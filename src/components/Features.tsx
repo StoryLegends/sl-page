@@ -52,12 +52,7 @@ const Features: React.FC = () => {
         </div>
 
         {/* Call to Action */}
-        <div className="mt-20 text-center">
-          <button className="group relative px-8 py-4 bg-legends-blue hover:bg-legends-blue-light text-black font-bold text-lg rounded-full transition-all hover:scale-105 hover:shadow-[0_0_30px_rgba(0,191,255,0.4)] overflow-hidden">
-            <span className="relative z-10">Подать заявку</span>
-            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-          </button>
-        </div>
+
       </div>
     </section>
   );

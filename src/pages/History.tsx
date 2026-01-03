@@ -51,23 +51,23 @@ const History = () => {
         {/* Timeline */}
         <div className="relative max-w-5xl mx-auto">
           {/* Central Line (hidden on mobile) */}
-          <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-white/5 -translate-x-1/2 hidden md:block" />
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent -translate-x-1/2 hidden md:block" />
 
           {seasons.map((season, index) => (
-            <div key={index} className={`relative flex items-center justify-between mb-24 ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
-              } flex-col`}>
+            <div key={index} className={`relative flex items-center justify-between mb-16 md:mb-24 ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
+              } flex-col gap-8 md:gap-0`}>
 
               {/* Content Card */}
               <div className="w-full md:w-[45%] group relative bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 transition-all duration-500 hover:-translate-y-2 z-10">
                 <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${season.color}`} />
 
-                <div className="p-8">
+                <div className="p-6 md:p-8">
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold bg-white/10 mb-3 text-white`}>
                         {season.subtitle}
                       </span>
-                      <h2 className="text-3xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-gray-400 transition-all">
+                      <h2 className="text-2xl md:text-3xl font-bold text-white mb-2 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-gray-400 transition-all">
                         {season.title}
                       </h2>
                     </div>
@@ -76,11 +76,11 @@ const History = () => {
                     </div>
                   </div>
 
-                  <p className="text-gray-400 mb-8 line-clamp-3">
+                  <p className="text-gray-400 mb-8 line-clamp-3 text-sm md:text-base">
                     {season.description}
                   </p>
 
-                  <div className="flex items-center gap-4 pt-6 border-t border-white/5">
+                  <div className="flex items-center gap-4 pt-6">
                     <button className="flex items-center gap-2 text-sm font-bold text-white hover:gap-3 transition-all">
                       Подробнее <ArrowRight className="w-4 h-4" />
                     </button>
@@ -91,34 +91,11 @@ const History = () => {
                 </div>
               </div>
 
-              {/* Connecting Line with Loop */}
-              <div className="hidden md:block absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2 w-full pointer-events-none">
-                {/* SVG Loop Connector */}
-                <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[200px] overflow-visible" style={{
-                  transform: index % 2 === 0 ? 'translate(-50%, -50%)' : 'translate(-50%, -50%) scaleX(-1)'
-                }}>
-                  <path
-                    d="M 300 100 C 350 100, 400 100, 450 100 C 500 100, 500 0, 450 0 C 400 0, 350 0, 300 0"
-                    fill="none"
-                    stroke="url(#gradient-line)"
-                    strokeWidth="2"
-                    className="opacity-20"
-                  />
-                  <defs>
-                    <linearGradient id="gradient-line" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="transparent" />
-                      <stop offset="50%" stopColor="white" />
-                      <stop offset="100%" stopColor="transparent" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-              </div>
-
-              {/* Center Dot */}
+              {/* Center Dot (Desktop only) */}
               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-black border-2 border-white/50 z-20 hidden md:block shadow-[0_0_15px_rgba(255,255,255,0.5)]" />
 
               {/* Empty Space for Zigzag Balance */}
-              <div className="w-full md:w-[45%]" />
+              <div className="w-full md:w-[45%] hidden md:block" />
 
             </div>
           ))}

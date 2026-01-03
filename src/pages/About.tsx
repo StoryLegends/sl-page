@@ -1,7 +1,39 @@
 import Layout from '../components/Layout';
-import { Users, Video, Trophy, Heart, Crown, Code, Shield, Megaphone } from 'lucide-react';
+import CTASection from '../components/CTASection';
+import { Users, Video, Trophy, Crown, Code, Shield, Megaphone, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const About = () => {
+  // Load images dynamically from src/assets/gallery
+  const galleryImagesGlob = import.meta.glob('/src/assets/gallery/*.{png,jpg,jpeg,webp}', { eager: true });
+  const galleryImages = Object.values(galleryImagesGlob).map((img: any) => img.default);
+
+  // Fallback images if folder is empty
+  const images = galleryImages.length > 0 ? galleryImages : [
+    "https://lh3.googleusercontent.com/sitesv/AAzXCkf0jtvw6YodxUoGqJcS46pP0pAbFLA0sFdioJRnpHTSYGKVnD04UxBYXc4iCTpDF_D0qngVCuoyRC_9VWzr_My1ndJwbRPF-y2Ysk1f4Pf2lH-lgB2cqi0Ya9c9DBJbBGNBft0ujddMDswE2wA9xzwfji2glG6RhzBKKcpQD4qKAxm2amKPOOL4=w16383",
+    "https://lh3.googleusercontent.com/sitesv/AAzXCkeHH7PkxYlYCgTxYU9_2qehFeTvkMVWWlwvVUGxvopyZat-tRt3Qy-eyQO8LnK6CFPmSgyXFFLVuxdvwkYQ_s1i2kYQwgbjp7XgTvTd2VLJr5vh5uZ2B4-3CdB6pJ0bb7KxWLY-5LgimUPZTgp3A2xpvPAJzngwW4Gvw8D_FH73OudERSYIaRcm=w16383"
+  ];
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [images.length]);
+
   return (
     <Layout>
       <div className="pt-24 pb-12 px-4 max-w-7xl mx-auto">
@@ -17,31 +49,58 @@ const About = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid md:grid-cols-2 gap-8 mb-16">
-          {/* Gallery Grid (Replacing Living World Card) */}
-          <div className="grid grid-cols-2 gap-4 h-full">
-            <div className="group relative rounded-2xl overflow-hidden border border-white/10 shadow-lg h-48 md:h-auto">
-              <img src="https://lh3.googleusercontent.com/sitesv/AAzXCkf0jtvw6YodxUoGqJcS46pP0pAbFLA0sFdioJRnpHTSYGKVnD04UxBYXc4iCTpDF_D0qngVCuoyRC_9VWzr_My1ndJwbRPF-y2Ysk1f4Pf2lH-lgB2cqi0Ya9c9DBJbBGNBft0ujddMDswE2wA9xzwfji2glG6RhzBKKcpQD4qKAxm2amKPOOL4=w16383" alt="Gallery 1" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-            </div>
-            <div className="group relative rounded-2xl overflow-hidden border border-white/10 shadow-lg h-48 md:h-auto">
-              {/* Using placeholder or archive images if available. Since I don't have the exact URLs for unnamed(2).png etc, I'll use placeholders or re-use the main one for now but with different crops/filters to simulate gallery, or just leave as is if I can't access local files easily in img src without import. 
-                    Actually, I can't easily reference local files without moving them to public. 
-                    I will use the main image again for now but styled as a gallery collage to represent "Living World".
-                */}
-              <div className="absolute inset-0 bg-legends-blue/20 z-10" />
-              <img src="https://lh3.googleusercontent.com/sitesv/AAzXCkf0jtvw6YodxUoGqJcS46pP0pAbFLA0sFdioJRnpHTSYGKVnD04UxBYXc4iCTpDF_D0qngVCuoyRC_9VWzr_My1ndJwbRPF-y2Ysk1f4Pf2lH-lgB2cqi0Ya9c9DBJbBGNBft0ujddMDswE2wA9xzwfji2glG6RhzBKKcpQD4qKAxm2amKPOOL4=w16383" alt="Gallery 2" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-            </div>
-            <div className="group relative rounded-2xl overflow-hidden border border-white/10 shadow-lg h-48 md:h-auto col-span-2">
-              <div className="absolute inset-0 bg-story-gold/10 z-10" />
-              <img src="https://lh3.googleusercontent.com/sitesv/AAzXCkf0jtvw6YodxUoGqJcS46pP0pAbFLA0sFdioJRnpHTSYGKVnD04UxBYXc4iCTpDF_D0qngVCuoyRC_9VWzr_My1ndJwbRPF-y2Ysk1f4Pf2lH-lgB2cqi0Ya9c9DBJbBGNBft0ujddMDswE2wA9xzwfji2glG6RhzBKKcpQD4qKAxm2amKPOOL4=w16383" alt="Gallery 3" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent z-20">
-                <h3 className="text-xl font-bold text-white">Галерея сервера</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 items-stretch">
+          {/* Gallery Card (Carousel) */}
+          <div className="group relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl h-[300px] md:h-full min-h-[300px] md:min-h-[400px] bg-white/5 backdrop-blur-sm">
+            {images.map((img, index) => (
+              <div
+                key={index}
+                className={`absolute inset-0 transition-opacity duration-1000 ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                  }`}
+              >
+                <img
+                  src={img}
+                  alt={`Gallery ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+              </div>
+            ))}
+
+            {/* Navigation Arrows */}
+            <button
+              onClick={prevImage}
+              className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70 z-30"
+            >
+              <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70 z-30"
+            >
+              <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
+
+            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 z-20">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">Живой мир</h3>
+              <p className="text-gray-300 text-base md:text-lg">Погрузитесь в атмосферу, созданную игроками.</p>
+
+              {/* Indicators */}
+              <div className="flex gap-2 mt-4">
+                {images.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${index === currentImageIndex ? 'w-8 bg-white' : 'w-2 bg-white/30 hover:bg-white/50'
+                      }`}
+                  />
+                ))}
               </div>
             </div>
           </div>
 
           {/* Features Grid */}
-          <div className="grid gap-6">
+          <div className="grid gap-6 content-center h-full">
             <div className="p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-colors group">
               <Video className="w-10 h-10 text-story-gold mb-4 group-hover:scale-110 transition-transform" />
               <h3 className="text-xl font-bold text-white mb-2">Для контент-мейкеров</h3>
@@ -86,7 +145,7 @@ const About = () => {
               </div>
               <h3 className="text-xl font-bold text-red-400 mb-1">datapeice</h3>
               <p className="text-white font-semibold text-sm mb-2">Разработчик</p>
-              <p className="text-gray-400 text-xs mb-3">Тоже довольно важная персонa.</p>
+              <p className="text-gray-400 text-xs mb-3">Властелин серверных исходников</p>
               <div className="inline-block px-3 py-1 rounded-full bg-red-500/10 text-red-300 text-xs font-mono">
                 datapeice
               </div>
@@ -121,27 +180,7 @@ const About = () => {
         </div>
 
         {/* CTA Section */}
-        <div className="text-center py-12 relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-story-gold to-transparent opacity-50" />
-
-          <Heart className="w-16 h-16 text-red-500 mx-auto mb-6 animate-pulse-slow" />
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ждем вас на сервере!</h2>
-          <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-            Всё, что вам нужно сделать — это заполнить заявку. Администрация рассмотрит её и свяжется с вами.
-          </p>
-
-          <div className="flex flex-col md:flex-row justify-center items-center gap-6">
-            <a
-              href="https://discord.com/invite/2RxxMnr6X9"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group relative px-8 py-4 bg-[#5865F2] hover:bg-[#4752C4] rounded-xl font-bold text-white transition-all hover:scale-105 shadow-lg hover:shadow-[#5865F2]/50 flex items-center gap-3"
-            >
-              <img src="/images/discord-icon.png" alt="Discord" className="w-6 h-6" />
-              Присоединиться к Discord
-            </a>
-          </div>
-        </div>
+        <CTASection />
       </div>
     </Layout>
   );

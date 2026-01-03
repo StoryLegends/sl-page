@@ -6,12 +6,12 @@ const Rules = () => {
     <Layout>
       <div className="pt-24 pb-12 px-4 max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-16">
-          <Shield className="w-16 h-16 text-story-gold mx-auto mb-6 animate-pulse-slow" />
-          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-story-gold via-white to-legends-blue bg-clip-text text-transparent">
+        <div className="text-center mb-12 md:mb-16">
+          <Shield className="w-12 h-12 md:w-16 md:h-16 text-story-gold mx-auto mb-4 md:mb-6 animate-pulse-slow" />
+          <h1 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-story-gold via-white to-legends-blue bg-clip-text text-transparent">
             Правила сервера
           </h1>
-          <div className="p-6 rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-sm text-left relative overflow-hidden">
+          <div className="p-4 md:p-6 rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-sm text-left relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
             <div className="flex gap-4">
               <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
