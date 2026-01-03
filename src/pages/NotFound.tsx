@@ -15,7 +15,7 @@ const NotFound: React.FC = () => {
         // Initial Decrypt
         const decryptInterval = setInterval(() => {
             setDisplayText(prev =>
-                prev.split('').map((letter, index) => {
+                prev.split('').map((_, index) => {
                     if (index < iteration) {
                         return target[index];
                     }
@@ -31,7 +31,7 @@ const NotFound: React.FC = () => {
                 glitchInterval = setInterval(() => {
                     // Random character replacement (existing logic)
                     if (Math.random() > 0.7) {
-                        const glitchText = target.split('').map((char, i) => {
+                        const glitchText = target.split('').map((char) => {
                             if (Math.random() > 0.5) return String.fromCharCode(33 + Math.floor(Math.random() * 90));
                             return char;
                         }).join('');
