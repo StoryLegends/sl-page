@@ -28,7 +28,7 @@ const Features: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <span className="text-sm uppercase tracking-[0.2em] text-story-gold/80 font-medium">Наши плюсы:</span>
+          <span className="text-2xl md:text-3xl uppercase tracking-[0.2em] text-story-gold/80 font-medium">Наши плюсы:</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

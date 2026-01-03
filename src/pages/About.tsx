@@ -1,6 +1,6 @@
 import Layout from '../components/Layout';
 import CTASection from '../components/CTASection';
-import { Users, Video, Trophy, Crown, Code, Shield, Megaphone, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Video, Trophy, Crown, Code, Megaphone, ChevronLeft, ChevronRight, Gavel } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const About = () => {
@@ -154,7 +154,7 @@ const About = () => {
             {/* tybick */}
             <div className="p-6 rounded-2xl bg-gradient-to-br from-green-900/20 to-black border border-green-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300">
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Shield className="w-10 h-10 text-green-400" />
+                <Gavel className="w-10 h-10 text-green-400" />
               </div>
               <h3 className="text-xl font-bold text-green-400 mb-1">tybick</h3>
               <p className="text-white font-semibold text-sm mb-2">Модератор</p>

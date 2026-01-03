@@ -1,28 +1,20 @@
 import Layout from '../components/Layout';
-import { Shield, AlertTriangle, Book, Gavel, MessageSquare, Map, Info } from 'lucide-react';
+import { FileSignature, Book, Gavel, MessageSquare, Map, Info } from 'lucide-react';
 
 const Rules = () => {
   return (
     <Layout>
       <div className="pt-24 pb-12 px-4 max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
-          <Shield className="w-12 h-12 md:w-16 md:h-16 text-story-gold mx-auto mb-4 md:mb-6 animate-pulse-slow" />
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-story-gold via-white to-legends-blue bg-clip-text text-transparent">
-            Правила сервера
+        <div className="text-center mb-24 relative">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-story-gold/20 blur-[100px] rounded-full -z-10" />
+          <FileSignature className="w-20 h-20 text-story-gold mx-auto mb-6 animate-pulse-slow" />
+          <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-story-gold via-white to-legends-blue bg-clip-text text-transparent drop-shadow-lg">
+            Правила
           </h1>
-          <div className="p-4 md:p-6 rounded-2xl bg-red-500/10 border border-red-500/30 backdrop-blur-sm text-left relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-red-500" />
-            <div className="flex gap-4">
-              <AlertTriangle className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
-              <div className="space-y-2 text-gray-300">
-                <p>Подавая заявку, вы автоматически соглашаетесь с правилами и принимаете на себя ответственность.</p>
-                <p>Правила могут быть изменены в любой момент и без уведомления игроков.</p>
-                <p>Администратор сам решает ваше наказание.</p>
-                <p>Администратор может выдать наказание даже если нет четкого правила.</p>
-              </div>
-            </div>
-          </div>
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+            Свод правил и рекомендаций для комфортной игры на сервере.
+          </p>
         </div>
 
         {/* Rules Sections */}
