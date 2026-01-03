@@ -1,0 +1,36 @@
+import React from 'react';
+
+const Footer: React.FC = () => {
+  return (
+    <footer className="relative z-10 py-12 border-t border-white/5 bg-black/40 backdrop-blur-sm mt-20">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+
+          {/* Social Buttons */}
+          <div className="flex gap-4">
+            <a href="#" className="px-6 py-2 rounded-lg bg-[#FF0000]/10 border border-[#FF0000]/20 text-[#FF0000] hover:bg-[#FF0000]/20 transition-all hover:scale-105">
+              YouTube
+            </a>
+            <a href="#" className="px-6 py-2 rounded-lg bg-[#5865F2]/10 border border-[#5865F2]/20 text-[#5865F2] hover:bg-[#5865F2]/20 transition-all hover:scale-105">
+              Discord
+            </a>
+          </div>
+
+          {/* Social Text */}
+          <div className="text-center">
+            <span className="text-gray-500 uppercase tracking-widest text-sm font-medium">Мы в соц. сетях</span>
+          </div>
+
+          {/* Copyright / Info */}
+          <div className="text-right text-xs text-gray-600 space-y-2">
+            <p>Not an official Minecraft product.</p>
+            <p>The server StoryLegends is not affiliated with Mojang Studios.</p>
+            <p className="text-gray-500">StoryLegends © 2023 - 2026</p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
+
+export default Footer;
