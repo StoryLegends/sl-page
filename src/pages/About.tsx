@@ -51,7 +51,7 @@ const About = () => {
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16 items-stretch">
           {/* Gallery Card (Carousel) */}
-          <div className="group relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl h-[300px] md:h-full min-h-[300px] md:min-h-[400px] bg-white/5 backdrop-blur-sm">
+          <div className="group relative z-[60] rounded-2xl overflow-hidden border border-white/10 shadow-2xl h-[300px] md:h-full min-h-[300px] md:min-h-[400px]" style={{ backgroundColor: 'black' }}>
             {images.map((img, index) => (
               <div
                 key={index}
@@ -214,9 +214,9 @@ const About = () => {
         </div>
 
         {/* Last Video Section */}
-        <div className="mb-16 relative z-10">
+        <div className="mb-16 relative z-[60]">
           <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-8">Последнее видео</h2>
-          <div className="max-w-4xl mx-auto aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/50">
+          <div className="max-w-4xl mx-auto aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl" style={{ backgroundColor: 'black' }}>
             <iframe
               src={(() => {
                 const videoUrl = import.meta.env.VITE_LAST_VIDEO || "https://www.youtube.com/embed/dQw4w9WgXcQ";
