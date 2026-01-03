@@ -1,7 +1,55 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
 @theme {
-  --font-sans: "Outfit", sans-serif;
+  --font-minecraft: "VT323", monospace;
+  --animate-glitch-extreme: glitch-extreme 3s infinite;
+  --animate-glitch-jitter: glitch-jitter 0.3s infinite;
+
+  @keyframes glitch-extreme {
+
+    0%,
+    90%,
+    96%,
+    100% {
+      opacity: 1;
+      transform: translate(0);
+    }
+
+    92% {
+      opacity: 0;
+    }
+
+    94% {
+      opacity: 1;
+      transform: scale(1.5) translateX(-50px);
+    }
+  }
+
+  @keyframes glitch-jitter {
+    0% {
+      transform: translate(0, 0);
+    }
+
+    25% {
+      transform: translate(-2px, 2px);
+    }
+
+    50% {
+      transform: translate(2px, -2px);
+    }
+
+    75% {
+      transform: translate(-2px, -2px);
+    }
+
+    100% {
+      transform: translate(2px, 2px);
+    }
+  }
+
+  --font-sans: "Outfit",
+  sans-serif;
 
   --color-story-gold: #FFD700;
   --color-story-gold-light: #FFE44D;
