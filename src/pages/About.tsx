@@ -44,7 +44,7 @@ const About = () => {
             О сервере
           </h1>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
-            StoryLegends — это приватный Minecraft сервер выживания, где создаются истории и легенды.
+            StoryLegends — это приватный Minecraft сервер выживания, где создаются легендарные истории.
           </p>
         </div>
 
@@ -121,61 +121,120 @@ const About = () => {
           </div>
         </div>
 
+
+
         {/* Administration Section */}
-        <div className="mb-16">
+        <div className="mb-16 relative z-10">
           <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">Состав администрации</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {/* LendSpele */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-900/20 to-black border border-purple-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Crown className="w-10 h-10 text-purple-400" />
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-900/20 to-black border border-purple-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full items-center">
+              <div className="relative mb-4 h-48 flex items-center justify-center">
+                <img
+                  src="/images/lendspele.png"
+                  alt="LendSpele"
+                  className="h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500"
+                  style={{ maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' }}
+                />
+              </div>
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/50">
+                <Crown className="w-6 h-6 text-purple-400" />
               </div>
               <h3 className="text-xl font-bold text-purple-400 mb-1">LendSpele</h3>
               <p className="text-white font-semibold text-sm mb-2">Владелец и Тех. Админ</p>
-              <p className="text-gray-400 text-xs mb-3">Ему нужно присылать заявки.</p>
-              <div className="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 text-xs font-mono">
+              <p className="text-gray-400 text-xs mb-3">Содержит, настраивает и разрабатывает сервер.</p>
+              <div className="inline-block px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 text-xs font-mono mt-auto">
                 lendspele_
               </div>
             </div>
 
             {/* datapeice */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-red-900/20 to-black border border-red-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Code className="w-10 h-10 text-red-400" />
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-red-900/20 to-black border border-red-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full items-center">
+              <div className="relative mb-4 h-48 flex items-center justify-center">
+                <img
+                  src="/images/datapeice.png"
+                  alt="datapeice"
+                  className="h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500"
+                  style={{ maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' }}
+                />
+              </div>
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center border border-red-500/50">
+                <Code className="w-6 h-6 text-red-400" />
               </div>
               <h3 className="text-xl font-bold text-red-400 mb-1">datapeice</h3>
               <p className="text-white font-semibold text-sm mb-2">Разработчик</p>
-              <p className="text-gray-400 text-xs mb-3">Властелин серверных исходников</p>
-              <div className="inline-block px-3 py-1 rounded-full bg-red-500/10 text-red-300 text-xs font-mono">
+              <p className="text-gray-400 text-xs mb-3">Разрабатывает модификации для сервера.</p>
+              <div className="inline-block px-3 py-1 rounded-full bg-red-500/10 text-red-300 text-xs font-mono mt-auto">
                 datapeice
               </div>
             </div>
 
             {/* tybick */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-green-900/20 to-black border border-green-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Gavel className="w-10 h-10 text-green-400" />
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-green-900/20 to-black border border-green-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full items-center">
+              <div className="relative mb-4 h-48 flex items-center justify-center">
+                <img
+                  src="/images/tybick.png"
+                  alt="tybick"
+                  className="h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500"
+                  style={{ maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' }}
+                />
+              </div>
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center border border-green-500/50">
+                <Gavel className="w-6 h-6 text-green-400" />
               </div>
               <h3 className="text-xl font-bold text-green-400 mb-1">tybick</h3>
               <p className="text-white font-semibold text-sm mb-2">Модератор</p>
               <p className="text-gray-400 text-xs mb-3">Помогает разбирать заявки.</p>
-              <div className="inline-block px-3 py-1 rounded-full bg-green-500/10 text-green-300 text-xs font-mono">
+              <div className="inline-block px-3 py-1 rounded-full bg-green-500/10 text-green-300 text-xs font-mono mt-auto">
                 ananasnmg22
               </div>
             </div>
 
             {/* Slides_GG */}
-            <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300">
-              <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Megaphone className="w-10 h-10 text-blue-400" />
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full items-center">
+              <div className="relative mb-4 h-48 flex items-center justify-center">
+                <img
+                  src="/images/slides.png"
+                  alt="Slides_GG"
+                  className="h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500"
+                  style={{ maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' }}
+                />
+              </div>
+              <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/50">
+                <Megaphone className="w-6 h-6 text-blue-400" />
               </div>
               <h3 className="text-xl font-bold text-blue-400 mb-1">Slides_GG</h3>
               <p className="text-white font-semibold text-sm mb-2">Рекламный менеджер</p>
-              <p className="text-gray-400 text-xs mb-3">Отвечает за продвижение.</p>
-              <div className="inline-block px-3 py-1 rounded-full bg-blue-500/10 text-blue-300 text-xs font-mono">
+              <p className="text-gray-400 text-xs mb-3">Занимается продвижением сервера</p>
+              <div className="inline-block px-3 py-1 rounded-full bg-blue-500/10 text-blue-300 text-xs font-mono mt-auto">
                 slides_1
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Last Video Section */}
+        <div className="mb-16 relative z-10">
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-8">Последнее видео</h2>
+          <div className="max-w-4xl mx-auto aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black/50">
+            <iframe
+              src={(() => {
+                const videoUrl = import.meta.env.VITE_LAST_VIDEO || "https://www.youtube.com/embed/dQw4w9WgXcQ";
+                // If it's already an embed URL, return it
+                if (videoUrl.includes('/embed/')) return videoUrl;
+
+                // Extract ID from various YouTube URL formats
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+                const match = videoUrl.match(regExp);
+                const videoId = (match && match[2].length === 11) ? match[2] : null;
+
+                return videoId ? `https://www.youtube.com/embed/${videoId}` : videoUrl;
+              })()}
+              title="Last Video"
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
           </div>
         </div>
 

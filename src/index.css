@@ -52,6 +52,88 @@
   }
 }
 
+/* Seasonal Animations */
+@keyframes snow-fall {
+  0% {
+    transform: translateY(-10vh) translateX(-10px);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(110vh) translateX(10px);
+    opacity: 0.3;
+  }
+}
+
+@keyframes leaves-fall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg) translateX(-20px);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(110vh) rotate(360deg) translateX(20px);
+    opacity: 0;
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(110vh) translateX(-10px);
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateY(-10vh) translateX(10px);
+    opacity: 0;
+  }
+}
+
+@keyframes sun-rays {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: rotate(180deg) scale(1.2);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.5;
+  }
+}
+
+.snow-fall {
+  animation: snow-fall linear infinite;
+}
+
+.leaves-fall {
+  animation: leaves-fall linear infinite;
+}
+
+.float-up {
+  animation: float-up linear infinite;
+}
+
+.sun-rays {
+  animation: sun-rays linear infinite;
+}
+
 /* Custom Utilities */
 @layer utilities {
   .glass {
