@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Check, X } from 'lucide-react';
 
 const CookieBanner = () => {
     const [isVisible, setIsVisible] = useState(false);
@@ -46,14 +47,16 @@ const CookieBanner = () => {
                 <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2">
                     <button
                         onClick={handleAccept}
-                        className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white transition-all hover:scale-105 shadow-lg hover:shadow-green-600/50"
+                        className="flex items-center gap-2 px-8 py-3 bg-emerald-600/80 hover:bg-emerald-500 rounded-xl font-bold text-white transition-all hover:scale-105 shadow-lg hover:shadow-emerald-600/30 backdrop-blur-sm"
                     >
+                        <Check size={20} />
                         Принять
                     </button>
                     <button
                         onClick={handleReject}
-                        className="px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-white transition-all hover:scale-105 shadow-lg hover:shadow-red-600/50"
+                        className="flex items-center gap-2 px-6 py-3 bg-rose-600/80 hover:bg-rose-500 rounded-xl font-bold text-white transition-all hover:scale-105 shadow-lg hover:shadow-rose-600/30 backdrop-blur-sm"
                     >
+                        <X size={20} />
                         Покинуть сайт
                     </button>
                 </div>
