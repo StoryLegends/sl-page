@@ -32,6 +32,10 @@ const Footer: React.FC = () => {
                 <span className="text-gray-600">Discord:</span>
                 <span className="text-gray-500">lendspele_</span>
               </div>
+              <div className="flex flex-col gap-1 mt-2">
+                <a href="/privacy-policy" className="hover:text-gray-400 transition-colors">Политика конфиденциальности</a>
+                <a href="/user-agreement" className="hover:text-gray-400 transition-colors">Пользовательское соглашение</a>
+              </div>
             </div>
 
             {/* Copyright / Info */}
