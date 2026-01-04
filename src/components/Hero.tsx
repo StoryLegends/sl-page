@@ -9,7 +9,7 @@ const Hero: React.FC = () => {
         {/* Main Title with Logo Image */}
         <div className="mb-12 animate-float relative z-10">
           <img
-            src={`${import.meta.env.BASE_URL}images/logo.png`}
+            src={`${import.meta.env.BASE_URL}images/logo.webp`}
             alt="StoryLegends"
             className="w-full max-w-4xl mx-auto drop-shadow-[0_0_50px_rgba(255,215,0,0.2)]"
           />

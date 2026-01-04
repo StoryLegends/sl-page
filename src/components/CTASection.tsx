@@ -3,7 +3,7 @@ import { Heart, FileText } from 'lucide-react';
 
 const CTASection: React.FC = () => {
     return (
-        <div className="text-center py-8 md:py-12 px-4 md:px-0 relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent">
+        <div className="text-center py-8 md:py-12 px-4 md:px-0 relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-white/5 to-transparent backdrop-blur-sm">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-story-gold to-transparent opacity-50" />
 
             <Heart className="w-16 h-16 text-red-500 mx-auto mb-6 animate-pulse-slow" />

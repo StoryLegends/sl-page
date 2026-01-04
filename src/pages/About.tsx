@@ -131,7 +131,7 @@ const About = () => {
             <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-900/20 to-black border border-purple-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full items-center">
               <div className="relative mb-4 h-48 flex items-center justify-center">
                 <img
-                  src="/images/lendspele.png"
+                  src="/images/lendspele.webp"
                   alt="LendSpele"
                   className="h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500"
                   style={{ maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' }}
@@ -152,7 +152,7 @@ const About = () => {
             <div className="p-6 rounded-2xl bg-gradient-to-br from-red-900/20 to-black border border-red-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full items-center">
               <div className="relative mb-4 h-48 flex items-center justify-center">
                 <img
-                  src="/images/datapeice.png"
+                  src="/images/datapeice.webp"
                   alt="datapeice"
                   className="h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500"
                   style={{ maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' }}
@@ -173,7 +173,7 @@ const About = () => {
             <div className="p-6 rounded-2xl bg-gradient-to-br from-green-900/20 to-black border border-green-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full items-center">
               <div className="relative mb-4 h-48 flex items-center justify-center">
                 <img
-                  src="/images/tybick.png"
+                  src="/images/tybick.webp"
                   alt="tybick"
                   className="h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500"
                   style={{ maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' }}
@@ -194,7 +194,7 @@ const About = () => {
             <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 backdrop-blur-sm text-center group hover:-translate-y-2 transition-transform duration-300 flex flex-col h-full items-center">
               <div className="relative mb-4 h-48 flex items-center justify-center">
                 <img
-                  src="/images/slides.png"
+                  src="/images/slides.webp"
                   alt="Slides_GG"
                   className="h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500"
                   style={{ maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' }}

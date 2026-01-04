@@ -158,7 +158,7 @@ const NotFound: React.FC = () => {
             {/* Floating Characters */}
             <div className="absolute top-[500px] left-2 w-20 md:top-[60%] md:left-[10%] md:w-40 animate-float opacity-80 pointer-events-none">
                 <img
-                    src="/images/angel.png"
+                    src="/images/angel.webp"
                     alt="Angel"
                     className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                 />
@@ -166,7 +166,7 @@ const NotFound: React.FC = () => {
 
             <div className="absolute top-5 right-2 w-32 md:top-[0%] md:right-[15%] md:w-96 animate-float opacity-80 pointer-events-none" style={{ animationDelay: '2s' }}>
                 <img
-                    src="/images/datapeice_full.png"
+                    src="/images/datapeice_full.webp"
                     alt="Datapeice"
                     className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(255,0,0,0.3)] -rotate-12"
                 />

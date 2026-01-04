@@ -38,7 +38,7 @@ const Navbar: React.FC = () => {
             <div className="absolute inset-0 bg-gradient-to-r from-story-gold/40 via-transparent to-legends-blue/60 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full" />
 
             <img
-              src={`${import.meta.env.BASE_URL}images/logo.png`}
+              src={`${import.meta.env.BASE_URL}images/logo.webp`}
               alt="StoryLegends"
               className={`relative z-10 h-6 md:h-8 w-auto drop-shadow-[0_0_15px_rgba(255,215,0,0.1)] transition-all duration-300 group-hover:scale-105 ${mobileMenuOpen ? 'opacity-0' : 'opacity-100'}`}
             />

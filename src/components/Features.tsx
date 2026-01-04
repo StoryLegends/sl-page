@@ -6,19 +6,19 @@ const Features: React.FC = () => {
     {
       title: "Лёгкость",
       description: "Легко присоединится к нашему серверу",
-      icon: <img src="/images/feather.png" alt="Lightness" className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" />,
+      icon: <img src="/images/feather.webp" alt="Lightness" className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" />,
       variant: 'default' as const
     },
     {
       title: "Цена",
       description: "Ты не должен платить чтобы попасть на сервер, лишь написать заявку. Все бесплатно",
-      icon: <img src="/images/diamond.png" alt="Price" className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />,
+      icon: <img src="/images/diamond.webp" alt="Price" className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />,
       variant: 'highlight' as const
     },
     {
       title: "Быстрый ответ",
       description: "Мы достаточно быстро отвечаем на заявки",
-      icon: <img src="/images/book.png" alt="Fast Answer" className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" />,
+      icon: <img src="/images/book.webp" alt="Fast Answer" className="w-40 h-40 object-contain mx-auto drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]" />,
       variant: 'default' as const
     }
   ];
