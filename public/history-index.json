@@ -1,5 +1,12 @@
 [
   {
+    "id": "4",
+    "name": "StoryLegends SL",
+    "description": "Начало легендарной истории",
+    "path": "StoryLegends SL",
+    "date": "2023-01-01"
+  },
+  {
     "id": "3",
     "name": "StoryMode MSM",
     "description": "Начало легендарной истории",

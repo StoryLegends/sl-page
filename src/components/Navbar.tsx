@@ -46,16 +46,22 @@ const Navbar: React.FC = () => {
 
           {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                to={link.href}
-                className={`text-sm font-medium transition-colors relative group ${location.pathname === link.href ? 'text-white' : 'text-gray-300 hover:text-white'}`}
-              >
-                {link.name}
-                <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-story-gold to-legends-blue transition-all duration-300 ${location.pathname === link.href ? 'w-full' : 'w-0 group-hover:w-full'}`} />
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = link.href === '/'
+                ? location.pathname === '/'
+                : location.pathname.startsWith(link.href);
+
+              return (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  className={`text-sm font-medium transition-colors relative group ${isActive ? 'text-white' : 'text-gray-300 hover:text-white'}`}
+                >
+                  {link.name}
+                  <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-story-gold to-legends-blue transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+                </Link>
+              );
+            })}
           </div>
 
           {/* Mobile Menu Button (Hamburger) */}
@@ -90,18 +96,24 @@ const Navbar: React.FC = () => {
 
         {/* Drawer Links */}
         <div className="flex flex-col items-center gap-8 mt-10">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.href}
-              className={`text-xl font-bold transition-colors relative group ${location.pathname === link.href ? 'text-white' : 'text-gray-400 hover:text-white'
-                }`}
-            >
-              {link.name}
-              <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-story-gold to-legends-blue transition-all duration-300 ${location.pathname === link.href ? 'w-full' : 'w-0 group-hover:w-full'
-                }`} />
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = link.href === '/'
+              ? location.pathname === '/'
+              : location.pathname.startsWith(link.href);
+
+            return (
+              <Link
+                key={link.name}
+                to={link.href}
+                className={`text-xl font-bold transition-colors relative group ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'
+                  }`}
+              >
+                {link.name}
+                <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-story-gold to-legends-blue transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'
+                  }`} />
+              </Link>
+            );
+          })}
         </div>
       </div>
     </>
