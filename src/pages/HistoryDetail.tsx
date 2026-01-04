@@ -134,7 +134,7 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
                     onClick={() => setSelectedImage(null)}
                 >
                     {/* Top Bar (Close Button) */}
-                    <div className="absolute top-0 left-0 right-0 p-4 flex justify-end z-[10000] pointer-events-none">
+                    <div className="absolute top-0 left-0 right-0 p-4 flex justify-end z-[20000] pointer-events-none">
                         <button
                             className="pointer-events-auto text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all backdrop-blur-md"
                             onClick={() => setSelectedImage(null)}
@@ -149,7 +149,7 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
 
                         {/* Image Area */}
                         <div
-                            className="relative w-full h-auto max-h-[70vh] md:max-h-[85vh] flex items-center justify-center"
+                            className="relative w-full h-auto max-h-[70vh] md:max-h-[85vh] flex items-center justify-center z-[10001] overflow-visible"
                             onClick={(e) => e.stopPropagation()}
                         >
                             <TransformWrapper
@@ -158,7 +158,7 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
                                 maxScale={4}
                                 centerOnInit
                             >
-                                <TransformComponent wrapperClass="!w-full !h-full flex items-center justify-center" contentClass="!w-full !h-full flex items-center justify-center">
+                                <TransformComponent wrapperClass="!w-full !h-full flex items-center justify-center !overflow-visible" contentClass="!w-full !h-full flex items-center justify-center">
                                     <img
                                         key={getPhotoId(selectedImage)}
                                         src={`/history/${folderName}/images/${getPhotoId(selectedImage)}.webp`}
@@ -201,7 +201,7 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
 
                         {/* Desktop Navigation Arrows (Absolute) */}
                         <button
-                            className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-all backdrop-blur-sm"
+                            className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 z-[10002] text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-all backdrop-blur-sm"
                             onClick={handlePrev}
                             aria-label="Previous image"
                         >
@@ -209,7 +209,7 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
                         </button>
 
                         <button
-                            className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-all backdrop-blur-sm"
+                            className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-[10002] text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-all backdrop-blur-sm"
                             onClick={handleNext}
                             aria-label="Next image"
                         >
