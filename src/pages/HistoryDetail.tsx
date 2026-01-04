@@ -20,9 +20,9 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
     const scroll = (direction: 'left' | 'right') => {
         if (scrollContainerRef.current) {
             const container = scrollContainerRef.current;
-            // Scroll by 2 images roughly (assuming ~600px width + gap) or container width if smaller
+            // Scroll by 1 image width + gap
             const itemWidth = container.firstElementChild?.clientWidth || 0;
-            const scrollAmount = itemWidth ? itemWidth * 2 + 32 : container.clientWidth; // 32 is roughly 2x gap
+            const scrollAmount = itemWidth ? itemWidth + 16 : container.clientWidth;
             const targetScroll = container.scrollLeft + (direction === 'left' ? -scrollAmount : scrollAmount);
 
             container.scrollTo({
@@ -134,22 +134,22 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
                 >
                     {/* Close Button - Fixed to screen top-right */}
                     <button
-                        className="fixed top-8 right-8 z-[10000] text-white bg-white/10 hover:bg-white/20 rounded-full p-3 transition-all backdrop-blur-md"
+                        className="fixed top-4 right-4 z-[10000] text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all backdrop-blur-md"
                         onClick={() => setSelectedImage(null)}
                         aria-label="Close"
                     >
-                        <X className="w-8 h-8" />
+                        <X className="w-6 h-6" />
                     </button>
 
                     {/* Image Container - Centered in Viewport */}
-                    <div className="absolute inset-0 flex items-center justify-center p-4 pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center p-0 md:p-4 pointer-events-none">
                         <div
-                            className="relative flex items-center justify-center gap-4 max-w-[90vw] max-h-[90vh] pointer-events-auto"
+                            className="relative flex items-center justify-center w-full h-full pointer-events-auto"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Prev Button */}
+                            {/* Prev Button - Absolute Left */}
                             <button
-                                className="text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-all backdrop-blur-sm"
+                                className="absolute left-2 md:left-8 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 md:p-3 transition-all backdrop-blur-sm"
                                 onClick={handlePrev}
                                 aria-label="Previous image"
                             >
@@ -161,15 +161,15 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
                                 key={getPhotoId(selectedImage)}
                                 src={`/history/${folderName}/images/${getPhotoId(selectedImage)}.webp`}
                                 alt={`${seasonName} full screen`}
-                                className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl animate-[zoom-in_0.3s_ease-out]"
+                                className="max-w-full max-h-[100vh] md:max-h-[90vh] object-contain shadow-2xl animate-[zoom-in_0.3s_ease-out]"
                                 style={{
                                     animation: 'zoom-in 0.3s ease-out forwards'
                                 }}
                             />
 
-                            {/* Next Button */}
+                            {/* Next Button - Absolute Right */}
                             <button
-                                className="text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-all backdrop-blur-sm"
+                                className="absolute right-2 md:right-8 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 md:p-3 transition-all backdrop-blur-sm"
                                 onClick={handleNext}
                                 aria-label="Next image"
                             >

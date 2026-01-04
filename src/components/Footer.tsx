@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
 
       <footer className="relative z-10 py-12 border-t border-white/5 bg-black/40 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-8">
+          <div className="flex flex-col md:flex-row justify-between items-center md:items-stretch gap-8">
 
             {/* Contact Info */}
             <div className="flex flex-col items-center md:items-start gap-2 text-xs text-gray-600">
@@ -39,11 +39,13 @@ const Footer: React.FC = () => {
             </div>
 
             {/* Copyright / Info */}
-            <div className="text-center md:text-right text-xs text-gray-600 space-y-2">
-              <p>Not an official Minecraft product.</p>
-              <p>The server StoryLegends is not affiliated with Mojang Studios.</p>
-              <p className="text-gray-500">StoryLegends © 2023 - 2026</p>
-              <p className="text-gray-500 pt-2">
+            <div className="flex flex-col justify-between text-center md:text-right text-xs text-gray-600">
+              <div className="space-y-2">
+                <p>Not an official Minecraft product.</p>
+                <p>The server StoryLegends is not affiliated with Mojang Studios.</p>
+                <p className="text-gray-500">StoryLegends © 2023 - 2026</p>
+              </div>
+              <p className="text-gray-500 pt-4 md:pt-0">
                 Developed by <a href="https://datapeice.me" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">@datapeice</a>
               </p>
             </div>
