@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Users, Monitor, Clock, Hourglass, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 
 interface PhotoObject {
     id: number;
@@ -126,72 +127,109 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
                 </div>
             </div>
 
-            {/* Lightbox Modal - Portaled to body to avoid stacking context issues */}
+            {/* Lightbox Modal */}
             {selectedImage !== null && createPortal(
                 <div
-                    className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm animate-[fade-in_0.2s_ease-out]"
+                    className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-sm animate-[fade-in_0.2s_ease-out] flex flex-col items-center justify-center"
                     onClick={() => setSelectedImage(null)}
                 >
-                    {/* Close Button - Fixed to screen top-right */}
-                    <button
-                        className="fixed top-4 right-4 z-[10000] text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all backdrop-blur-md"
-                        onClick={() => setSelectedImage(null)}
-                        aria-label="Close"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
+                    {/* Top Bar (Close Button) */}
+                    <div className="absolute top-0 left-0 right-0 p-4 flex justify-end z-[10000] pointer-events-none">
+                        <button
+                            className="pointer-events-auto text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all backdrop-blur-md"
+                            onClick={() => setSelectedImage(null)}
+                            aria-label="Close"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
 
-                    {/* Image Container - Centered in Viewport */}
-                    <div className="absolute inset-0 flex items-center justify-center p-0 md:p-4 pointer-events-none">
+                    {/* Main Content Wrapper - Centered */}
+                    <div className="w-full max-w-7xl max-h-screen flex flex-col items-center justify-center p-4 gap-4 relative">
+
+                        {/* Image Area */}
                         <div
-                            className="relative flex items-center justify-center w-full h-full pointer-events-auto"
+                            className="relative w-full h-auto max-h-[70vh] md:max-h-[85vh] flex items-center justify-center"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            {/* Prev Button - Absolute Left */}
+                            <TransformWrapper
+                                initialScale={1}
+                                minScale={1}
+                                maxScale={4}
+                                centerOnInit
+                            >
+                                <TransformComponent wrapperClass="!w-full !h-full flex items-center justify-center" contentClass="!w-full !h-full flex items-center justify-center">
+                                    <img
+                                        key={getPhotoId(selectedImage)}
+                                        src={`/history/${folderName}/images/${getPhotoId(selectedImage)}.webp`}
+                                        alt={`${seasonName} full screen`}
+                                        className="max-w-full max-h-[70vh] md:max-h-[85vh] object-contain shadow-2xl"
+                                    />
+                                </TransformComponent>
+                            </TransformWrapper>
+                        </div>
+
+                        {/* Mobile Bottom Bar (Navigation + Description) - Immediately below image */}
+                        <div
+                            className="md:hidden w-full flex items-center justify-between gap-4 z-[10000] shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <button
-                                className="absolute left-2 md:left-8 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 md:p-3 transition-all backdrop-blur-sm"
+                                className="text-white/90 hover:text-white bg-white/10 rounded-full p-3 transition-all"
                                 onClick={handlePrev}
                                 aria-label="Previous image"
                             >
-                                <ChevronLeft className="w-8 h-8" />
+                                <ChevronLeft className="w-6 h-6" />
                             </button>
 
-                            {/* Image */}
-                            <img
-                                key={getPhotoId(selectedImage)}
-                                src={`/history/${folderName}/images/${getPhotoId(selectedImage)}.webp`}
-                                alt={`${seasonName} full screen`}
-                                className="max-w-full max-h-[100vh] md:max-h-[90vh] object-contain shadow-2xl animate-[zoom-in_0.3s_ease-out]"
-                                style={{
-                                    animation: 'zoom-in 0.3s ease-out forwards'
-                                }}
-                            />
+                            <div className="flex-1 text-center">
+                                {getPhotoDescription(selectedImage) && (
+                                    <p className="text-white text-sm font-medium whitespace-pre-line line-clamp-2">
+                                        {getPhotoDescription(selectedImage)}
+                                    </p>
+                                )}
+                            </div>
 
-                            {/* Next Button - Absolute Right */}
                             <button
-                                className="absolute right-2 md:right-8 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-2 md:p-3 transition-all backdrop-blur-sm"
+                                className="text-white/90 hover:text-white bg-white/10 rounded-full p-3 transition-all"
                                 onClick={handleNext}
                                 aria-label="Next image"
                             >
-                                <ChevronRight className="w-8 h-8" />
+                                <ChevronRight className="w-6 h-6" />
                             </button>
                         </div>
-                    </div>
 
-                    {/* Description - Absolute Bottom */}
-                    {getPhotoDescription(selectedImage) && (
-                        <div className="absolute bottom-8 left-0 right-0 flex justify-center px-4 pointer-events-none">
-                            <div
-                                className="bg-black/60 backdrop-blur-md p-4 rounded-lg max-w-2xl text-center border border-white/10 animate-[fade-in_0.3s_ease-out_0.1s] opacity-0 pointer-events-auto"
-                                style={{ animationFillMode: 'forwards' }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <p className="text-white text-lg font-medium whitespace-pre-line">
-                                    {getPhotoDescription(selectedImage)}
-                                </p>
-                            </div>
+                        {/* Desktop Navigation Arrows (Absolute) */}
+                        <button
+                            className="hidden md:block absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-all backdrop-blur-sm"
+                            onClick={handlePrev}
+                            aria-label="Previous image"
+                        >
+                            <ChevronLeft className="w-8 h-8" />
+                        </button>
+
+                        <button
+                            className="hidden md:block absolute right-4 top-1/2 -translate-y-1/2 z-50 text-white/70 hover:text-white bg-black/40 hover:bg-black/60 rounded-full p-3 transition-all backdrop-blur-sm"
+                            onClick={handleNext}
+                            aria-label="Next image"
+                        >
+                            <ChevronRight className="w-8 h-8" />
+                        </button>
+
+                        {/* Desktop Description (Overlay) */}
+                        <div className="hidden md:block absolute bottom-8 left-0 right-0 flex justify-center px-4 pointer-events-none z-[10000]">
+                            {getPhotoDescription(selectedImage) && (
+                                <div
+                                    className="bg-black/60 backdrop-blur-md p-4 rounded-lg max-w-2xl text-center border border-white/10 animate-[fade-in_0.3s_ease-out_0.1s] pointer-events-auto"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <p className="text-white text-lg font-medium whitespace-pre-line">
+                                        {getPhotoDescription(selectedImage)}
+                                    </p>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
 
                     <style>{`
                         @keyframes zoom-in {
