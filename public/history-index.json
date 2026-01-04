@@ -1,15 +1,22 @@
 [
   {
+    "id": "5",
+    "name": "StoryLegends AF",
+    "description": "Новые главы истории",
+    "path": "StoryLegends AF",
+    "date": "10-05-2025"
+  },
+  {
     "id": "4",
     "name": "StoryLegends SL",
     "description": "Начало легендарной истории",
     "path": "StoryLegends SL",
-    "date": "2023-01-01"
+    "date": "2023-2024"
   },
   {
     "id": "3",
     "name": "StoryMode MSM",
-    "description": "Начало легендарной истории",
+    "description": "Начало всей истории",
     "path": "StoryModeMSM",
     "date": "2023-01-01"
   },
