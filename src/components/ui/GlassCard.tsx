@@ -11,7 +11,7 @@ const GlassCard: React.FC<GlassCardProps> = ({
     className = '',
     variant = 'default'
 }) => {
-    const baseStyles = "glass rounded-2xl p-6 transition-all duration-300 relative group";
+    const baseStyles = "bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 transition-all duration-300 relative group";
 
     const variants = {
         default: "hover:bg-white/10 hover:border-white/20 hover:shadow-lg hover:shadow-white/5 hover:-translate-y-1",
