@@ -39,7 +39,7 @@ const SeasonalEffects: React.FC = () => {
       {particles.map((particle) => (
         <div
           key={particle.id}
-          className={`absolute text-sm md:text-3xl opacity-70 ${config.animation} will-change-transform`}
+          className={`absolute text-xs md:text-xl opacity-70 ${config.animation} will-change-transform`}
           style={{
             left: particle.left,
             top: `-20px`,

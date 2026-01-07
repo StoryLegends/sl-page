@@ -80,7 +80,7 @@ const History = () => {
                 } flex-col gap-8 md:gap-0`}>
 
                 {/* Content Card */}
-                <Link to={`/history/${item.id}`} className="w-full md:w-[45%] group relative bg-[#111]/90 ring-1 ring-inset ring-white/10 rounded-2xl overflow-hidden transition-transform duration-500 hover:-translate-y-2 hover:bg-[#1a1a1a] z-10 block">
+                <Link to={`/history/${item.id}`} className="w-full md:w-[45%] group relative bg-white/5 backdrop-blur-sm ring-1 ring-inset ring-white/10 rounded-2xl overflow-hidden transition-transform duration-500 hover:-translate-y-2 hover:bg-white/10 z-10 block">
                   <div
                     className="absolute top-0 left-0 w-full h-1 rounded-t-2xl"
                     style={{ background: gradientStyle }}
