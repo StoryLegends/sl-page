@@ -1,8 +1,7 @@
 import Layout from '../components/Layout';
 import CTASection from '../components/CTASection';
-import { Users, Video, Trophy, Crown, Code, Megaphone, ChevronLeft, ChevronRight, Gavel, ArrowRight } from 'lucide-react';
+import { Users, Video, Trophy, Crown, Code, Megaphone, ChevronLeft, ChevronRight, Gavel } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 
 const About = () => {
   // Load images dynamically from src/assets/gallery
