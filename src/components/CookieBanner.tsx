@@ -1,82 +1,232 @@
-import { useState, useEffect } from 'react';
-import { Check, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useCookieConsent } from '../context/CookieConsentContext';
+import { X, Settings, Check } from 'lucide-react';
+import clsx from 'clsx';
 
-const CookieBanner = () => {
-    const [isVisible, setIsVisible] = useState(false);
-    const [isClosing, setIsClosing] = useState(false);
+const CookieBanner: React.FC = () => {
+    const { bannerVisible, acceptAll, rejectAll, updateConsent, consent } = useCookieConsent();
+    const [showSettings, setShowSettings] = useState(false);
 
-    useEffect(() => {
-        const consent = localStorage.getItem('cookieConsent');
-        if (!consent) {
-            setIsVisible(true);
-        }
-    }, []);
+    // Local state for the settings modal
+    const [tempConsent, setTempConsent] = useState({
+        analytics: consent?.analytics || false
+    });
 
-    const handleAccept = () => {
-        localStorage.setItem('cookieConsent', 'true');
-        setIsClosing(true);
-        setTimeout(() => {
-            setIsVisible(false);
-        }, 500);
+    const handleSaveSettings = () => {
+        updateConsent({
+            necessary: true,
+            analytics: tempConsent.analytics
+        });
+        setShowSettings(false);
     };
 
-    const handleReject = () => {
-        window.location.href = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    const handleCustomize = () => {
+        setTempConsent({
+            analytics: consent?.analytics || false
+        });
+        setShowSettings(true);
     };
-
-    if (!isVisible) return null;
 
     return (
-        <div className={`fixed bottom-0 left-0 right-0 z-[100] flex flex-col md:flex-row items-center md:items-end justify-center gap-4 md:gap-12 p-1 pb-0 bg-[#111] border-t-4 border-[#333] shadow-[0_-4px_20px_rgba(0,0,0,0.8)] ${isClosing ? 'animate-[slide-down_0.5s_ease-in_forwards]' : 'animate-[slide-up_0.5s_ease-out]'}`}>
-            {/* Image */}
-            <div className="w-64 h-64 md:w-72 md:h-72 shrink-0 relative overflow-hidden md:-mb-10">
-                <img
-                    src="/images/cookie.webp"
-                    alt="Cookie"
-                    className="w-full h-full object-contain drop-shadow-2xl"
-                />
-                {/* Bottom fade layer - only at the very bottom edge */}
-                <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#111] to-transparent pointer-events-none" />
-            </div>
-
-            {/* Text and Buttons */}
-            <div className="flex flex-col items-center md:items-start gap-4 text-center md:text-left pb-8">
-                <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter drop-shadow-sm font-minecraft">
-                    Держи печеньку!
-                </h2>
-                <p className="text-[#888] font-medium max-w-xl text-sm md:text-base">
-                    Мы используем куки (cookies) для улучшения работы сайта и аналитики. Продолжая использовать сайт, вы соглашаетесь с нашей политикой.
-                </p>
-
-                <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-2">
-                    <button
-                        onClick={handleAccept}
-                        className="flex items-center gap-2 px-8 py-3 bg-emerald-600/80 hover:bg-emerald-500 rounded-xl font-bold text-white transition-all hover:scale-105 shadow-lg hover:shadow-emerald-600/30 backdrop-blur-sm"
+        <>
+            <AnimatePresence>
+                {bannerVisible && (
+                    <motion.div
+                        initial={{ y: 100 }}
+                        animate={{ y: 0 }}
+                        exit={{ y: 100 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        className="fixed bottom-0 left-0 right-0 z-[100] bg-[#111] border-t-4 border-[#333] shadow-[0_-4px_20px_rgba(0,0,0,0.8)]"
                     >
-                        <Check size={20} />
-                        Принять
-                    </button>
-                    <button
-                        onClick={handleReject}
-                        className="flex items-center gap-2 px-6 py-3 bg-rose-600/80 hover:bg-rose-500 rounded-xl font-bold text-white transition-all hover:scale-105 shadow-lg hover:shadow-rose-600/30 backdrop-blur-sm"
-                    >
-                        <X size={20} />
-                        Покинуть сайт
-                    </button>
-                </div>
-            </div>
+                        {/* Main Container */}
+                        <div className="max-w-7xl mx-auto px-4 py-4 md:py-0">
 
-            <style>{`
-                @keyframes slide-up {
-                    from { transform: translateY(100%); }
-                    to { transform: translateY(0); }
-                }
-                @keyframes slide-down {
-                    from { transform: translateY(0); }
-                    to { transform: translateY(100%); }
-                }
-            `}</style>
-        </div>
+                            {/* Wrapper for Flex Behavior */}
+                            <div className="w-full">
+
+                                {/* MOBILE LAYOUT - UNCHANGED */}
+                                <div className="flex flex-col md:hidden w-full pb-4 px-4">
+                                    <div className="flex flex-row items-center gap-4">
+                                        {/* Image */}
+                                        <div className="w-20 h-20 shrink-0 relative">
+                                            <img
+                                                src="/images/cookie.webp"
+                                                alt="Cookie"
+                                                className="w-full h-full object-contain drop-shadow-2xl"
+                                            />
+                                        </div>
+                                        {/* Text */}
+                                        <div className="flex flex-col items-start gap-2">
+                                            <h2 className="text-xl font-black text-white uppercase tracking-tighter drop-shadow-sm font-minecraft leading-none">
+                                                Держи печеньку!
+                                            </h2>
+                                            <p className="text-[#888] font-medium text-xs leading-snug text-left">
+                                                Мы используем куки (cookies) для улучшения работы сайта и аналитики.
+                                                Вы можете принять все, отклонить все или настроить их.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {/* Buttons */}
+                                    <div className="mt-4 flex flex-col gap-2 w-full">
+                                        <div className="flex gap-2 w-full">
+                                            <button
+                                                onClick={handleCustomize}
+                                                className="flex-1 px-3 py-2 border-2 border-[#444] hover:bg-[#222] text-gray-300 rounded-lg font-bold transition-all text-xs text-center"
+                                            >
+                                                Настроить
+                                            </button>
+                                            <button
+                                                onClick={rejectAll}
+                                                className="flex-1 px-3 py-2 bg-red-600 hover:bg-red-500 rounded-lg font-bold text-white transition-all shadow-lg hover:shadow-red-600/50 text-xs text-center whitespace-nowrap"
+                                            >
+                                                Отклонить все
+                                            </button>
+                                        </div>
+                                        <button
+                                            onClick={acceptAll}
+                                            className="w-full px-4 py-2 bg-green-600 hover:bg-green-500 rounded-lg font-bold text-white transition-all shadow-lg hover:shadow-green-600/50 flex items-center justify-center gap-2 text-xs"
+                                        >
+                                            <Check size={16} />
+                                            Принять все
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* DESKTOP LAYOUT - CENTERED, IMAGE FLUSH BOTTOM */}
+                                <div className="hidden md:flex flex-row items-end justify-center gap-10 max-w-6xl mx-auto">
+                                    {/* Image - Flush at bottom with negative margin to "pop out" */}
+                                    <div className="w-80 h-80 shrink-0 relative md:-mb-12">
+                                        <img
+                                            src="/images/cookie.webp"
+                                            alt="Cookie"
+                                            className="w-full h-full object-contain drop-shadow-2xl"
+                                        />
+                                    </div>
+
+                                    {/* Content Column - Centered vertically mostly, but respecting bottom alignment */}
+                                    <div className="flex flex-col items-start pb-8">
+                                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter drop-shadow-sm font-minecraft leading-none mb-4">
+                                            Держи печеньку!
+                                        </h2>
+                                        <p className="text-[#888] font-medium text-base leading-snug max-w-xl text-left mb-6">
+                                            Мы используем куки (cookies) для улучшения работы сайта и аналитики.
+                                            Вы можете принять все, отклонить все или настроить их.
+                                        </p>
+
+                                        <div className="flex flex-row gap-4">
+                                            <button
+                                                onClick={handleCustomize}
+                                                className="px-6 py-3 border-2 border-[#444] hover:bg-[#222] text-gray-300 rounded-xl font-bold transition-all text-base"
+                                            >
+                                                Настроить
+                                            </button>
+                                            <button
+                                                onClick={rejectAll}
+                                                className="px-6 py-3 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-white transition-all shadow-lg hover:shadow-red-600/50 text-base"
+                                            >
+                                                Отклонить все
+                                            </button>
+                                            <button
+                                                onClick={acceptAll}
+                                                className="px-8 py-3 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white transition-all shadow-lg hover:shadow-green-600/50 flex items-center justify-center gap-2 text-base"
+                                            >
+                                                <Check size={20} />
+                                                Принять все
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {showSettings && (
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                            onClick={() => setShowSettings(false)}
+                        />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="relative w-full max-w-lg bg-[#111] border-4 border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden"
+                        >
+                            <div className="p-6 border-b-4 border-[#333] flex justify-between items-center bg-[#1a1a1a]">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-2 font-minecraft text-2xl tracking-tight">
+                                    <Settings className="w-6 h-6 text-story-gold" />
+                                    Настройки печенек
+                                </h3>
+                                <button
+                                    onClick={() => setShowSettings(false)}
+                                    className="p-2 hover:bg-[#333] rounded-lg transition-colors border-2 border-transparent hover:border-[#444]"
+                                >
+                                    <X className="w-5 h-5 text-gray-400" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-6 bg-[#111]">
+                                {/* Essential */}
+                                <div className="flex items-start justify-between gap-4 p-4 bg-[#0a0a0a] rounded-xl border-2 border-[#222]">
+                                    <div>
+                                        <div className="font-bold text-white mb-1 font-minecraft text-lg">Технические</div>
+                                        <div className="text-sm text-gray-400 leading-relaxed">Необходимы для работы сайта. Нельзя выключить.</div>
+                                    </div>
+                                    <div className="relative inline-flex h-6 w-11 shrink-0 cursor-not-allowed rounded-full border-2 border-transparent bg-green-900/40 transition-colors">
+                                        <span className="translate-x-5 pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white/30 shadow ring-0" />
+                                    </div>
+                                </div>
+
+                                {/* Analytics */}
+                                <div className="flex items-start justify-between gap-4 p-4 bg-[#0a0a0a] rounded-xl border-2 border-[#222]">
+                                    <div>
+                                        <div className="font-bold text-white mb-1 font-minecraft text-lg">Аналитика</div>
+                                        <div className="text-sm text-gray-400 leading-relaxed">Помогают нам понять, как вы используете сайт, чтобы сделать его лучше.</div>
+                                    </div>
+                                    <button
+                                        onClick={() => setTempConsent(prev => ({ ...prev, analytics: !prev.analytics }))}
+                                        className={clsx(
+                                            tempConsent.analytics ? 'bg-green-600' : 'bg-gray-800',
+                                            "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+                                        )}
+                                    >
+                                        <span
+                                            className={clsx(
+                                                tempConsent.analytics ? 'translate-x-5' : 'translate-x-0',
+                                                "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                                            )}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-6 border-t-4 border-[#333] bg-[#1a1a1a] flex justify-end gap-3">
+                                <button
+                                    onClick={() => setShowSettings(false)}
+                                    className="px-6 py-2 rounded-xl border-2 border-[#444] hover:bg-[#333] text-gray-300 transition-colors font-bold"
+                                >
+                                    Отмена
+                                </button>
+                                <button
+                                    onClick={handleSaveSettings}
+                                    className="px-8 py-2 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold transition-all shadow-lg hover:shadow-green-600/50"
+                                >
+                                    Сохранить
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </>
     );
 };
 

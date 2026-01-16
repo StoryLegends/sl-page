@@ -1,0 +1,70 @@
+{
+    "Legends": [
+        {
+            "name": "Mr. Yan",
+            "image": "lendspele.webp",
+            "description": "Creator of the first story",
+            "links": [
+                {
+                    "name": "YouTube",
+                    "url": "https://youtube.com/1234567890"
+                },
+                {
+                    "name": "Twitch",
+                    "url": "https://twitch.tv/1234567890"
+                }
+            ],
+            "Discrod": "https://discord.com/users/1234567890"
+        },
+        {
+            "name": "LendSpele",
+            "image": "lendspele.webp",
+            "description": "Legend",
+            "links": [
+                {
+                    "name": "YouTube",
+                    "url": "https://youtube.com/1234567890"
+                },
+                {
+                    "name": "Twitch",
+                    "url": "https://twitch.tv/1234567890"
+                }
+            ],
+            "Discrod": "https://discord.com/users/1234567890"
+        },
+        {
+            "name": "datapeice",
+            "image": "lendspele.webp",
+            "description": "Find Polish alt-girl for him plzz...",
+            "links": [
+                {
+                    "name": "YouTube",
+                    "url": "https://youtube.com/1234567890"
+                },
+                {
+                    "name": "Twitch",
+                    "url": "https://twitch.tv/1234567890"
+                }
+            ],
+            "Discrod": "https://discord.com/users/1234567890"
+        }
+    ],
+    "ContenMakers": [
+        {
+            "name": "Zhartan",
+            "image": "lendspele.webp",
+            "description": "Femboy ultra cat",
+            "links": [
+                {
+                    "name": "YouTube",
+                    "url": "https://youtube.com/1234567890"
+                },
+                {
+                    "name": "Twitch",
+                    "url": "https://twitch.tv/1234567890"
+                }
+            ],
+            "Discrod": "https://discord.com/users/1234567890"
+        }
+    ]
+}

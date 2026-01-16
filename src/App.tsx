@@ -14,6 +14,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import UserAgreement from './pages/UserAgreement';
 import Licenses from './pages/Licenses';
 import NotFound from './pages/NotFound';
+import GloryList from './pages/GloryList';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         <Route path="/rules" element={<Rules />} />
         <Route path="/history" element={<History />} />
         <Route path="/history/:id" element={<HistoryDetail />} />
+        <Route path="/glorylist" element={<GloryList />} />
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/user-agreement" element={<UserAgreement />} />
         <Route path="/licenses" element={<Licenses />} />

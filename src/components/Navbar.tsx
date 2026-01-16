@@ -59,7 +59,7 @@ const Navbar: React.FC = () => {
             {navLinks.map((link) => {
               const isActive = link.href === '/'
                 ? location.pathname === '/'
-                : location.pathname.startsWith(link.href);
+                : location.pathname.startsWith(link.href) || (link.href === '/about' && location.pathname === '/glorylist');
 
               return (
                 <Link
@@ -109,7 +109,7 @@ const Navbar: React.FC = () => {
           {navLinks.map((link) => {
             const isActive = link.href === '/'
               ? location.pathname === '/'
-              : location.pathname.startsWith(link.href);
+              : location.pathname.startsWith(link.href) || (link.href === '/about' && location.pathname === '/glorylist');
 
             return (
               <Link
