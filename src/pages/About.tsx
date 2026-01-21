@@ -1,6 +1,7 @@
 import Layout from '../components/Layout';
 import CTASection from '../components/CTASection';
-import { Users, Video, Trophy, Crown, Code, Megaphone, ChevronLeft, ChevronRight, Gavel } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Users, Video, Trophy, Crown, Code, Megaphone, ChevronLeft, ChevronRight, Gavel, ArrowRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const About = () => {
@@ -121,6 +122,40 @@ const About = () => {
               <p className="text-gray-400">У нас играли немалые ютуберы. Присоединяйтесь к дружному комьюнити!</p>
             </div>
           </div>
+        </div>
+
+        {/* Hall of Fame Banner */}
+        <div className="mb-16">
+          <Link to="/glorylist" className="block p-8 rounded-3xl bg-black/40 border-2 border-story-gold shadow-[0_0_30px_rgba(255,170,0,0.2)] hover:shadow-[0_0_60px_rgba(255,170,0,0.5)] hover:-translate-y-1 transition-all group relative overflow-hidden backdrop-blur-md">
+            {/* Background Glow */}
+            <div className="absolute inset-0 bg-gradient-to-r from-story-gold/10 via-transparent to-story-gold/5 opacity-50" />
+
+            <div className="absolute top-1/2 right-12 -translate-y-1/2 opacity-20 group-hover:opacity-40 transition-opacity">
+              <Crown className="w-64 h-64 text-story-gold -rotate-12" />
+            </div>
+
+            <div className="relative z-10 flex flex-col md:flex-row items-center md:items-center text-center md:text-left gap-6">
+              <div className="p-4 rounded-full bg-story-gold/10 border border-story-gold/30 shrink-0">
+                <Crown className="w-12 h-12 text-story-gold group-hover:scale-110 transition-transform drop-shadow-md" />
+              </div>
+
+              <div className="flex-1">
+                <h3 className="text-3xl font-bold text-white mb-2 flex items-center justify-center md:justify-start gap-3">
+                  Зал Славы
+                  <ArrowRight className="w-6 h-6 text-story-gold transition-transform group-hover:translate-x-2" />
+                </h3>
+                <p className="text-gray-300 font-medium text-lg max-w-2xl">
+                  Легенды, вписавшие своё имя в историю StoryLegends. Узнайте их истории и достижения.
+                </p>
+              </div>
+
+              <div className="hidden md:flex items-center justify-center pr-12">
+                <div className="px-6 py-3 rounded-full border border-story-gold/50 text-story-gold font-bold uppercase tracking-wider text-sm group-hover:bg-story-gold group-hover:text-black transition-colors">
+                  Открыть
+                </div>
+              </div>
+            </div>
+          </Link>
         </div>
 
 
