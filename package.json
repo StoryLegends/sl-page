@@ -7,7 +7,7 @@
     "dev": "node scripts/generate-history.js && vite",
     "build": "node scripts/generate-history.js && tsc -b && vite build && node scripts/generate-static-routes.js",
     "generate-history": "node scripts/generate-history.js",
-    "postbuild": "cp dist/index.html dist/404.html",
+    "postbuild": "",
     "lint": "eslint .",
     "preview": "vite preview"
   },

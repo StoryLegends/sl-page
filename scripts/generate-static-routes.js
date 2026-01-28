@@ -5,15 +5,49 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Define your static routes here
+// Define your static routes with specific metadata
 const routes = [
-    'about',
-    'rules',
-    'history',
-    'glorylist',
-    'privacy-policy',
-    'user-agreement',
-    'licenses'
+    {
+        path: 'about',
+        title: 'О сервере - StoryLegends',
+        description: 'Узнайте больше о мире StoryLegends, нашем сообществе и особенностях бесплатного ванильного сервера Minecraft.'
+    },
+    {
+        path: 'rules',
+        title: 'Правила - StoryLegends',
+        description: 'Правила игры на сервере StoryLegends. Соблюдение этих норм обеспечивает комфортную игру для всех.'
+    },
+    {
+        path: 'history',
+        title: 'История - StoryLegends',
+        description: 'Хроники сезонов и великие события сервера StoryLegends. Погрузитесь в прошлое нашего мира.'
+    },
+    {
+        path: 'glorylist',
+        title: 'Зал Славы - StoryLegends',
+        description: 'Легендарные игроки и строители, оставившие свой след в истории StoryLegends.'
+    },
+    {
+        path: 'privacy-policy',
+        title: 'Политика конфиденциальности - StoryLegends',
+        description: 'Политика обработки персональных данных и конфиденциальности на сайте StoryLegends.'
+    },
+    {
+        path: 'user-agreement',
+        title: 'Пользовательское соглашение - StoryLegends',
+        description: 'Условия использования сервисов и правила поведения на проекте StoryLegends.'
+    },
+    {
+        path: 'licenses',
+        title: 'Лицензии - StoryLegends',
+        description: 'Информация о лицензиях и правах на использование контента StoryLegends.'
+    },
+    {
+        path: '404',
+        title: 'Страница не найдена - StoryLegends',
+        description: 'Кажется вы заблудились...',
+        image: 'https://www.storylegends.xyz/images/saul.webp'
+    }
 ];
 
 const distDir = path.join(__dirname, '../dist');
@@ -32,18 +66,47 @@ function generateStaticRoutes() {
 
     const indexContent = fs.readFileSync(indexHtmlPath, 'utf-8');
 
-    routes.forEach(route => {
-        const routeDir = path.join(distDir, route);
+    // Base values to replace from index.html
+    const defaultTitle = 'StoryLegends';
+    const defaultDescription = 'StoryLegends - Бесплатный ванильный сервер Minecraft';
+    const defaultUrl = 'https://www.storylegends.xyz/';
+    const defaultImage = 'https://www.storylegends.xyz/images/opengraph.webp';
 
-        // Create directory for the route
-        if (!fs.existsSync(routeDir)) {
-            fs.mkdirSync(routeDir, { recursive: true });
+    routes.forEach(route => {
+        let targetPath;
+        if (route.path === '404') {
+            targetPath = path.join(distDir, '404.html');
+        } else {
+            const routeDir = path.join(distDir, route.path);
+            if (!fs.existsSync(routeDir)) {
+                fs.mkdirSync(routeDir, { recursive: true });
+            }
+            targetPath = path.join(routeDir, 'index.html');
         }
 
-        // Write index.html to the route directory
-        const targetPath = path.join(routeDir, 'index.html');
-        fs.writeFileSync(targetPath, indexContent);
-        console.log(`Created static page for: /${route}`);
+        let routeContent = indexContent;
+
+        // Replace Title Tag
+        routeContent = routeContent.replace(/<title>.*<\/title>/, `<title>${route.title}</title>`);
+
+        // Replace OG Title (assuming it matches defaultTitle)
+        routeContent = routeContent.replace(new RegExp(`content="${defaultTitle}"`, 'g'), `content="${route.title}"`);
+
+        // Replace Description
+        routeContent = routeContent.replace(new RegExp(`content="${defaultDescription}"`, 'g'), `content="${route.description}"`);
+
+        // Replace URL
+        const routeUrl = `${defaultUrl}${route.path}`;
+        routeContent = routeContent.replace(new RegExp(`content="${defaultUrl}"`, 'g'), `content="${routeUrl}"`);
+
+        // Replace global Image if specified for the route
+        if (route.image) {
+            routeContent = routeContent.replace(new RegExp(`content="${defaultImage}"`, 'g'), `content="${route.image}"`);
+        }
+
+        // Write file
+        fs.writeFileSync(targetPath, routeContent);
+        console.log(`Created custom page for: ${route.path}`);
     });
 
     console.log('Static route generation complete.');
