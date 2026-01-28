@@ -45,8 +45,7 @@ const routes = [
     {
         path: '404',
         title: 'Страница не найдена - StoryLegends',
-        description: 'Кажется вы заблудились...',
-        image: 'https://www.storylegends.xyz/images/saul.webp'
+        description: 'Кажется вы заблудились...'
     }
 ];
 
@@ -70,12 +69,15 @@ function generateStaticRoutes() {
     const defaultTitle = 'StoryLegends';
     const defaultDescription = 'StoryLegends - Бесплатный ванильный сервер Minecraft';
     const defaultUrl = 'https://www.storylegends.xyz/';
-    const defaultImage = 'https://www.storylegends.xyz/images/opengraph.webp';
+    const defaultImage = 'https://www.storylegends.xyz/images/opengraph.png';
+    const saulImage = 'https://www.storylegends.xyz/images/saul.png';
 
     routes.forEach(route => {
         let targetPath;
         if (route.path === '404') {
             targetPath = path.join(distDir, '404.html');
+            // override for 404
+            route.image = saulImage;
         } else {
             const routeDir = path.join(distDir, route.path);
             if (!fs.existsSync(routeDir)) {

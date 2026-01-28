@@ -86,8 +86,8 @@ const NotFound: React.FC = () => {
                 <meta name="description" content="Кажется вы заблудились..." />
                 <meta property="og:title" content="Страница не найдена - StoryLegends" />
                 <meta property="og:description" content="Кажется вы заблудились..." />
-                <meta property="og:image" content="https://www.storylegends.xyz/images/saul.webp" />
-                <meta name="twitter:image" content="https://www.storylegends.xyz/images/saul.webp" />
+                <meta property="og:image" content="https://www.storylegends.xyz/images/saul.png" />
+                <meta name="twitter:image" content="https://www.storylegends.xyz/images/saul.png" />
             </Helmet>
             {/* Background Glitch Effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
