@@ -53,7 +53,7 @@ const SeasonStatus = () => {
                 className="w-full"
             >
                 {/* Glow Effect */}
-                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[500px] bg-gradient-to-r ${config.bg} to-transparent blur-[80px] opacity-40 pointer-events-none rounded-full`} />
+                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-[500px] bg-gradient-to-r ${config.bg} to-transparent blur-[80px] opacity-100 pointer-events-none rounded-full`} />
 
                 <div className={`relative overflow-hidden rounded-[2rem] border ${config.border} bg-[#0a0a0a]/80 backdrop-blur-xl shadow-2xl group transition-all duration-500 hover:shadow-[0_0_50px_rgba(0,0,0,0.5)]`}>
                     {/* Dynamic Background Gradient */}
