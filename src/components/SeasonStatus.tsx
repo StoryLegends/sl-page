@@ -1,7 +1,6 @@
 
 import { serverStatus } from '../config/serverStatus';
 import { PlayCircle, Lock, Megaphone, Clock } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const StatusConfig = {
     active: {
@@ -49,11 +48,7 @@ const SeasonStatus = () => {
 
     return (
         <div className="max-w-5xl mx-auto px-4 md:px-6 mb-24 relative z-20">
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
+            <div
                 className="w-full"
             >
                 {/* Background Glow - Stronger and larger */}
@@ -101,7 +96,7 @@ const SeasonStatus = () => {
                         )}
                     </div>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 };
