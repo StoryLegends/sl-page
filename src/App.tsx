@@ -8,17 +8,17 @@ import Loader from './components/ui/Loader';
 import './App.css';
 
 import Main from './pages/Main';
+import About from './pages/About';
+import Rules from './pages/Rules';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import UserAgreement from './pages/UserAgreement';
+import Licenses from './pages/Licenses';
+import FAQ from './pages/FAQ';
+import NotFound from './pages/NotFound';
 
-const About = lazy(() => import('./pages/About'));
-const Rules = lazy(() => import('./pages/Rules'));
 const History = lazy(() => import('./pages/History'));
 const HistoryDetail = lazy(() => import('./pages/HistoryDetail'));
-const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
-const UserAgreement = lazy(() => import('./pages/UserAgreement'));
-const Licenses = lazy(() => import('./pages/Licenses'));
-const NotFound = lazy(() => import('./pages/NotFound'));
 const GloryList = lazy(() => import('./pages/GloryList'));
-const FAQ = lazy(() => import('./pages/FAQ'));
 
 function App() {
   return (
