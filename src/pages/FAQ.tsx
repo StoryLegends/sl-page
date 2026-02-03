@@ -99,15 +99,15 @@ const FAQ = () => {
                                 <span className="font-bold text-blue-400 mr-2">О:</span>
                                 Популярные причины:
                                 <ul className="list-none mt-4 space-y-4">
-                                    <li className="bg-black/20 p-4 rounded-lg border border-white/5">
+                                    <li className="bg-black/20 p-4 pl-6 rounded-r-lg border-y border-r border-white/5 border-l-2 border-l-white/10 hover:border-l-red-500 transition-colors duration-300">
                                         <p className="text-red-400 font-mono text-sm mb-2">You are not white-listed on this server!</p>
                                         <p>Причина говорит сама за себя, вас нет в вайт листе, возможно вы не правильно указали ник или зашли не с того ника, проверьте.</p>
                                     </li>
-                                    <li className="bg-black/20 p-4 rounded-lg border border-white/5">
+                                    <li className="bg-black/20 p-4 pl-6 rounded-r-lg border-y border-r border-white/5 border-l-2 border-l-white/10 hover:border-l-red-500 transition-colors duration-300">
                                         <p className="text-red-400 font-mono text-sm mb-2">The server requires the mod “SLcompass” installed</p>
                                         <p>Вы не установили один из наших модов, без него нельзя играть. Установите и ошибка исчезнет. (Ошибка может появится при высоком пинге)</p>
                                     </li>
-                                    <li className="bg-black/20 p-4 rounded-lg border border-white/5">
+                                    <li className="bg-black/20 p-4 pl-6 rounded-r-lg border-y border-r border-white/5 border-l-2 border-l-white/10 hover:border-l-red-500 transition-colors duration-300">
                                         <p className="text-red-400 font-mono text-sm mb-2">The following registry entry namespaces may be related: …</p>
                                         <p>Отсутствие каких либо модов на вашем клиенте. Под ошибкой “...” пишет название модов которых у вас нет, проверьте установили ли вы все моды из канала <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#инфа</span>.</p>
                                     </li>
