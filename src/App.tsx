@@ -15,6 +15,7 @@ import UserAgreement from './pages/UserAgreement';
 import Licenses from './pages/Licenses';
 import NotFound from './pages/NotFound';
 import GloryList from './pages/GloryList';
+import FAQ from './pages/FAQ';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/user-agreement" element={<UserAgreement />} />
         <Route path="/licenses" element={<Licenses />} />
+        <Route path="/faq" element={<FAQ />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

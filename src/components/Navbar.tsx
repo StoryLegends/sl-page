@@ -46,6 +46,7 @@ const Navbar: React.FC = () => {
     { name: 'Донат', href: 'https://boosty.to/lendspele/donate' },
     { name: 'О сервере', href: '/about' },
     { name: 'Правила', href: '/rules' },
+    { name: 'FAQ', href: '/faq' },
     { name: 'История', href: '/history' },
   ];
 

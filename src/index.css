@@ -101,14 +101,49 @@
 }
 
 /* Seasonal Animations */
-@keyframes snow-fall {
+@keyframes fall {
   0% {
-    transform: translateY(-10vh) translateX(-10px);
+    top: -10%;
     opacity: 0;
   }
 
   10% {
     opacity: 1;
+  }
+
+  100% {
+    top: 110%;
+    opacity: 0.3;
+  }
+}
+
+@keyframes sway {
+  0% {
+    transform: translateX(-15px) rotate(-10deg);
+  }
+
+  50% {
+    transform: translateX(15px) rotate(10deg);
+  }
+
+  100% {
+    transform: translateX(-15px) rotate(-10deg);
+  }
+}
+
+.animate-fall {
+  animation: fall linear infinite;
+}
+
+.animate-sway {
+  animation: sway ease-in-out infinite;
+}
+
+/* Legacy snow-fall for compatibility if needed, but we will update component */
+@keyframes snow-fall {
+  0% {
+    transform: translateY(-10vh) translateX(-10px);
+    opacity: 0;
   }
 
   100% {

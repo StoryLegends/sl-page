@@ -18,6 +18,11 @@ const routes = [
         description: 'Правила игры на сервере StoryLegends. Соблюдение этих норм обеспечивает комфортную игру для всех.'
     },
     {
+        path: 'faq',
+        title: 'FAQ / ЧЗВ - StoryLegends',
+        description: 'Ответы на часто задаваемые вопросы о сервере StoryLegends. Как начать играть, правила, моды и решение проблем.'
+    },
+    {
         path: 'history',
         title: 'История - StoryLegends',
         description: 'Хроники сезонов и великие события сервера StoryLegends. Погрузитесь в прошлое нашего мира.'
