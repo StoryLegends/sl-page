@@ -52,13 +52,24 @@ const SeasonStatus = () => {
 
     return (
         <div className="max-w-5xl mx-auto px-4 md:px-6 mb-24 relative z-20">
-            <div
-                className="w-full"
-            >
-                {/* Background Glow - Stronger and larger */}
-                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] ${config.glow} blur-[100px] pointer-events-none rounded-full transition-colors duration-500`} />
+            <div className="w-full relative">
+                {/* Background Glow - Replaced heavy 'blur' filter with 'radial-gradient' for better scroll performance */}
+                <div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                               w-[130%] h-[130%] md:w-[150%] md:h-[150%] 
+                               pointer-events-none transform-gpu opacity-60 md:opacity-40"
+                    style={{
+                        background: `radial-gradient(circle, ${config.glow.replace('bg-', '').replace('/40', '')} 0%, transparent 70%)`,
+                        filter: 'blur(30px)', // Minimal blur as fallback/booster
+                        willChange: 'transform'
+                    }}
+                />
 
-                <div className={`relative overflow-hidden rounded-[2rem] border ${config.border} bg-[#050505]/40 backdrop-blur-md shadow-2xl group`}>
+                <div className={`relative overflow-hidden rounded-[2rem] border ${config.border} bg-[#050505]/40 backdrop-blur-sm shadow-2xl group transform-gpu`}
+                    style={{
+                        transform: 'translate3d(0,0,0)',
+                        backfaceVisibility: 'hidden'
+                    }}>
 
                     {/* Inner Content */}
                     <div className="relative p-8 md:px-16 md:py-10 flex flex-col items-center text-center gap-6">
@@ -69,18 +80,25 @@ const SeasonStatus = () => {
                                 <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${config.ping}`}></span>
                                 <span className={`relative inline-flex rounded-full h-3 w-3 ${config.ping}`}></span>
                             </span>
-                            <span className={`text-xl font-bold uppercase tracking-widest ${config.color} drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]`}>{config.header}</span>
+                            <span className={`text-xl font-bold uppercase tracking-widest ${config.color}`}
+                                style={{ textShadow: '0 0 10px rgba(0,0,0,0.5)' }}>
+                                {config.header}
+                            </span>
                         </div>
 
-                        {/* Icon Container - Square with glow */}
+                        {/* Icon Container - optimized glow */}
                         <div className={`relative group-hover:scale-110 transition-transform duration-500`}>
-                            <div className={`absolute inset-0 ${config.glow} blur-2xl rounded-2xl opacity-40 group-hover:opacity-60 transition-opacity duration-500`}></div>
-                            <Icon className={`relative z-10 w-16 h-16 md:w-20 md:h-20 ${config.color} drop-shadow-[0_0_20px_currentColor]`} />
+                            <div className="absolute inset-0 rounded-full opacity-40 group-hover:opacity-60 transition-opacity duration-500"
+                                style={{
+                                    background: `radial-gradient(circle, currentColor 0%, transparent 70%)`,
+                                    filter: 'blur(15px)'
+                                }} />
+                            <Icon className={`relative z-10 w-16 h-16 md:w-20 md:h-20 ${config.color}`} />
                         </div>
 
                         {/* Text Content */}
-                        <div className="space-y-4 max-w-3xl">
-                            <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight font-minecraft tracking-tight drop-shadow-lg">
+                        <div className="space-y-4 max-w-3xl font-sans">
+                            <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight font-minecraft tracking-tight">
                                 {title}
                             </h2>
                             <p className="text-gray-300 text-lg leading-relaxed font-medium">

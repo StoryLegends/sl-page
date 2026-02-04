@@ -49,7 +49,7 @@ const SeasonalEffects: React.FC = () => {
       return;
     }
 
-    const count = isMobile ? Math.min(config.count, 20) : config.count;
+    const count = isMobile ? Math.min(config.count, 12) : config.count;
     const isWinter = CURRENT_SEASON === 'winter' || CURRENT_SEASON === 'new-year';
 
     // Winter colors palette
@@ -148,10 +148,8 @@ const SeasonalEffects: React.FC = () => {
           if (p.y > height + 50) p.y = -50;
         }
 
-        // 4. Update DOM
+        // 4. Update DOM - Only transform changes every frame
         p.element.style.transform = `translate3d(${p.x}px, ${p.y}px, 0) rotate(${p.rotation}deg) scale(${p.scale})`;
-        p.element.style.opacity = p.opacity.toString();
-        if (p.color) p.element.style.color = p.color;
       });
 
       requestRef.current = requestAnimationFrame(animate);
@@ -185,7 +183,9 @@ const SeasonalEffects: React.FC = () => {
           className="absolute will-change-transform text-xs md:text-xl"
           style={{
             transform: 'translate3d(-100px, -100px, 0)', // Allow first frame to position correctly
-            fontSize: particle.fontSize
+            fontSize: particle.fontSize,
+            opacity: particle.opacity,
+            color: particle.color
           }}
         >
           {particle.content}
