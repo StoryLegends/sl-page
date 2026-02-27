@@ -118,7 +118,7 @@ const ProfilePage = () => {
         try {
             await authApi.discordDisconnect();
             showNotification('Discord успешно отвязан', 'success');
-            navigate(0);
+            refreshUser();
         } catch (err) {
             console.error(err);
             showNotification('Ошибка при отвязке Discord', 'error');
@@ -142,7 +142,7 @@ const ProfilePage = () => {
             await usersApi.updateMe(dataToUpdate);
             setIsEditing(false);
             showNotification('Профиль успешно обновлен!', 'success');
-            navigate(0);
+            refreshUser();
         } catch (err: any) {
             console.error('Failed to update profile', err);
             const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Не удалось обновить профиль.';
@@ -185,11 +185,11 @@ const ProfilePage = () => {
     const handleVerifyTotp = async () => {
         try {
             await totpApi.verify(totpVerifyCode);
-            alert('2FA успешно активирована!');
+            showNotification('2FA успешно активирована!', 'success');
             setShowTotpModal(false);
             setTotpSetupData(null);
             setTotpVerifyCode('');
-            navigate(0);
+            refreshUser();
         } catch (err) {
             console.error(err);
             showNotification('Неверный код', 'error');
@@ -201,8 +201,8 @@ const ProfilePage = () => {
         if (!code) return;
         try {
             await totpApi.disable(code);
-            alert('2FA отключена');
-            navigate(0);
+            showNotification('2FA успешно отключена', 'success');
+            refreshUser();
         } catch (err) {
             console.error(err);
             alert('Ошибка отключения 2FA');

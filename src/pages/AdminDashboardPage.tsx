@@ -672,7 +672,7 @@ const AdminDashboardPage = () => {
                                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-story-gold"></div>
                                 </div>
                             ) : activeTab === 'users' ? (
-                                <div className="space-y-4 flex-grow flex flex-col overflow-hidden">
+                                <div className="space-y-4 flex-grow flex flex-col">
                                     {/* Actions */}
                                     <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
                                         <div className="flex flex-col gap-3 md:flex-row md:items-center w-full md:w-auto">
@@ -711,7 +711,7 @@ const AdminDashboardPage = () => {
                                     </div>
 
                                     {/* Desktop Table */}
-                                    <div className="hidden md:block overflow-x-auto flex-grow">
+                                    <div className="hidden md:block overflow-x-auto flex-grow pb-20 -mb-20">
                                         <table className="w-full text-left border-collapse">
                                             <thead>
                                                 <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
@@ -726,7 +726,7 @@ const AdminDashboardPage = () => {
                                                 </tr>
                                             </thead>
                                             <tbody className="text-gray-300">
-                                                {filteredUsers.map(u => (
+                                                {filteredUsers.map((u, index) => (
                                                     <tr key={u.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
                                                         <td className="px-3 py-3">
                                                             <div className="flex items-center gap-3">
@@ -790,7 +790,7 @@ const AdminDashboardPage = () => {
                                                             </button>
 
                                                             {openMenuUserId === u.id && (
-                                                                <div ref={desktopMenuRef} className="absolute right-3 top-12 z-50 w-56 bg-[#0c0c0c] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1" onClick={e => e.stopPropagation()}>
+                                                                <div ref={desktopMenuRef} className={`absolute right-3 ${index > filteredUsers.length - 5 && filteredUsers.length > 5 ? 'bottom-full mb-2' : 'top-12'} z-50 w-56 bg-[#0c0c0c] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 max-h-[350px] overflow-y-auto custom-scrollbar`} onClick={e => e.stopPropagation()}>
                                                                     {(!isModerator || (u.role !== 'ROLE_ADMIN' && u.role !== 'ROLE_MODERATOR')) && (
                                                                         <>
                                                                             {isAdmin && (
