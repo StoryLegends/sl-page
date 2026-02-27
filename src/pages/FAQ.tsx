@@ -161,6 +161,43 @@ const FAQ = () => {
                         </div>
                     </div>
 
+                    {/* Question 9 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Как поставить скин на сервере?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                <div className="space-y-4">
+                                    <p>Если у вас лицензия, то мод на сервере сам считает ваш скин и поставит.</p>
+
+                                    <div>
+                                        <p className="mb-2">Если вы хотите поставить скин по нику другого игрока, то воспользуйтесь:</p>
+                                        <code className="bg-black/30 px-3 py-1.5 rounded-lg text-emerald-400 font-mono text-sm block border border-white/5">
+                                            /skin set mojang LendSpele
+                                        </code>
+                                        <p className="text-xs text-gray-500 mt-1 italic">— где LendSpele будет ником игрока</p>
+                                    </div>
+
+                                    <div>
+                                        <p className="mb-2">Если хотите поставить свой скин, то можно сделать это через фотохостинг (например, imgur или подобные). После вы копируете полную и прямую ссылку на ваш скин (ссылка должна вести непосредственно на файл изображения).</p>
+                                        <p className="mb-2 italic opacity-80">Чтобы поставить:</p>
+                                        <code className="bg-black/30 px-3 py-1.5 rounded-lg text-emerald-400 font-mono text-sm block border border-white/5">
+                                            /skin set web classic "url"
+                                        </code>
+                                        <ul className="list-disc list-inside text-xs text-gray-500 mt-2 space-y-1 ml-2">
+                                            <li><span className="text-gray-400">"url"</span> — прямая ссылка на скин (<span className="text-red-400/80 underline underline-offset-2">кавычки обязательны</span>)</li>
+                                            <li><span className="text-gray-400 font-bold">classic</span> — широкие руки (используйте <span className="text-blue-400">slim</span> для тонких рук)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Footer Note */}

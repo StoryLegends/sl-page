@@ -282,3 +282,35 @@ body {
   background: rgba(255, 215, 0, 0.3);
   color: #fff;
 }
+
+.grecaptcha-badge {
+  visibility: hidden;
+}
+
+/* Badge Icon Utilities */
+.badge-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.badge-icon svg {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  object-fit: contain;
+}
+
+/* Avatar Utilities */
+.avatar-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  transform: scale(1.12);
+  /* Increased scale to crop frames inside image files */
+  display: block;
+  background-color: #000;
+}

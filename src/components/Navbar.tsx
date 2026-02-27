@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Youtube } from 'lucide-react';
+import { Menu, X, Youtube, Shield, User, FileText } from 'lucide-react';
+import UserAvatar from './UserAvatar';
+import { useAuth } from '../context/AuthContext';
+
 
 const DiscordIcon = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -14,10 +17,13 @@ const TelegramIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+
 const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, isAdmin, isModerator, logout } = useAuth();
 
   useEffect(() => {
     const sentinel = document.getElementById('nav-sentinel');
@@ -39,7 +45,19 @@ const Navbar: React.FC = () => {
   // Close mobile menu when route changes
   useEffect(() => {
     setMobileMenuOpen(false);
+    setUserMenuOpen(false);
   }, [location.pathname]);
+
+  // Click outside to close user menu
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (userMenuOpen && !(e.target as Element).closest('.user-menu-container')) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [userMenuOpen]);
 
   const navLinks = [
     { name: 'Главная', href: '/' },
@@ -50,6 +68,10 @@ const Navbar: React.FC = () => {
     { name: 'История', href: '/history' },
   ];
 
+  navLinks.push({ name: 'Игроки', href: '/players' });
+
+
+
   const socialLinks = [
     { name: 'YouTube', url: 'https://www.youtube.com/@storylegends77', icon: Youtube, color: 'hover:text-[#FF0000]' },
     { name: 'Discord', url: 'https://discord.com/invite/2RxxMnr6X9', icon: DiscordIcon, color: 'hover:text-[#5865F2]' },
@@ -58,14 +80,12 @@ const Navbar: React.FC = () => {
 
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${scrolled ? 'py-3 md:py-4 bg-[#0a0a0a] shadow-lg' : 'py-3 md:py-6 bg-transparent'
-        }`}>
-        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <div id="nav-sentinel" className="absolute top-0 left-0 w-full h-1 pointer-events-none" />
+      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${scrolled ? 'py-3 md:py-4 bg-[#0a0a0a] shadow-lg' : 'py-3 md:py-6 bg-transparent'}`}>
+        <div className="max-w-[1440px] mx-auto px-4 md:px-10 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="relative group cursor-pointer z-50">
-            {/* Dual-color glow: Gold (Left) -> Blue (Right) */}
             <div className="absolute inset-0 bg-gradient-to-r from-story-gold/40 via-transparent to-legends-blue/60 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full" />
-
             <img
               src={`${import.meta.env.BASE_URL}images/logo.webp`}
               alt="StoryLegends"
@@ -73,119 +93,151 @@ const Navbar: React.FC = () => {
             />
           </Link>
 
-          {/* Desktop Links & Socials */}
-          <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center gap-6">
-              {navLinks.map((link) => {
-                const isActive = link.href === '/'
-                  ? location.pathname === '/'
-                  : location.pathname.startsWith(link.href) || (link.href === '/about' && location.pathname === '/glorylist');
+          {/* Right Group: Links + User */}
+          <div className="flex items-center gap-4">
+            {/* Desktop Links */}
+            <div className="hidden md:flex items-center gap-4">
+              <div className="flex items-center gap-8">
+                {navLinks.map((link) => {
+                  const isActive = link.href === '/'
+                    ? location.pathname === '/'
+                    : location.pathname.startsWith(link.href);
 
-                return (
-                  <Link
-                    key={link.name}
-                    to={link.href}
-                    className={`text-sm font-medium transition-colors relative group ${isActive ? 'text-white' : 'text-gray-300 hover:text-white'
-                      }`}
+                  return (
+                    <Link
+                      key={link.name}
+                      to={link.href}
+                      className={`text-sm font-bold uppercase tracking-wider transition-colors relative group ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+                    >
+                      {link.name}
+                      <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-story-gold to-legends-blue transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`} />
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-4 ml-2">
+                {socialLinks.map((social) => (
+                  <a
+                    key={social.name}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`text-gray-400 ${social.color} transition-colors`}
+                    title={social.name}
                   >
-                    {link.name}
-                    <span
-                      className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-story-gold to-legends-blue transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'
-                        }`}
-                    />
-                  </Link>
-                );
-              })}
+                    <social.icon className="w-4 h-4 md:w-5 md:h-5" />
+                  </a>
+                ))}
+              </div>
+              <div className="w-px h-5 bg-white/10" />
             </div>
 
-            <div className="w-px h-5 bg-white/10" />
-
-            {/* Desktop Social Icons */}
-            <div className="flex items-center gap-4">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.name}
-                  href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`text-gray-400 transition-colors transform hover:scale-110 ${social.color}`}
-                  aria-label={social.name}
+            {/* User + Hamburger */}
+            <div className="flex items-center gap-2 md:gap-4">
+              {/* User Dropdown */}
+              <div className="relative user-menu-container">
+                <button
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 text-white hover:text-story-gold transition-colors focus:outline-none"
                 >
-                  <social.icon className="w-5 h-5" />
-                </a>
-              ))}
+                  {user ? (
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full overflow-hidden bg-neutral-900 shadow-lg relative transition-all ${userMenuOpen ? 'ring-2 ring-story-gold' : 'ring-1 ring-white/10'}`}>
+                      <UserAvatar
+                        avatarUrl={user.avatarUrl}
+                        username={user.username}
+                        size="full"
+                      />
+                    </div>
+                  ) : (
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border transition-all ${userMenuOpen ? 'bg-story-gold/20 text-story-gold border-story-gold' : 'bg-story-gold/10 text-story-gold border-story-gold/50'}`}>
+                      <User className="w-4 h-4 md:w-5 md:h-5" />
+                    </div>
+                  )}
+                </button>
+
+                <div className={`absolute right-0 top-full mt-2 w-48 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl transition-all duration-200 overflow-hidden z-[110] ${userMenuOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 translate-y-2 invisible'}`}>
+                  <div className="p-2 space-y-1">
+                    {user ? (
+                      <>
+                        <div className="px-4 py-2 border-b border-white/5 mb-1">
+                          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">Аккаунт</p>
+                          <p className="text-sm text-white font-medium truncate">{user.username}</p>
+                        </div>
+                        <Link to="/profile" className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
+                          <User className="w-4 h-4" /> Профиль
+                        </Link>
+                        <Link to="/application" className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
+                          <FileText className="w-4 h-4" /> Заявки
+                        </Link>
+                        {(isAdmin || isModerator) && (
+                          <Link to="/admin" className="flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
+                            <Shield className="w-4 h-4" /> Админ
+                          </Link>
+                        )}
+                        <div className="h-px bg-white/5 my-1" />
+                        <button onClick={() => { logout(); setUserMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                          <X className="w-4 h-4" /> Выйти
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="px-2 py-1">
+                          <Link to="/login" className="block w-full px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
+                            Войти
+                          </Link>
+                          <Link to="/register" className="block w-full px-4 py-2 text-sm text-story-gold hover:bg-white/10 hover:text-white rounded-lg transition-colors font-bold mt-1" onClick={() => setUserMenuOpen(false)}>
+                            Регистрация
+                          </Link>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Hamburger */}
+              <button
+                className="md:hidden p-2 text-white hover:bg-white/10 rounded-lg transition-colors z-50"
+                onClick={() => setMobileMenuOpen(true)}
+              >
+                <Menu className="w-6 h-6" />
+              </button>
             </div>
           </div>
-
-          {/* Mobile Menu Button (Hamburger) */}
-          <button
-            className={`md:hidden relative z-50 text-white p-2 focus:outline-none transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-            onClick={() => setMobileMenuOpen(true)}
-          >
-            <Menu className="w-6 h-6" />
-          </button>
         </div>
       </nav>
 
-      {/* Mobile Menu Backdrop */}
-      <div
-        className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-[90] transition-opacity duration-300 md:hidden ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-          }`}
-        onClick={() => setMobileMenuOpen(false)}
-      />
-
-      {/* Mobile Menu Drawer */}
-      <div className={`fixed top-0 right-0 h-full w-64 bg-[#0a0a0a] border-l border-white/10 shadow-2xl z-[100] transition-transform duration-300 md:hidden flex flex-col ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}>
-        {/* Drawer Header with Close Button */}
-        <div className="flex justify-end p-6">
-          <button
-            className="text-white p-2 focus:outline-none hover:bg-white/10 rounded-full transition-colors"
-            onClick={() => setMobileMenuOpen(false)}
-          >
+      {/* Mobile Drawer */}
+      <div className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-[120] transition-opacity duration-300 md:hidden ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setMobileMenuOpen(false)} />
+      <div className={`fixed top-0 right-0 h-full w-72 bg-[#0a0a0a] border-l border-white/10 z-[130] transition-transform duration-300 md:hidden flex flex-col ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="p-6 flex justify-end">
+          <button className="p-2 text-white hover:bg-white/10 rounded-full transition-colors" onClick={() => setMobileMenuOpen(false)}>
             <X className="w-6 h-6" />
           </button>
         </div>
-
-        {/* Drawer Links */}
-        <div className="flex flex-col items-center gap-8 mt-10">
-          {navLinks.map((link) => {
-            const isActive = link.href === '/'
-              ? location.pathname === '/'
-              : location.pathname.startsWith(link.href) || (link.href === '/about' && location.pathname === '/glorylist');
-
-            return (
-              <Link
-                key={link.name}
-                to={link.href}
-                className={`text-xl font-bold transition-colors relative group ${isActive ? 'text-white' : 'text-gray-400 hover:text-white'
-                  }`}
-              >
-                {link.name}
-                <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-story-gold to-legends-blue transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'
-                  }`} />
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Mobile Social Links */}
-        <div className="mt-auto mb-10 flex justify-center gap-6">
-          {socialLinks.map((social) => (
-            <a
-              key={social.name}
-              href={social.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`text-gray-400 transition-colors p-2 rounded-full bg-white/5 border border-white/10 ${social.color}`}
-              aria-label={social.name}
+        <div className="flex flex-col px-8 gap-6 mt-4">
+          {navLinks.map((link) => (
+            <Link
+              key={link.name}
+              to={link.href}
+              className="text-xl font-bold text-gray-400 hover:text-white transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
             >
-              <social.icon className="w-6 h-6" />
-            </a>
+              {link.name}
+            </Link>
           ))}
         </div>
+        <div className="mt-auto p-8 border-t border-white/5 flex flex-col gap-6">
+          <div className="flex justify-center gap-6">
+            {socialLinks.map((social) => (
+              <a key={social.name} href={social.url} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                <social.icon className="w-6 h-6" />
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
-
     </>
   );
 };

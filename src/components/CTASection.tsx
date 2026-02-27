@@ -9,7 +9,7 @@ const CTASection: React.FC = () => {
             <Heart className="w-16 h-16 text-red-500 mx-auto mb-6 animate-pulse-slow" />
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Ждем вас на сервере!</h2>
             <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-                Всё, что вам нужно сделать — это заполнить заявку. Администрация рассмотрит её и свяжется с вами.
+                Всё, что вам нужно сделать — это зарегистрироваться на нашем сайте. После регистрации и подтверждения почты, вы сможете подать заявку из личного кабинета.
             </p>
 
             <div className="flex flex-col md:flex-row justify-center items-center gap-6">
@@ -26,13 +26,11 @@ const CTASection: React.FC = () => {
                 </a>
 
                 <a
-                    href="https://forms.gle/gGJjnRsUY3CowzVg6"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="/register"
                     className="group relative px-8 py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-white transition-all hover:scale-105 shadow-lg hover:shadow-green-600/50 flex items-center gap-3 w-full md:w-auto justify-center"
                 >
                     <FileText className="w-6 h-6" />
-                    Подать заявку
+                    Зарегистрироваться
                 </a>
             </div>
         </div>

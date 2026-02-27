@@ -33,6 +33,51 @@ const routes = [
         description: 'Легендарные игроки и строители, оставившие свой след в истории StoryLegends.'
     },
     {
+        path: 'players',
+        title: 'Игроки - StoryLegends',
+        description: 'Список игроков и строителей сервера StoryLegends. Найдите своих друзей и легендарных личностей.'
+    },
+    {
+        path: 'register',
+        title: 'Регистрация - StoryLegends',
+        description: 'Присоединяйтесь к нашему сообществу. Зарегистрируйте аккаунт, чтобы начать свое приключение на StoryLegends.'
+    },
+    {
+        path: 'login',
+        title: 'Вход - StoryLegends',
+        description: 'Авторизуйтесь в своем аккаунте StoryLegends для доступа к профилю и заявкам.'
+    },
+    {
+        path: 'verify-email',
+        title: 'Подтверждение Email - StoryLegends',
+        description: 'Страница подтверждения электронного адреса для новых аккаунтов StoryLegends.'
+    },
+    {
+        path: 'forgot-password',
+        title: 'Восстановление пароля - StoryLegends',
+        description: 'Забыли пароль? Восстановите доступ к своему аккаунту с помощью email.'
+    },
+    {
+        path: 'reset-password',
+        title: 'Сброс пароля - StoryLegends',
+        description: 'Установите новый пароль для своего аккаунта StoryLegends.'
+    },
+    {
+        path: 'profile',
+        title: 'Профиль - StoryLegends',
+        description: 'Управление вашим профилем, значками и настройками безопасности на StoryLegends.'
+    },
+    {
+        path: 'application',
+        title: 'Заявка - StoryLegends',
+        description: 'Подайте заявку на участие в жизни сервера StoryLegends и станьте частью нашей истории.'
+    },
+    {
+        path: 'admin',
+        title: 'Панель управления - StoryLegends',
+        description: 'Панель управления проектом StoryLegends для администрации.'
+    },
+    {
         path: 'privacy-policy',
         title: 'Политика конфиденциальности - StoryLegends',
         description: 'Политика обработки персональных данных и конфиденциальности на сайте StoryLegends.'

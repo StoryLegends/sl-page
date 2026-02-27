@@ -49,6 +49,11 @@ const Footer: React.FC = () => {
                 <p>Not an official Minecraft product.</p>
                 <p>The server StoryLegends is not affiliated with Mojang Studios.</p>
                 <p className="text-gray-500">StoryLegends © 2023 - 2026</p>
+                <p className="text-[10px] text-gray-700 mt-2 max-w-xs ml-auto">
+                  This site is protected by reCAPTCHA and the Google
+                  <a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="hover:text-gray-500 ml-1">Privacy Policy</a> and
+                  <a href="https://policies.google.com/terms" target="_blank" rel="noreferrer" className="hover:text-gray-500 ml-1">Terms of Service</a> apply.
+                </p>
               </div>
               <p className="text-gray-500 pt-4 md:pt-0">
                 Developed by <a href="https://datapeice.me" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors">@datapeice</a>

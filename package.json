@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "autoprefixer": "^10.4.23",
+    "axios": "^1.13.5",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.562.0",
@@ -23,6 +24,7 @@
     "react-helmet-async": "^2.0.5",
     "react-router-dom": "^6.30.2",
     "react-zoom-pan-pinch": "^3.7.0",
+    "react19-google-recaptcha-v3": "^1.0.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18"
   },
