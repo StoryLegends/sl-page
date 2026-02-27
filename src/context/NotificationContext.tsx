@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X, Ban } from 'lucide-react';
 
 type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
@@ -65,7 +65,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
                                 <div className="flex-shrink-0 mt-0.5 relative z-10">
                                     {n.type === 'success' && <CheckCircle className="w-5 h-5 text-green-400" />}
-                                    {n.type === 'error' && <XCircle className="w-5 h-5 text-red-400" />}
+                                    {n.type === 'error' && <Ban className="w-5 h-5 text-red-400" />}
                                     {n.type === 'warning' && <AlertCircle className="w-5 h-5 text-story-gold" />}
                                     {n.type === 'info' && <Info className="w-5 h-5 text-blue-400" />}
                                 </div>

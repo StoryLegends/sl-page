@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { usersApi, type User } from '../api';
+import { usersApi, type User, type Badge } from '../api';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import { Users, Search, X, MessageSquare, Gamepad2, Crown } from 'lucide-react';
@@ -29,19 +29,20 @@ const PlayersPage = () => {
     };
 
     const filteredUsers = users
-        .filter(u =>
+        .filter((u: User) =>
             u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
             u.minecraftNickname?.toLowerCase().includes(searchTerm.toLowerCase())
         )
-        .sort((a, b) => {
+        .sort((a: User, b: User) => {
             const aIsAdmin = a.role === 'ROLE_ADMIN' || a.role === 'ROLE_MODERATOR';
             const bIsAdmin = b.role === 'ROLE_ADMIN' || b.role === 'ROLE_MODERATOR';
 
-            // Admins first
-            if (aIsAdmin && !bIsAdmin) return -1;
-            if (!bIsAdmin && aIsAdmin) return 1;
+            // Admins first, then normal players
+            if (aIsAdmin !== bIsAdmin) {
+                return aIsAdmin ? -1 : 1;
+            }
 
-            // Then alphabetical by username
+            // Within each group, sort by username alphabetically
             return a.username.localeCompare(b.username);
         });
 
@@ -76,7 +77,7 @@ const PlayersPage = () => {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 text-left">
-                            {filteredUsers.map(user => (
+                            {filteredUsers.map((user: User) => (
                                 <div
                                     key={user.id}
                                     onClick={() => {
@@ -99,7 +100,7 @@ const PlayersPage = () => {
                                         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-story-gold to-transparent opacity-0 group-hover:opacity-50 transition-opacity" />
                                     )}
 
-                                    <div className="flex items-center gap-4 mb-4">
+                                    <div className="flex items-start gap-4 mb-4 pt-1">
                                         <UserAvatar
                                             avatarUrl={user.avatarUrl}
                                             username={user.username}
@@ -115,7 +116,7 @@ const PlayersPage = () => {
                                                 )}
                                             </div>
                                             <div className="flex flex-wrap gap-1.5 items-center">
-                                                {user.badges && user.badges.map(badge => (
+                                                {user.badges && user.badges.map((badge: Badge) => (
                                                     <div key={badge.id} className="group/badge relative flex items-center justify-center">
                                                         <div
                                                             className="w-7 h-7 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-90 cursor-help"
@@ -188,7 +189,7 @@ const PlayersPage = () => {
                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${(selectedUser.role === 'ROLE_ADMIN' || selectedUser.role === 'ROLE_MODERATOR') ? 'bg-red-500/20 text-red-300' : 'bg-blue-500/20 text-blue-300'}`}>
                                         {(selectedUser.role === 'ROLE_ADMIN' || selectedUser.role === 'ROLE_MODERATOR') ? 'Admin' : 'Player'}
                                     </span>
-                                    {selectedUser.badges && selectedUser.badges.map(badge => (
+                                    {selectedUser.badges && selectedUser.badges.map((badge: Badge) => (
                                         <div
                                             key={badge.id}
                                             className="px-2 py-0.5 rounded text-[10px] font-bold uppercase flex items-center gap-1.5 border"
