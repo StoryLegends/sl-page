@@ -35,7 +35,7 @@
         {
             "name": "Yap_s",
             "image": "yaps.webp",
-            "description": "Котик мур мяу, старый игрок.",
+            "description": "Киси киси мяу мяу, старый игрок",
             "links": [
                 {
                     "name": "YouTube",
@@ -59,18 +59,33 @@
         {
             "name": "FixAlex555",
             "image": "fixalex555.webp",
-            "description": "Стример на твиче. Проводит стримы по серверным будням.",
+            "description": "Стример.",
             "links": [
                 {
                     "name": "Twitch",
                     "url": "https://www.twitch.tv/fixalex555"
                 }
             ],
-            "Discrod": "fpv.fixalex555"
+            "Discrod": "fpv.fixalex555",
+            "details": "Стримит будни сервера на своем твич канале."
+        },
+                {
+            "name": "Wywernt",
+            "image": "wyvernt.webp",
+            "description": "Снимает ролики.",
+            "links": [
+                {
+                    "name": "YouTube",
+                    "url": "https://www.youtube.com/@ImWyvernt"
+                }
+            ],
+            "Discrod": "wywernt",
+            "details": "Делает ролики по своим похождениям на нашем сервере."
         }
     ]
 
 }
+
 
 
 
