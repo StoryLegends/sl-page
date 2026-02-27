@@ -307,7 +307,10 @@ const AdminDashboardPage = () => {
             refetchCurrentTab();
         } catch (err: any) {
             console.error(err);
-            alert(err.response?.data?.message || err.response?.data?.error || 'Failed to update user');
+            const errorMsg = typeof err.response?.data === 'string'
+                ? err.response.data
+                : (err.response?.data?.message || err.response?.data?.error || 'Failed to update user');
+            alert(errorMsg);
         }
     };
 

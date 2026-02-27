@@ -37,6 +37,7 @@ export interface User {
 }
 
 export interface UpdateProfileData {
+    username?: string;
     email?: string;
     discordNickname?: string;
     minecraftNickname?: string;
