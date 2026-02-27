@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { usersApi, type User, type Badge } from '../api';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
-import { Users, Search, X, MessageSquare, Gamepad2, Crown } from 'lucide-react';
+import { Users, Search, X, MessageSquare, Gamepad2, Crown, ArrowRight } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
 
 
@@ -46,6 +47,79 @@ const PlayersPage = () => {
             return a.username.localeCompare(b.username);
         });
 
+    const staff = filteredUsers.filter((u: User) => u.role === 'ROLE_ADMIN' || u.role === 'ROLE_MODERATOR');
+    const players = filteredUsers.filter((u: User) => u.role !== 'ROLE_ADMIN' && u.role !== 'ROLE_MODERATOR');
+
+    const PlayerCard = ({ user }: { user: User }) => (
+        <div
+            onClick={() => {
+                setSelectedUser(user);
+                setShowModal(true);
+            }}
+            className={`
+                bg-black/40 border rounded-2xl p-6 backdrop-blur-md transition-all group relative overflow-hidden cursor-pointer active:scale-[0.98]
+                ${(user.role === 'ROLE_ADMIN' || user.role === 'ROLE_MODERATOR')
+                    ? 'border-story-gold/30 shadow-[0_0_30px_rgba(255,191,0,0.1)] hover:shadow-[0_0_40px_rgba(255,191,0,0.2)] hover:border-story-gold/50'
+                    : 'border-white/10 hover:border-story-gold/30 hover:bg-white/5'}
+            `}
+        >
+            {(user.role === 'ROLE_ADMIN' || user.role === 'ROLE_MODERATOR') ? (
+                <>
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-story-gold to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
+                    <Crown className="absolute -right-4 -bottom-4 w-32 h-32 text-story-gold/10 -rotate-12 pointer-events-none group-hover:text-story-gold/[0.15] group-hover:scale-110 transition-all duration-500" />
+                </>
+            ) : (
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-story-gold to-transparent opacity-0 group-hover:opacity-50 transition-opacity" />
+            )}
+
+            <div className="flex items-start gap-4 mb-4 pt-1">
+                <UserAvatar
+                    avatarUrl={user.avatarUrl}
+                    username={user.username}
+                    size="lg"
+                />
+                <div>
+                    <div className="flex items-center gap-2 mb-1.5 min-w-0 relative z-10">
+                        <h3 className="font-bold text-white text-lg truncate leading-none">{user.username}</h3>
+                        {(user.role === 'ROLE_ADMIN' || user.role === 'ROLE_MODERATOR') && (
+                            <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border whitespace-nowrap bg-red-500/20 text-red-300 border-red-500/30">
+                                Admin
+                            </span>
+                        )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                        {user.badges && user.badges.map((badge: Badge) => (
+                            <div key={badge.id} className="group/badge relative flex items-center justify-center">
+                                <div
+                                    className="w-7 h-7 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-90 cursor-help"
+                                    style={{ color: badge.color }}
+                                >
+                                    <div className="w-5 h-5 flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5 [&>svg]:max-w-full [&>svg]:max-h-full" dangerouslySetInnerHTML={{ __html: badge.svgIcon }} />
+                                </div>
+                                {/* Tooltip */}
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#0a0a0a] border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-wider text-white whitespace-nowrap opacity-0 group-hover/badge:opacity-100 transition-opacity pointer-events-none z-10 shadow-2xl">
+                                    {badge.name}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-[#0a0a0a]" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-2 text-sm relative z-10">
+                <div className="flex justify-between text-gray-400">
+                    <span>Minecraft:</span>
+                    <span className="text-gray-200 font-mono truncate ml-2 text-right">{user.minecraftNickname || '-'}</span>
+                </div>
+                <div className="flex justify-between text-gray-400">
+                    <span>Discord:</span>
+                    <span className="text-gray-200 font-mono truncate ml-2 text-right">{user.discordNickname || '-'}</span>
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <Layout>
             <SEO title="Игроки" description="Список игроков сервера" />
@@ -71,82 +145,65 @@ const PlayersPage = () => {
                         </div>
                     </div>
 
+                    {/* Hall of Fame Banner */}
+                    <Link to="/glorylist" className="block mb-6 group">
+                        <div className="relative overflow-hidden bg-black/40 backdrop-blur-md border border-story-gold/30 rounded-[2rem] p-6 md:p-8 hover:border-story-gold/50 transition-all duration-500 shadow-[0_0_30px_rgba(255,191,0,0.05)] hover:shadow-[0_0_40px_rgba(255,191,0,0.15)] flex flex-col md:flex-row items-center justify-between gap-6">
+                            {/* Subtle background decoration */}
+                            <Crown className="absolute -right-4 -bottom-8 w-48 h-48 text-story-gold/5 -rotate-12 pointer-events-none group-hover:scale-110 group-hover:text-story-gold/10 transition-all duration-700" />
+
+                            <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
+                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-story-gold/10 border border-story-gold/30 flex items-center justify-center shadow-[inset_0_0_20px_rgba(255,191,0,0.1)] group-hover:scale-105 transition-transform duration-500">
+                                    <Crown className="w-8 h-8 md:w-10 md:h-10 text-story-gold" />
+                                </div>
+
+                                <div className="text-center md:text-left">
+                                    <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                                        <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Зал Славы</h2>
+                                        <ArrowRight className="w-5 h-5 text-story-gold group-hover:translate-x-1 transition-transform -translate-y-[1px]" />
+                                    </div>
+                                    <p className="text-gray-400 text-sm md:text-base max-w-xl leading-relaxed">
+                                        Легенды, вписавшие своё имя в историю StoryLegends. Узнайте их истории и достижения.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="relative z-10 w-full md:w-auto">
+                                <div className="px-8 py-3 rounded-xl border border-story-gold/50 text-story-gold font-bold text-sm uppercase tracking-[0.2em] group-hover:bg-story-gold group-hover:text-black transition-all duration-500 text-center">
+                                    ОТКРЫТЬ
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+
                     {loading ? (
                         <div className="flex justify-center py-20">
                             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-story-gold"></div>
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 text-left">
-                            {filteredUsers.map((user: User) => (
-                                <div
-                                    key={user.id}
-                                    onClick={() => {
-                                        setSelectedUser(user);
-                                        setShowModal(true);
-                                    }}
-                                    className={`
-                                        bg-black/40 border rounded-2xl p-6 backdrop-blur-md transition-all group relative overflow-hidden cursor-pointer active:scale-[0.98]
-                                        ${(user.role === 'ROLE_ADMIN' || user.role === 'ROLE_MODERATOR')
-                                            ? 'border-story-gold/30 shadow-[0_0_30px_rgba(255,191,0,0.1)] hover:shadow-[0_0_40px_rgba(255,191,0,0.2)] hover:border-story-gold/50'
-                                            : 'border-white/10 hover:border-story-gold/30 hover:bg-white/5'}
-                                    `}
-                                >
-                                    {(user.role === 'ROLE_ADMIN' || user.role === 'ROLE_MODERATOR') ? (
-                                        <>
-                                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-story-gold to-transparent opacity-50 group-hover:opacity-100 transition-opacity" />
-                                            <Crown className="absolute -right-4 -bottom-4 w-32 h-32 text-story-gold/10 -rotate-12 pointer-events-none group-hover:text-story-gold/[0.15] group-hover:scale-110 transition-all duration-500" />
-                                        </>
-                                    ) : (
-                                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-story-gold to-transparent opacity-0 group-hover:opacity-50 transition-opacity" />
-                                    )}
-
-                                    <div className="flex items-start gap-4 mb-4 pt-1">
-                                        <UserAvatar
-                                            avatarUrl={user.avatarUrl}
-                                            username={user.username}
-                                            size="lg"
-                                        />
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1.5 min-w-0 relative z-10">
-                                                <h3 className="font-bold text-white text-lg truncate leading-none">{user.username}</h3>
-                                                {(user.role === 'ROLE_ADMIN' || user.role === 'ROLE_MODERATOR') && (
-                                                    <span className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border whitespace-nowrap bg-red-500/20 text-red-300 border-red-500/30">
-                                                        Admin
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="flex flex-wrap gap-1.5 items-center">
-                                                {user.badges && user.badges.map((badge: Badge) => (
-                                                    <div key={badge.id} className="group/badge relative flex items-center justify-center">
-                                                        <div
-                                                            className="w-7 h-7 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-90 cursor-help"
-                                                            style={{ color: badge.color }}
-                                                        >
-                                                            <div className="w-5 h-5 flex items-center justify-center [&>svg]:w-5 [&>svg]:h-5 [&>svg]:max-w-full [&>svg]:max-h-full" dangerouslySetInnerHTML={{ __html: badge.svgIcon }} />
-                                                        </div>
-                                                        {/* Tooltip */}
-                                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-[#0a0a0a] border border-white/10 rounded-lg text-[10px] font-black uppercase tracking-wider text-white whitespace-nowrap opacity-0 group-hover/badge:opacity-100 transition-opacity pointer-events-none z-10 shadow-2xl">
-                                                            {badge.name}
-                                                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-x-4 border-x-transparent border-t-4 border-t-[#0a0a0a]" />
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
+                            {staff.length > 0 && (
+                                <>
+                                    <div className="col-span-full flex items-center gap-4 relative z-10 mb-2">
+                                        <div className="w-1.5 h-8 bg-story-gold rounded-full shadow-[0_0_15px_rgba(255,191,0,0.2)]" />
+                                        <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Состав администрации</h2>
                                     </div>
+                                    {staff.map((user: User) => (
+                                        <PlayerCard key={user.id} user={user} />
+                                    ))}
+                                </>
+                            )}
 
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between text-gray-400">
-                                            <span>Minecraft:</span>
-                                            <span className="text-gray-200 font-mono">{user.minecraftNickname || '-'}</span>
-                                        </div>
-                                        <div className="flex justify-between text-gray-400">
-                                            <span>Discord:</span>
-                                            <span className="text-gray-200 font-mono">{user.discordNickname || '-'}</span>
-                                        </div>
+                            {players.length > 0 && (
+                                <>
+                                    <div className="col-span-full flex items-center gap-4 relative z-10 mt-8 mb-2">
+                                        <div className="w-1.5 h-8 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.2)]" />
+                                        <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider">Игроки</h2>
                                     </div>
-                                </div>
-                            ))}
+                                    {players.map((user: User) => (
+                                        <PlayerCard key={user.id} user={user} />
+                                    ))}
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
