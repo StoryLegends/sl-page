@@ -52,7 +52,7 @@ const FAQ = () => {
                             </h3>
                             <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
                                 <span className="font-bold text-blue-400 mr-2">О:</span>
-                                После рассмотрения заявки вам напишет администратор и сообщит, что вы приняты. Если после срока рассмотрения вам не написали, то вы не приняты.
+                                Вам придет уведомление от нашего Discord сервера, также вы можете следить за статусом заявки в своем профиле на сайте.
                             </div>
                         </div>
                     </div>
@@ -67,7 +67,7 @@ const FAQ = () => {
                             </h3>
                             <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
                                 <span className="font-bold text-blue-400 mr-2">О:</span>
-                                Вся эта информация хранится в канале <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#инфа</span> в категории сервера в дискорд. Пожалуйста, читайте всё внимательно и весь канал. Убедитесь, что у вас есть роль <span className="text-yellow-400 font-mono bg-yellow-400/10 px-1 rounded">@SL</span> и вашу заявку приняли.
+                                Вся эта информация хранится в канале <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#ℹ️│информация</span> в категории сервера в дискорд. Пожалуйста, читайте всё внимательно и весь канал. Убедитесь, что у вас есть роль <span className="text-yellow-400 font-mono bg-yellow-400/10 px-1 rounded">@SL</span> и вашу заявку приняли.
                             </div>
                         </div>
                     </div>
@@ -82,7 +82,7 @@ const FAQ = () => {
                             </h3>
                             <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
                                 <span className="font-bold text-blue-400 mr-2">О:</span>
-                                Зависит какой. Если в канале <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#инфа</span> сказано, что мод есть в сети, то вы можете найти его на популярных ресурсах по типу Modrinth / CurseForge. Приватные моды публикуются в тот же канал под лицензиями, читайте и соблюдайте их.
+                                Зависит какой. Если в канале <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#ℹ️│информация</span> сказано, что мод есть в сети, то вы можете найти его на популярных ресурсах по типу Modrinth / CurseForge. Приватные моды публикуются в тот же канал под лицензиями, читайте и соблюдайте их.
                             </div>
                         </div>
                     </div>
@@ -109,7 +109,7 @@ const FAQ = () => {
                                     </li>
                                     <li className="bg-black/20 p-4 pl-6 rounded-r-lg border-y border-r border-white/5 border-l-2 border-l-white/10 hover:border-l-red-500 transition-colors duration-300">
                                         <p className="text-red-400 font-mono text-sm mb-2">The following registry entry namespaces may be related: …</p>
-                                        <p>Отсутствие каких либо модов на вашем клиенте. Под ошибкой “...” пишет название модов которых у вас нет, проверьте установили ли вы все моды из канала <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#инфа</span>.</p>
+                                        <p>Отсутствие каких либо модов на вашем клиенте. Под ошибкой “...” пишет название модов которых у вас нет, проверьте установили ли вы все моды из канала <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#ℹ️│информация</span>.</p>
                                     </li>
                                 </ul>
                             </div>
@@ -141,7 +141,7 @@ const FAQ = () => {
                             </h3>
                             <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
                                 <span className="font-bold text-blue-400 mr-2">О:</span>
-                                Все механики кратко описаны в <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#инфа</span>. Если вам что-то не ясно, то вы всегда можете спросить администрацию. Крафты узнаются на сервере, но если они уже изучены, вы можете спросить игроков.
+                                Все механики кратко описаны в <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#ℹ️│информация</span>. Если вам что-то не ясно, то вы всегда можете спросить администрацию. Крафты узнаются на сервере, но если они уже изучены, вы можете спросить игроков.
                             </div>
                         </div>
                     </div>
