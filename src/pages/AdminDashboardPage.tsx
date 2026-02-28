@@ -608,21 +608,55 @@ const AdminDashboardPage = () => {
                     {parts.map((part, j) => {
                         if (part.match(urlRegex)) {
                             let platform = 'Ссылка';
-                            let icon = '🔗';
-                            if (part.includes('youtube.com') || part.includes('youtu.be')) { platform = 'YouTube'; icon = '▶️'; }
-                            else if (part.includes('twitch.tv')) { platform = 'Twitch'; icon = '🟪'; }
-                            else if (part.includes('tiktok.com')) { platform = 'TikTok'; icon = '🎵'; }
-                            else if (part.includes('t.me') || part.includes('telegram')) { platform = 'Telegram'; icon = '✈️'; }
-                            else if (part.includes('vk.com')) { platform = 'VK'; icon = '🟦'; }
-                            else if (part.includes('discord.gg') || part.includes('discord.com')) { platform = 'Discord'; icon = '🎮'; }
+                            let iconSvg = <><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>;
+                            let colorClass = 'bg-white/10 hover:bg-white/20 text-white border border-white/5 shadow-sm';
+
+                            if (part.includes('youtube.com') || part.includes('youtu.be')) {
+                                platform = 'YouTube';
+                                colorClass = 'bg-[#FF0000] hover:bg-red-600 text-white shadow-[#FF0000]/20 shadow-lg border border-transparent';
+                                iconSvg = <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />;
+                            } else if (part.includes('twitch.tv')) {
+                                platform = 'Twitch';
+                                colorClass = 'bg-[#9146FF] hover:bg-[#7e34ea] text-white shadow-[#9146FF]/20 shadow-lg border border-transparent';
+                                iconSvg = <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z" />;
+                            } else if (part.includes('tiktok.com')) {
+                                platform = 'TikTok';
+                                colorClass = 'bg-black hover:bg-zinc-900 text-white border border-white/20 shadow-white/5 shadow-lg';
+                                iconSvg = <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z" />;
+                            } else if (part.includes('t.me') || part.includes('telegram')) {
+                                platform = 'Telegram';
+                                colorClass = 'bg-[#2AABEE] hover:bg-[#2094d1] text-white shadow-[#2AABEE]/20 shadow-lg border border-transparent';
+                                iconSvg = <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />;
+                            } else if (part.includes('vk.com')) {
+                                platform = 'VK';
+                                colorClass = 'bg-[#0077FF] hover:bg-[#0062d1] text-white shadow-[#0077FF]/20 shadow-lg border border-transparent';
+                                iconSvg = <path d="M15.077 2H8.923C3.931 2 2 3.931 2 8.923v6.154C2 20.069 3.931 22 8.923 22h6.154C20.069 22 22 20.069 22 15.077V8.923C22 3.931 20.069 2 15.077 2zm3.328 14.188c.38.38.746.776 1.107 1.178.175.195.352.392.54.577.264.26.476.353.844.353h1.832c.158 0 .267-.024.33-.075.056-.045.076-.112.062-.204-.038-.247-.323-.629-.861-1.157-.384-.376-.84-.78-1.346-1.259-.168-.16-.328-.328-.48-.5-.368-.415-.365-.67.042-1.166.402-.49 1.148-1.464 1.428-1.956.12-.213.197-.406.208-.553.014-.176-.062-.284-.233-.306l-1.986-.013c-.15 0-.276.04-.373.123-.08.068-.146.17-.194.31-.101.32-.242.668-.423 1.04-.326.671-.676 1.037 1.748-.445.602-.782.852-1.02.766-.192-.069-.286-.388-.286-.948V9.387c0-.285-.05-.515-.145-.676-.1-.173-.298-.276-.583-.3-.42-.036-1.076-.053-1.637-.053-.87 0-1.442.069-1.696.2-.212.11-.376.31-.284.321.14.015.36.084.502.215.176.161.264.444.264.843v2.85c0 .416-.043.68-.12.802-.09.142-.295.148-.605-.015-.478-.252-1.033-.787-1.65-1.583-.604-.78-.112-1.688-1.536-2.684a2.91 2.91 0 0 1-.161-.318c-.067-.16-.168-.266-.299-.313-.112-.04-.26-.063-.443-.063H4.81c-.161 0-.294.045-.387.128-.081.073-.122.176-.118.297.013.385.498 1.487 1.443 3.28 1.028 1.948 2.067 3.42 3.097 4.382 1.309 1.223 2.768 1.834 4.35 1.834h.61c.144 0 .252-.036.326-.098.077-.066.115-.164.12-.291v-1.633c0-.395.093-.615.263-.663.15-.043.376.024.673.204z" />;
+                            } else if (part.includes('discord.gg') || part.includes('discord.com')) {
+                                platform = 'Discord';
+                                colorClass = 'bg-[#5865F2] hover:bg-[#4752c4] text-white shadow-[#5865F2]/20 shadow-lg border border-transparent';
+                                iconSvg = <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152c-.211.3753-.4447.8648-.6083 1.2498-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8745-.6177-1.2498 19.7363 19.7363 0 00-4.8852 1.515C.5334 9.0458-.319 13.5799.0992 18.0578c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294.4616-.6304.8731-1.2952 1.226-1.9942-.6528-.2476-1.2743-.5495-1.8722-.8923.1258-.0943.2517-.1895.3714-.2874 3.9278 1.7933 8.18 1.7933 12.0614 0 .1209.098.2456.1931.3728.2882-12.2986 12.2986 0 01-1.873.8914c.3604.698.7719 1.3628 1.225 1.9932 1.961-.6067 3.9495-1.5219 6.0023-3.0294.5004-5.177-.8382-9.6739-3.5485-13.6604zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2014 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.201 0 2.1756 1.0952 2.1568 2.419 0 1.3332-.9554 2.4189-2.1568 2.4189z" />;
+                            }
+
+                            const isStandardLink = platform === 'Ссылка';
 
                             return (
-                                <span key={j} className="inline-flex items-center gap-1.5 align-middle mx-1 whitespace-nowrap">
-                                    <a href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors underline max-w-[200px] truncate" title={part}>
-                                        {part}
+                                <span key={j} className="inline-flex items-center gap-3 align-middle mt-2 mb-2 bg-white/5 border border-white/5 rounded-xl px-2 py-2 pr-4 max-w-full group w-fit mx-1">
+                                    <a href={part} target="_blank" rel="noopener noreferrer" title={platform} className={`flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg transition-transform group-hover:scale-105 ${colorClass}`}>
+                                        <svg
+                                            viewBox="0 0 24 24"
+                                            width="16"
+                                            height="16"
+                                            fill={isStandardLink ? "none" : "currentColor"}
+                                            stroke={isStandardLink ? "currentColor" : "none"}
+                                            strokeWidth={isStandardLink ? "2" : "0"}
+                                            strokeLinecap={isStandardLink ? "round" : "inherit"}
+                                            strokeLinejoin={isStandardLink ? "round" : "inherit"}
+                                        >
+                                            {iconSvg}
+                                        </svg>
                                     </a>
-                                    <a href={part} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-md text-[10px] font-bold text-white transition-colors uppercase tracking-wider no-underline">
-                                        {icon} {platform}
+                                    <a href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors underline break-all text-sm font-mono overflow-wrap-anywhere">
+                                        {part}
                                     </a>
                                 </span>
                             );
