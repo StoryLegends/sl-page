@@ -18,6 +18,7 @@ const AdminDashboardPage = () => {
     const [applications, setApplications] = useState<any[]>([]);
     const [allBadges, setAllBadges] = useState<any[]>([]);
     const [siteSettings, setSiteSettings] = useState<any>(null);
+    const [pendingAppsCount, setPendingAppsCount] = useState<number | null>(null);
 
     // Filter states
     const [appStatusFilter, setAppStatusFilter] = useState<string>('PENDING');
@@ -382,7 +383,17 @@ const AdminDashboardPage = () => {
         }
     };
 
+    const fetchPendingAppsCount = async () => {
+        try {
+            const res = await applicationsApi.getAll('PENDING', 0, 1);
+            setPendingAppsCount(res.totalElements);
+        } catch (err) {
+            console.error('Failed to fetch pending applications count:', err);
+        }
+    };
+
     const refetchCurrentTab = () => {
+        fetchPendingAppsCount();
         if (activeTab === 'users') fetchUsers(usersPage);
         else if (activeTab === 'applications') fetchApplications(appsPage);
     };
@@ -406,6 +417,7 @@ const AdminDashboardPage = () => {
             navigate('/');
         }
         if (user && (isAdmin || isModerator)) {
+            fetchPendingAppsCount();
             if (activeTab === 'users') {
                 fetchUsers(usersPage);
             } else if (activeTab === 'applications') {
@@ -604,7 +616,7 @@ const AdminDashboardPage = () => {
 
     const stats = {
         totalUsers: users.length,
-        pendingApps: applications.filter(a => a.status === 'PENDING' || !a.status).length,
+        pendingApps: pendingAppsCount !== null ? pendingAppsCount : applications.filter(a => a.status === 'PENDING' || !a.status).length,
         activeUsers: users.filter(u => u.isPlayer).length,
         bannedUsers: users.filter(u => u.banned).length
     };
