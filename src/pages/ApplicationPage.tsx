@@ -35,6 +35,30 @@ const ApplicationPage = () => {
         selfRating: 5
     });
 
+    const [contentLinks, setContentLinks] = useState<string[]>(['']);
+
+    const handleAddLink = () => {
+        setContentLinks([...contentLinks, '']);
+    };
+
+    const handleLinkChange = (index: number, value: string) => {
+        const newLinks = [...contentLinks];
+        newLinks[index] = value;
+        setContentLinks(newLinks);
+    };
+
+    const handleRemoveLink = (index: number) => {
+        const newLinks = [...contentLinks];
+        newLinks.splice(index, 1);
+        setContentLinks(newLinks);
+    };
+
+    const isValidUrl = (url: string) => {
+        if (!url.trim()) return true;
+        const pattern = /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,})(:\d{1,5})?([/?#].*)?$/i;
+        return pattern.test(url.trim());
+    };
+
     const [settings, setSettings] = useState<any>(null);
     const [settingsLoading, setSettingsLoading] = useState(true);
 
@@ -96,9 +120,18 @@ const ApplicationPage = () => {
                 return;
             }
 
+            let finalAdditionalInfo = formData.additionalInfo;
+            if (formData.makeContent) {
+                const validLinks = contentLinks.filter(l => l.trim() !== '');
+                if (validLinks.length > 0) {
+                    finalAdditionalInfo += '\n\nКонтент-ссылки:\n' + validLinks.join('\n');
+                }
+            }
+
             console.log('Application submission attempt with token length:', token.length);
             await applicationsApi.create({
                 ...formData,
+                additionalInfo: finalAdditionalInfo,
                 age: formData.age ? parseInt(formData.age) : 0,
                 recaptchaToken: token
             });
@@ -112,6 +145,7 @@ const ApplicationPage = () => {
                 additionalInfo: '',
                 selfRating: 5
             });
+            setContentLinks(['']);
 
             fetchMyApplications();
             showNotification('Заявка успешно отправлена!', 'success');
@@ -342,9 +376,62 @@ const ApplicationPage = () => {
                                             <label htmlFor="makeContent" className="text-sm text-gray-300">Планирую создавать контент</label>
                                         </div>
 
+                                        {formData.makeContent && (
+                                            <div className="space-y-3 p-4 bg-white/5 border border-white/10 rounded-xl animate-fadeIn">
+                                                <label className="block text-sm font-medium text-gray-300">Ссылки на ваши каналы (YouTube, Twitch, TikTok и т.д.)</label>
+                                                {contentLinks.map((link, idx) => {
+                                                    const isInvalid = link.trim() !== '' && !isValidUrl(link);
+                                                    return (
+                                                        <div key={idx} className="flex gap-2 items-center">
+                                                            <div className="flex-1 relative">
+                                                                <input
+                                                                    type="text"
+                                                                    value={link}
+                                                                    onChange={(e) => handleLinkChange(idx, e.target.value)}
+                                                                    className={`w-full px-4 py-2 bg-black/40 border rounded-xl focus:outline-none text-white text-sm transition-colors ${isInvalid
+                                                                        ? 'border-red-500/50 focus:border-red-500/80 bg-red-900/10'
+                                                                        : 'border-white/10 focus:border-story-gold/50'
+                                                                        }`}
+                                                                    placeholder="https://..."
+                                                                />
+                                                                {isInvalid && (
+                                                                    <span className="absolute -bottom-4 right-2 text-[10px] text-red-400">Некорректная ссылка</span>
+                                                                )}
+                                                            </div>
+                                                            {idx === contentLinks.length - 1 ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={handleAddLink}
+                                                                    disabled={link.trim() === ''}
+                                                                    className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-colors flex-shrink-0 ${link.trim() === ''
+                                                                            ? 'bg-story-gold/5 text-story-gold/30 border-story-gold/10 cursor-not-allowed'
+                                                                            : 'bg-story-gold/20 hover:bg-story-gold/40 text-story-gold border-story-gold/30'
+                                                                        }`}
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            ) : (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleRemoveLink(idx)}
+                                                                    className="w-10 h-10 flex items-center justify-center bg-red-500/20 hover:bg-red-500/40 text-red-400 rounded-xl border border-red-500/30 transition-colors flex-shrink-0"
+                                                                >
+                                                                    -
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
                                         <button
                                             type="submit"
-                                            disabled={formData.additionalInfo.length < 200}
+                                            disabled={
+                                                formData.additionalInfo.length < 200 ||
+                                                (formData.makeContent && contentLinks.some(l => l.trim() !== '' && !isValidUrl(l))) ||
+                                                (formData.makeContent && !contentLinks.some(l => l.trim() !== ''))
+                                            }
                                             className="w-full bg-white text-black font-bold py-3.5 px-4 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             Отправить

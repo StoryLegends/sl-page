@@ -598,6 +598,41 @@ const AdminDashboardPage = () => {
             alert('Не удалось скачать резервную копию. Убедитесь что на сервере установлен pg_dump');
         }
     };
+    const renderWithLinks = (text: string) => {
+        if (!text) return null;
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.split('\n').map((line, i) => {
+            const parts = line.split(urlRegex);
+            return (
+                <div key={i} className="min-h-[1em]">
+                    {parts.map((part, j) => {
+                        if (part.match(urlRegex)) {
+                            let platform = 'Ссылка';
+                            let icon = '🔗';
+                            if (part.includes('youtube.com') || part.includes('youtu.be')) { platform = 'YouTube'; icon = '▶️'; }
+                            else if (part.includes('twitch.tv')) { platform = 'Twitch'; icon = '🟪'; }
+                            else if (part.includes('tiktok.com')) { platform = 'TikTok'; icon = '🎵'; }
+                            else if (part.includes('t.me') || part.includes('telegram')) { platform = 'Telegram'; icon = '✈️'; }
+                            else if (part.includes('vk.com')) { platform = 'VK'; icon = '🟦'; }
+                            else if (part.includes('discord.gg') || part.includes('discord.com')) { platform = 'Discord'; icon = '🎮'; }
+
+                            return (
+                                <span key={j} className="inline-flex items-center gap-1.5 align-middle mx-1 whitespace-nowrap">
+                                    <a href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors underline max-w-[200px] truncate" title={part}>
+                                        {part}
+                                    </a>
+                                    <a href={part} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-white/10 hover:bg-white/20 px-2 py-0.5 rounded-md text-[10px] font-bold text-white transition-colors uppercase tracking-wider no-underline">
+                                        {icon} {platform}
+                                    </a>
+                                </span>
+                            );
+                        }
+                        return <span key={j}>{part}</span>;
+                    })}
+                </div>
+            );
+        });
+    };
 
     const filteredApplications = applications.filter(app => {
         const query = appSearch.toLowerCase();
@@ -1836,9 +1871,9 @@ const AdminDashboardPage = () => {
                                                 <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
                                                 <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">О себе:</span>
                                                 <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
-                                                    <p className="text-gray-200 leading-relaxed whitespace-pre-wrap text-[15px] break-all">
-                                                        {currentApp.additionalInfo}
-                                                    </p>
+                                                    <div className="text-gray-200 leading-relaxed text-[15px] break-all">
+                                                        {renderWithLinks(currentApp.additionalInfo)}
+                                                    </div>
                                                 </div>
                                             </div>
 
