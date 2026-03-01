@@ -935,8 +935,8 @@ const AdminDashboardPage = () => {
                                                         <div className="flex-grow min-w-0">
                                                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                                                                 <h3 className="font-bold text-white text-base leading-none tracking-tight truncate">{u.username}</h3>
-                                                                <span className={`px-2 py-0.5 rounded-[6px] text-[8px] font-black uppercase tracking-widestAlpha border shrink-0 ${u.role === 'ROLE_ADMIN' ? 'bg-red-500/10 text-red-400 border-red-500/10' : u.role === 'ROLE_MODERATOR' ? 'bg-purple-500/10 text-purple-400 border-purple-500/10' : 'bg-blue-500/10 text-blue-400 border-blue-500/10'}`}>
-                                                                    {u.role.replace('ROLE_', '')}
+                                                                <span className={`px-2 py-0.5 rounded-[6px] text-[8px] font-black uppercase tracking-widestAlpha border shrink-0 ${u.role === 'ROLE_ADMIN' ? 'bg-red-500/10 text-red-400 border-red-500/10' : u.role === 'ROLE_MODERATOR' ? 'bg-purple-500/10 text-purple-400 border-purple-500/10' : u.isPlayer ? 'bg-green-500/10 text-green-400 border-green-500/10' : 'bg-gray-500/10 text-gray-500 border-gray-500/10'}`}>
+                                                                    {u.role === 'ROLE_ADMIN' ? 'ADMIN' : u.role === 'ROLE_MODERATOR' ? 'MODERATOR' : u.isPlayer ? 'PLAYER' : 'REG'}
                                                                 </span>
                                                                 {u.banned && (
                                                                     <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-1.5 py-0.5 rounded text-[8px] font-black tracking-widestAlpha uppercase shrink-0">Banned</span>
@@ -1178,9 +1178,16 @@ const AdminDashboardPage = () => {
                                                             className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
                                                         >
                                                             <td className="px-6 py-4">
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-white font-bold">{app.firstName} ({app.age} лет)</span>
-                                                                    <span className="text-xs text-gray-500">@{app.user.username}</span>
+                                                                <div className="flex items-center gap-3">
+                                                                    <UserAvatar
+                                                                        avatarUrl={app.user?.avatarUrl}
+                                                                        username={app.user?.username || app.firstName}
+                                                                        size="sm"
+                                                                    />
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-white font-bold">{app.firstName} ({app.age} лет)</span>
+                                                                        <span className="text-xs text-gray-500">@{app.user?.username || app.user?.username}</span>
+                                                                    </div>
                                                                 </div>
                                                             </td>
                                                             <td className="px-6 py-4">
@@ -1218,9 +1225,12 @@ const AdminDashboardPage = () => {
                                                     >
                                                         <div className="flex justify-between items-start mb-3">
                                                             <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center font-minecraft text-gray-400">
-                                                                    {app.firstName?.[0]}
-                                                                </div>
+                                                                <UserAvatar
+                                                                    avatarUrl={app.user?.avatarUrl}
+                                                                    username={app.user?.username || app.firstName}
+                                                                    size="lg"
+                                                                    rounded="rounded-xl"
+                                                                />
                                                                 <div>
                                                                     <h4 className="text-white font-bold text-sm leading-tight">{app.firstName} ({app.age})</h4>
                                                                     <p className="text-[10px] text-gray-500 font-medium">@{app.user?.username}</p>
@@ -1896,7 +1906,7 @@ const AdminDashboardPage = () => {
                                                 <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
                                                 <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">Почему мы?</span>
                                                 <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
-                                                    <p className="text-gray-200 leading-relaxed text-[15px] break-all">
+                                                    <p className="text-gray-200 leading-relaxed text-[15px] break-words whitespace-pre-wrap">
                                                         {currentApp.whyUs}
                                                     </p>
                                                 </div>
@@ -1905,7 +1915,7 @@ const AdminDashboardPage = () => {
                                                 <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
                                                 <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">О себе:</span>
                                                 <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
-                                                    <div className="text-gray-200 leading-relaxed text-[15px] break-all">
+                                                    <div className="text-gray-200 leading-relaxed text-[15px] break-words whitespace-pre-wrap">
                                                         {renderWithLinks(currentApp.additionalInfo)}
                                                     </div>
                                                 </div>
@@ -1916,7 +1926,7 @@ const AdminDashboardPage = () => {
                                                     <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
                                                     <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">Источник:</span>
                                                     <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
-                                                        <p className="text-gray-200 text-sm break-all">{currentApp.source}</p>
+                                                        <p className="text-gray-200 text-sm break-words whitespace-pre-wrap">{currentApp.source}</p>
                                                     </div>
                                                 </div>
                                                 <div className="relative group">
