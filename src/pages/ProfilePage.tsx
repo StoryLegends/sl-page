@@ -52,7 +52,7 @@ const ProfilePage = () => {
         if (user) {
             setFormData({
                 username: user.username,
-                email: user.email,
+                email: user.email || '',
                 discordNickname: user.discordNickname || '',
                 minecraftNickname: user.minecraftNickname || '',
                 bio: user.bio || ''
