@@ -319,7 +319,7 @@ const AdminDashboardPage = () => {
         setEditUserForm({
             id: user.id,
             username: user.username,
-            email: user.email,
+            email: user.email || '',
             role: user.role,
             discordNickname: user.discordNickname || '',
             minecraftNickname: user.minecraftNickname || '',
@@ -574,9 +574,9 @@ const AdminDashboardPage = () => {
 
     const filteredUsers = users.filter(u => {
         const matchesSearch = u.username.toLowerCase().includes(userSearch.toLowerCase()) ||
-            u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
-            u.minecraftNickname?.toLowerCase().includes(userSearch.toLowerCase()) ||
-            u.discordNickname?.toLowerCase().includes(userSearch.toLowerCase());
+            (u.email && u.email.toLowerCase().includes(userSearch.toLowerCase())) ||
+            (u.minecraftNickname && u.minecraftNickname.toLowerCase().includes(userSearch.toLowerCase())) ||
+            (u.discordNickname && u.discordNickname.toLowerCase().includes(userSearch.toLowerCase()));
 
         const matchesRole = userRoleFilter === '' || u.role === userRoleFilter;
 

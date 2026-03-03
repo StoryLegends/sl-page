@@ -11,21 +11,21 @@ export interface Badge {
 export interface User {
     id: number;
     username: string;
-    email: string;
+    email?: string;
     discordNickname: string;
     minecraftNickname: string;
     role: 'ROLE_USER' | 'ROLE_ADMIN' | 'ROLE_MODERATOR';
     avatarUrl: string | null;
-    banned: boolean;
+    banned?: boolean;
     banReason?: string | null;
-    emailVerified: boolean;
-    discordVerified: boolean;
-    totpEnabled: boolean;
+    emailVerified?: boolean;
+    discordVerified?: boolean;
+    totpEnabled?: boolean;
     bio?: string | null;
-    isPlayer: boolean;
-    inSeason: boolean;
+    isPlayer?: boolean;
+    inSeason?: boolean;
     discordUserId?: string;
-    inDiscordServer: boolean;
+    inDiscordServer?: boolean;
     badges?: Badge[];
     // Admin-only security fields
     registrationIp?: string;
