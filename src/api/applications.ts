@@ -50,6 +50,11 @@ export const applicationsApi = {
         return response.data;
     },
 
+    getById: async (id: number): Promise<Application> => {
+        const response = await apiClient.get(`/api/admin/applications/${id}`);
+        return response.data;
+    },
+
     updateStatus: async (id: number, status: string, adminComment?: string): Promise<Application> => {
         const response = await apiClient.patch(`/api/admin/applications/${id}/status`, { status, adminComment });
         return response.data;

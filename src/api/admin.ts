@@ -45,6 +45,11 @@ export const adminApi = {
         return response.data;
     },
 
+    getUser: async (id: number): Promise<User> => {
+        const response = await apiClient.get(`/api/admin/users/${id}`);
+        return response.data;
+    },
+
     createUser: async (data: any): Promise<User> => {
         const response = await apiClient.post('/api/admin/users', data);
         return response.data;

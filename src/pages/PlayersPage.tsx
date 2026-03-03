@@ -12,6 +12,7 @@ const PlayersPage = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [isBioLoading, setIsBioLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
@@ -50,12 +51,23 @@ const PlayersPage = () => {
     const staff = filteredUsers.filter((u: User) => u.role === 'ROLE_ADMIN' || u.role === 'ROLE_MODERATOR');
     const players = filteredUsers.filter((u: User) => u.role !== 'ROLE_ADMIN' && u.role !== 'ROLE_MODERATOR');
 
+    const openModal = async (user: User) => {
+        try {
+            setSelectedUser(user);
+            setShowModal(true);
+            setIsBioLoading(true);
+            const fullUser = await usersApi.getById(user.id);
+            setSelectedUser(fullUser);
+        } catch (err) {
+            console.error('Failed to fetch full user bio', err);
+        } finally {
+            setIsBioLoading(false);
+        }
+    };
+
     const PlayerCard = ({ user }: { user: User }) => (
         <div
-            onClick={() => {
-                setSelectedUser(user);
-                setShowModal(true);
-            }}
+            onClick={() => openModal(user)}
             className={`
                 bg-black/40 border rounded-2xl p-6 backdrop-blur-md transition-all group relative overflow-hidden cursor-pointer active:scale-[0.98]
                 ${(user.role === 'ROLE_ADMIN' || user.role === 'ROLE_MODERATOR')
@@ -285,9 +297,16 @@ const PlayersPage = () => {
                                     <div className="absolute top-4 left-6 w-1 h-4 bg-story-gold rounded-full" />
                                     <span className="text-[10px] text-story-gold uppercase font-bold tracking-widest block mb-4 px-2 text-left">Биография</span>
                                     <div className="max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                                        <p className="text-gray-300 leading-relaxed text-left whitespace-pre-wrap">
-                                            {selectedUser.bio || 'Этот игрок еще не рассказал о себе.'}
-                                        </p>
+                                        {isBioLoading ? (
+                                            <div className="flex items-center gap-3 py-4">
+                                                <div className="w-4 h-4 border-2 border-story-gold/20 border-t-story-gold rounded-full animate-spin" />
+                                                <span className="text-xs text-gray-500 font-bold uppercase tracking-widestAlpha">Загрузка биографии...</span>
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-300 leading-relaxed text-left whitespace-pre-wrap">
+                                                {selectedUser.bio || 'Этот игрок еще не рассказал о себе.'}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>

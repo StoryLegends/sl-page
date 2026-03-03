@@ -68,4 +68,10 @@ export const usersApi = {
         const response = await apiClient.get('/api/users');
         return response.data;
     },
+
+    // Get user by ID (public)
+    getById: async (id: number): Promise<User> => {
+        const response = await apiClient.get(`/api/users/${id}`);
+        return response.data;
+    },
 };

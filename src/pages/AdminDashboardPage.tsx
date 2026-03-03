@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { adminApi, applicationsApi, type User } from '../api';
+import { adminApi, applicationsApi, type User, type Application } from '../api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
@@ -15,7 +15,7 @@ const AdminDashboardPage = () => {
 
     // Data states
     const [users, setUsers] = useState<User[]>([]);
-    const [applications, setApplications] = useState<any[]>([]);
+    const [applications, setApplications] = useState<Application[]>([]);
     const [allBadges, setAllBadges] = useState<any[]>([]);
     const [siteSettings, setSiteSettings] = useState<any>(null);
     const [pendingAppsCount, setPendingAppsCount] = useState<number | null>(null);
@@ -47,11 +47,13 @@ const AdminDashboardPage = () => {
     const [showEditUserModal, setShowEditUserModal] = useState(false);
     const [showBanModal, setShowBanModal] = useState(false);
     const [showAppModal, setShowAppModal] = useState(false);
-    const [currentApp, setCurrentApp] = useState<any>(null);
+    const [isAppLoading, setIsAppLoading] = useState(false);
+    const [currentApp, setCurrentApp] = useState<Application | null>(null);
     const [banReason, setBanReason] = useState('');
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [openMenuUserId, setOpenMenuUserId] = useState<number | null>(null);
     const [showSecurityDossier, setShowSecurityDossier] = useState<number | null>(null);
+    const [securityDossierUser, setSecurityDossierUser] = useState<User | null>(null);
     const [showWarningsModal, setShowWarningsModal] = useState(false);
     const [userWarnings, setUserWarnings] = useState<any[]>([]);
     const [newWarningReason, setNewWarningReason] = useState('');
@@ -315,20 +317,38 @@ const AdminDashboardPage = () => {
         }
     };
 
-    const openEditModal = (user: User) => {
-        setEditUserForm({
-            id: user.id,
-            username: user.username,
-            email: user.email || '',
-            role: user.role,
-            discordNickname: user.discordNickname || '',
-            minecraftNickname: user.minecraftNickname || '',
-            bio: user.bio || '',
-            isPlayer: user.isPlayer || false
-        });
-        setSelectedUserId(user.id);
-        setShowEditUserModal(true);
-        setOpenMenuUserId(null);
+    const openEditModal = async (user: User) => {
+        try {
+            const fullUser = await adminApi.getUser(user.id);
+            setEditUserForm({
+                id: fullUser.id,
+                username: fullUser.username,
+                email: fullUser.email || '',
+                role: fullUser.role,
+                discordNickname: fullUser.discordNickname || '',
+                minecraftNickname: fullUser.minecraftNickname || '',
+                bio: fullUser.bio || '',
+                isPlayer: fullUser.isPlayer || false
+            });
+            setSelectedUserId(fullUser.id);
+            setShowEditUserModal(true);
+            setOpenMenuUserId(null);
+        } catch (err) {
+            console.error('Failed to load full user details', err);
+            alert('Failed to load user details');
+        }
+    };
+
+    const openSecurityDossier = async (user: User) => {
+        try {
+            const fullUser = await adminApi.getUser(user.id);
+            setSecurityDossierUser(fullUser);
+            setShowSecurityDossier(fullUser.id);
+            setOpenMenuUserId(null);
+        } catch (err) {
+            console.error('Failed to load full user details', err);
+            alert('Failed to load user details');
+        }
     };
 
     const openBanModal = (userId: number) => {
@@ -336,6 +356,22 @@ const AdminDashboardPage = () => {
         setBanReason('');
         setShowBanModal(true);
         setOpenMenuUserId(null);
+    };
+
+    const openApplicationModal = async (appId: number) => {
+        try {
+            setIsAppLoading(true);
+            setShowAppModal(true);
+            const fullApp = await applicationsApi.getById(appId);
+            setCurrentApp(fullApp);
+            setAdminComment(fullApp.adminComment || '');
+        } catch (err) {
+            console.error('Failed to load application details', err);
+            alert('Failed to load application details');
+            setShowAppModal(false);
+        } finally {
+            setIsAppLoading(false);
+        }
     };
 
     const [loading, setLoading] = useState(false);
@@ -901,7 +937,7 @@ const AdminDashboardPage = () => {
                                                                             )}
                                                                         </>
                                                                     )}
-                                                                    <button onClick={(e) => { e.stopPropagation(); setShowSecurityDossier(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
+                                                                    <button onClick={(e) => { e.stopPropagation(); openSecurityDossier(u); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
                                                                         <Shield className="w-4 h-4 text-blue-400" /> Security Dossier
                                                                     </button>
                                                                     <button onClick={(e) => { e.stopPropagation(); openWarningsModal(u); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
@@ -1174,7 +1210,7 @@ const AdminDashboardPage = () => {
                                                     {filteredApplications.map(app => (
                                                         <tr
                                                             key={app.id}
-                                                            onClick={() => { setCurrentApp(app); setShowAppModal(true); setAdminComment(app.adminComment || ''); }}
+                                                            onClick={() => openApplicationModal(app.id)}
                                                             className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
                                                         >
                                                             <td className="px-6 py-4">
@@ -1220,7 +1256,7 @@ const AdminDashboardPage = () => {
                                                 filteredApplications.map(app => (
                                                     <div
                                                         key={app.id}
-                                                        onClick={() => { setCurrentApp(app); setShowAppModal(true); setAdminComment(app.adminComment || ''); }}
+                                                        onClick={() => openApplicationModal(app.id)}
                                                         className="bg-[#0f0f0f]/80 border border-white/[0.04] rounded-2xl p-4 active:scale-[0.98] transition-all duration-200 relative overflow-hidden group shadow-lg"
                                                     >
                                                         <div className="flex justify-between items-start mb-3">
@@ -1767,7 +1803,7 @@ const AdminDashboardPage = () => {
                                                 <label className="block text-sm font-medium text-gray-400 mb-1">Role</label>
                                                 <select
                                                     value={editUserForm.role}
-                                                    onChange={e => setEditUserForm({ ...editUserForm, role: e.target.value as any })}
+                                                    onChange={e => setEditUserForm({ ...editUserForm, role: e.target.value as 'ROLE_USER' | 'ROLE_ADMIN' | 'ROLE_MODERATOR' })}
                                                     className="w-full px-4 py-2 bg-black/50 border border-white/10 rounded-xl text-white focus:border-story-gold/50 outline-none"
                                                 >
                                                     <option value="ROLE_USER">User</option>
@@ -1899,179 +1935,186 @@ const AdminDashboardPage = () => {
                                 </div>
 
                                 <div className="p-5">
-                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
-                                        {/* Column 1: Deep Dive Texts */}
-                                        <div className="space-y-4">
-                                            <div className="relative group">
-                                                <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
-                                                <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">Почему мы?</span>
-                                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
-                                                    <p className="text-gray-200 leading-relaxed text-[15px] break-words whitespace-pre-wrap">
-                                                        {currentApp.whyUs}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                            <div className="relative group">
-                                                <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
-                                                <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">О себе:</span>
-                                                <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
-                                                    <div className="text-gray-200 leading-relaxed text-[15px] break-words whitespace-pre-wrap">
-                                                        {renderWithLinks(currentApp.additionalInfo)}
-                                                    </div>
-                                                </div>
-                                            </div>
-
+                                    {isAppLoading ? (
+                                        <div className="flex flex-col items-center justify-center py-40 gap-4">
+                                            <div className="w-12 h-12 border-4 border-story-gold/20 border-t-story-gold rounded-full animate-spin" />
+                                            <p className="text-gray-400 font-bold uppercase tracking-[0.2em] text-xs">Loading Detailed Application Data...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+                                            {/* Column 1: Deep Dive Texts */}
                                             <div className="space-y-4">
                                                 <div className="relative group">
                                                     <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
-                                                    <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">Источник:</span>
+                                                    <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">Почему мы?</span>
                                                     <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
-                                                        <p className="text-gray-200 text-sm break-words whitespace-pre-wrap">{currentApp.source}</p>
+                                                        <p className="text-gray-200 leading-relaxed text-[15px] break-words whitespace-pre-wrap">
+                                                            {currentApp.whyUs}
+                                                        </p>
                                                     </div>
                                                 </div>
                                                 <div className="relative group">
                                                     <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
-                                                    <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">Самооценка:</span>
-                                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner flex items-center justify-between">
-                                                        <span className="text-xl font-bold text-story-gold">{currentApp.selfRating} / 10</span>
+                                                    <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">О себе:</span>
+                                                    <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
+                                                        <div className="text-gray-200 leading-relaxed text-[15px] break-words whitespace-pre-wrap">
+                                                            {renderWithLinks(currentApp.additionalInfo)}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="space-y-4">
+                                                    <div className="relative group">
+                                                        <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
+                                                        <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">Источник:</span>
+                                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner">
+                                                            <p className="text-gray-200 text-sm break-words whitespace-pre-wrap">{currentApp.source}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="relative group">
+                                                        <div className="absolute -left-2 top-0 bottom-0 w-0.5 bg-story-gold/20 rounded-full group-hover:bg-story-gold/50 transition-colors" />
+                                                        <span className="text-[10px] text-story-gold uppercase font-bold tracking-[0.2em] block mb-1.5 px-2">Самооценка:</span>
+                                                        <div className="bg-white/5 p-4 rounded-xl border border-white/5 shadow-inner flex items-center justify-between">
+                                                            <span className="text-xl font-bold text-story-gold">{currentApp.selfRating} / 10</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        {/* Column 2: User Persona */}
-                                        <div className="space-y-4">
-                                            <div className="bg-gradient-to-b from-white/[0.07] to-transparent rounded-2xl p-4 border border-white/10 shadow-2xl space-y-5">
-                                                <div>
-                                                    <span className="text-[10px] text-gray-500 uppercase font-bold tracking-[0.2em] block mb-4 border-b border-white/5 pb-1.5">ПРОФИЛЬ ИГРОКА</span>
-                                                    <div className="grid grid-cols-1 gap-3">
-                                                        <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
-                                                            <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Ник на сайте:</span>
-                                                            <span className="text-story-gold font-bold text-sm">{currentApp.user?.username || '—'}</span>
+                                            {/* Column 2: User Persona */}
+                                            <div className="space-y-4">
+                                                <div className="bg-gradient-to-b from-white/[0.07] to-transparent rounded-2xl p-4 border border-white/10 shadow-2xl space-y-5">
+                                                    <div>
+                                                        <span className="text-[10px] text-gray-500 uppercase font-bold tracking-[0.2em] block mb-4 border-b border-white/5 pb-1.5">ПРОФИЛЬ ИГРОКА</span>
+                                                        <div className="grid grid-cols-1 gap-3">
+                                                            <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
+                                                                <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Ник на сайте:</span>
+                                                                <span className="text-story-gold font-bold text-sm">{currentApp.user?.username || '—'}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
+                                                                <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Email:</span>
+                                                                <span className="text-white break-all text-sm font-medium">{currentApp.user?.email || '—'}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
+                                                                <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Discord:</span>
+                                                                <span className="text-blue-400 font-bold text-sm">{currentApp.user?.discordNickname || '—'}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
+                                                                <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Minecraft:</span>
+                                                                <span className="text-green-400 font-bold text-sm">{currentApp.user?.minecraftNickname || '—'}</span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
-                                                            <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Email:</span>
-                                                            <span className="text-white break-all text-sm font-medium">{currentApp.user?.email || '—'}</span>
+                                                    </div>
+
+                                                    <div className="flex flex-col gap-2">
+                                                        <div className="flex justify-center">
+                                                            <span className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase border ${currentApp.makeContent ? 'text-red-500 border-red-500/20 bg-red-500/5 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'text-gray-400 border-white/5 bg-white/5'}`}>
+                                                                {currentApp.makeContent ? '🎥 CONTENT CREATOR' : 'STANDARD PLAYER'}
+                                                            </span>
                                                         </div>
-                                                        <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
-                                                            <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Discord:</span>
-                                                            <span className="text-blue-400 font-bold text-sm">{currentApp.user?.discordNickname || '—'}</span>
-                                                        </div>
-                                                        <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
-                                                            <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Minecraft:</span>
-                                                            <span className="text-green-400 font-bold text-sm">{currentApp.user?.minecraftNickname || '—'}</span>
-                                                        </div>
+                                                        {currentApp.user?.isPlayer && (
+                                                            <div className="flex justify-center">
+                                                                <span className="px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase border border-green-500/20 bg-green-500/10 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.1)]">
+                                                                    ✓ WHITELISTED PLAYER
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
 
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="flex justify-center">
-                                                        <span className={`px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase border ${currentApp.makeContent ? 'text-red-500 border-red-500/20 bg-red-500/5 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'text-gray-400 border-white/5 bg-white/5'}`}>
-                                                            {currentApp.makeContent ? '🎥 CONTENT CREATOR' : 'STANDARD PLAYER'}
-                                                        </span>
-                                                    </div>
-                                                    {currentApp.user?.isPlayer && (
-                                                        <div className="flex justify-center">
-                                                            <span className="px-4 py-1.5 rounded-xl text-[10px] font-black tracking-widest uppercase border border-green-500/20 bg-green-500/10 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.1)]">
-                                                                ✓ WHITELISTED PLAYER
+                                                {/* Past Applications */}
+                                                {(() => {
+                                                    const pastApps = applications.filter(app => app.user?.id === currentApp.user?.id && app.id !== currentApp.id);
+                                                    if (pastApps.length === 0) return null;
+                                                    return (
+                                                        <div className="bg-gradient-to-b from-white/[0.07] to-transparent rounded-2xl p-4 border border-white/10 shadow-2xl space-y-4">
+                                                            <span className="text-[10px] text-gray-500 uppercase font-bold tracking-[0.2em] block border-b border-white/5 pb-1.5">ПРОШЛЫЕ ЗАЯВКИ</span>
+                                                            <div className="space-y-3 max-h-[300px] overflow-y-auto no-scrollbar">
+                                                                {pastApps.map(app => (
+                                                                    <button
+                                                                        key={app.id}
+                                                                        onClick={() => openApplicationModal(app.id)}
+                                                                        className="w-full text-left bg-black/40 hover:bg-black/60 p-3 rounded-xl border border-white/5 transition-all group"
+                                                                    >
+                                                                        <div className="flex items-center justify-between mb-1">
+                                                                            <span className="text-[10px] font-mono text-gray-400">#{app.id}</span>
+                                                                            <span className={`text-[9px] font-black uppercase tracking-widest ${app.status === 'ACCEPTED' ? 'text-green-500' :
+                                                                                app.status === 'REJECTED' ? 'text-red-500' :
+                                                                                    'text-story-gold'
+                                                                                }`}>{app.status || 'PENDING'}</span>
+                                                                        </div>
+                                                                        <div className="text-xs text-gray-300 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                                                                            {new Date(app.createdAt).toLocaleString()}
+                                                                        </div>
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+
+                                            {/* Column 3: The Verdict & Meta */}
+                                            <div className="space-y-4">
+                                                <div className="bg-story-gold/[0.03] rounded-2xl p-4 border border-story-gold/20 shadow-[0_0_40px_rgba(255,191,0,0.02)] space-y-4">
+                                                    <h4 className="text-story-gold font-black text-xs uppercase tracking-[0.3em] flex items-center gap-2">
+                                                        <Shield className="w-4 h-4 opacity-50" /> VERDICT
+                                                    </h4>
+                                                    <textarea
+                                                        placeholder="Введите ваш вердикт/комментарий..."
+                                                        value={adminComment}
+                                                        onChange={(e) => setAdminComment(e.target.value)}
+                                                        readOnly={currentApp.status && currentApp.status !== 'PENDING'}
+                                                        className={`w-full h-40 p-4 bg-black/60 border border-white/10 rounded-xl text-base text-white focus:border-story-gold/50 focus:ring-4 focus:ring-story-gold/5 outline-none transition-all resize-none shadow-inner ${currentApp.status && currentApp.status !== 'PENDING' ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                                    />
+                                                    {(!currentApp.status || currentApp.status === 'PENDING') ? (
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            <button
+                                                                onClick={() => handleAppStatus(currentApp.id, 'ACCEPTED')}
+                                                                className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-3 rounded-xl transition-all shadow-xl shadow-green-900/40 uppercase tracking-widest text-[10px]"
+                                                            >
+                                                                Принять
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleAppStatus(currentApp.id, 'REJECTED')}
+                                                                className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl transition-all shadow-xl shadow-red-900/40 uppercase tracking-widest text-[10px]"
+                                                            >
+                                                                Отклонить
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-center">
+                                                            <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">
+                                                                Action Locked: {currentApp.status}
                                                             </span>
                                                         </div>
                                                     )}
                                                 </div>
-                                            </div>
 
-                                            {/* Past Applications */}
-                                            {(() => {
-                                                const pastApps = applications.filter(app => app.user?.id === currentApp.user?.id && app.id !== currentApp.id);
-                                                if (pastApps.length === 0) return null;
-                                                return (
-                                                    <div className="bg-gradient-to-b from-white/[0.07] to-transparent rounded-2xl p-4 border border-white/10 shadow-2xl space-y-4">
-                                                        <span className="text-[10px] text-gray-500 uppercase font-bold tracking-[0.2em] block border-b border-white/5 pb-1.5">ПРОШЛЫЕ ЗАЯВКИ</span>
-                                                        <div className="space-y-3 max-h-[300px] overflow-y-auto no-scrollbar">
-                                                            {pastApps.map(app => (
-                                                                <button
-                                                                    key={app.id}
-                                                                    onClick={() => setCurrentApp(app)}
-                                                                    className="w-full text-left bg-black/40 hover:bg-black/60 p-3 rounded-xl border border-white/5 transition-all group"
-                                                                >
-                                                                    <div className="flex items-center justify-between mb-1">
-                                                                        <span className="text-[10px] font-mono text-gray-400">#{app.id}</span>
-                                                                        <span className={`text-[9px] font-black uppercase tracking-widest ${app.status === 'ACCEPTED' ? 'text-green-500' :
-                                                                            app.status === 'REJECTED' ? 'text-red-500' :
-                                                                                'text-story-gold'
-                                                                            }`}>{app.status || 'PENDING'}</span>
-                                                                    </div>
-                                                                    <div className="text-xs text-gray-300 font-medium whitespace-nowrap overflow-hidden text-ellipsis">
-                                                                        {new Date(app.createdAt).toLocaleString()}
-                                                                    </div>
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
-
-                                        {/* Column 3: The Verdict & Meta */}
-                                        <div className="space-y-4">
-                                            <div className="bg-story-gold/[0.03] rounded-2xl p-4 border border-story-gold/20 shadow-[0_0_40px_rgba(255,191,0,0.02)] space-y-4">
-                                                <h4 className="text-story-gold font-black text-xs uppercase tracking-[0.3em] flex items-center gap-2">
-                                                    <Shield className="w-4 h-4 opacity-50" /> VERDICT
-                                                </h4>
-                                                <textarea
-                                                    placeholder="Введите ваш вердикт/комментарий..."
-                                                    value={adminComment}
-                                                    onChange={(e) => setAdminComment(e.target.value)}
-                                                    readOnly={currentApp.status && currentApp.status !== 'PENDING'}
-                                                    className={`w-full h-40 p-4 bg-black/60 border border-white/10 rounded-xl text-base text-white focus:border-story-gold/50 focus:ring-4 focus:ring-story-gold/5 outline-none transition-all resize-none shadow-inner ${currentApp.status && currentApp.status !== 'PENDING' ? 'opacity-60 cursor-not-allowed' : ''}`}
-                                                />
-                                                {(!currentApp.status || currentApp.status === 'PENDING') ? (
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <button
-                                                            onClick={() => handleAppStatus(currentApp.id, 'ACCEPTED')}
-                                                            className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-3 rounded-xl transition-all shadow-xl shadow-green-900/40 uppercase tracking-widest text-[10px]"
-                                                        >
-                                                            Принять
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleAppStatus(currentApp.id, 'REJECTED')}
-                                                            className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl transition-all shadow-xl shadow-red-900/40 uppercase tracking-widest text-[10px]"
-                                                        >
-                                                            Отклонить
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <div className="p-3 bg-white/5 border border-white/10 rounded-xl text-center">
-                                                        <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">
-                                                            Action Locked: {currentApp.status}
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/5 space-y-4 shadow-xl">
-                                                <span className="text-xs text-gray-500 uppercase font-black tracking-[0.2em] block border-b border-white/5 pb-1.5">METADATA</span>
-                                                <div className="grid grid-cols-1 gap-4">
-                                                    <div className="space-y-3">
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="text-xs text-gray-500 font-black uppercase tracking-widest opacity-60">Application ID:</span>
-                                                            <span className="text-xs text-gray-300 font-mono break-all">#{currentApp.id}</span>
-                                                        </div>
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="text-xs text-gray-500 font-black uppercase tracking-widest opacity-60">Internal User ID:</span>
-                                                            <span className="text-xs text-gray-300 font-mono break-all">{currentApp.user?.id || '—'}</span>
-                                                        </div>
-                                                        <div className="flex flex-col gap-0.5">
-                                                            <span className="text-xs text-gray-500 font-black uppercase tracking-widest opacity-60">Submitted Date:</span>
-                                                            <p className="text-xs text-gray-300 font-medium tracking-tight text-white/80">
-                                                                {new Date(currentApp.createdAt).toLocaleString()}
-                                                            </p>
+                                                <div className="bg-white/[0.02] rounded-2xl p-4 border border-white/5 space-y-4 shadow-xl">
+                                                    <span className="text-xs text-gray-500 uppercase font-black tracking-[0.2em] block border-b border-white/5 pb-1.5">METADATA</span>
+                                                    <div className="grid grid-cols-1 gap-4">
+                                                        <div className="space-y-3">
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span className="text-xs text-gray-500 font-black uppercase tracking-widest opacity-60">Application ID:</span>
+                                                                <span className="text-xs text-gray-300 font-mono break-all">#{currentApp.id}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span className="text-xs text-gray-500 font-black uppercase tracking-widest opacity-60">Internal User ID:</span>
+                                                                <span className="text-xs text-gray-300 font-mono break-all">{currentApp.user?.id || '—'}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <span className="text-xs text-gray-500 font-black uppercase tracking-widest opacity-60">Submitted Date:</span>
+                                                                <p className="text-xs text-gray-300 font-medium tracking-tight text-white/80">
+                                                                    {new Date(currentApp.createdAt).toLocaleString()}
+                                                                </p>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -2106,7 +2149,7 @@ const AdminDashboardPage = () => {
 
                                 {/* Content Area */}
                                 <div className="p-4 overflow-y-auto custom-scrollbar flex-1 bg-black/20">
-                                    {users.find(u => u.id === showSecurityDossier) ? (
+                                    {securityDossierUser ? (
                                         <div className="space-y-4">
                                             {/* Registration Section */}
                                             <div className="bg-neutral-800/40 p-3 rounded-xl border border-white/5 space-y-2">
@@ -2117,7 +2160,7 @@ const AdminDashboardPage = () => {
                                                             <span className="text-xs text-gray-500 uppercase font-black">IP Address</span>
                                                             <button
                                                                 onClick={async () => {
-                                                                    const rawIp = users.find(u => u.id === showSecurityDossier)?.registrationIp || '';
+                                                                    const rawIp = securityDossierUser.registrationIp || '';
                                                                     const copyVal = rawIp.includes(',') ? rawIp.split(',')[2] : rawIp;
                                                                     await navigator.clipboard.writeText(copyVal);
                                                                     alert('IP Address Copied');
@@ -2128,14 +2171,14 @@ const AdminDashboardPage = () => {
                                                             </button>
                                                         </div>
                                                         <IPGeoInfo
-                                                            ip={users.find(u => u.id === showSecurityDossier)?.registrationIp}
+                                                            ip={securityDossierUser.registrationIp}
                                                             colorClasses="text-blue-400"
                                                         />
                                                     </div>
                                                     <div className="bg-black/30 p-3 rounded-xl border border-white/5">
                                                         <span className="text-xs text-gray-500 uppercase font-black block mb-2">User Agent</span>
                                                         <p className="text-[11px] text-gray-400 font-mono break-all line-clamp-2">
-                                                            {users.find(u => u.id === showSecurityDossier)?.registrationUserAgent || 'No data'}
+                                                            {securityDossierUser.registrationUserAgent || 'No data'}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -2154,7 +2197,7 @@ const AdminDashboardPage = () => {
                                                                 <span className="text-xs text-gray-500 uppercase font-black">{s.label}</span>
                                                                 <button
                                                                     onClick={async () => {
-                                                                        const rawIp = (users.find(u => u.id === showSecurityDossier) as any)?.[s.ip] || '';
+                                                                        const rawIp = (securityDossierUser as any)[s.ip] || '';
                                                                         const copyVal = rawIp.includes(',') ? rawIp.split(',')[2] : rawIp;
                                                                         await navigator.clipboard.writeText(copyVal);
                                                                         alert('IP Address Copied');
@@ -2165,11 +2208,11 @@ const AdminDashboardPage = () => {
                                                                 </button>
                                                             </div>
                                                             <IPGeoInfo
-                                                                ip={(users.find(u => u.id === showSecurityDossier) as any)?.[s.ip]}
+                                                                ip={(securityDossierUser as any)[s.ip]}
                                                                 colorClasses={s.color}
                                                             />
                                                             <p className="mt-2 text-[11px] text-gray-600 font-mono break-all line-clamp-1 border-t border-white/5 pt-1">
-                                                                {(users.find(u => u.id === showSecurityDossier) as any)?.[s.ua] || 'No metadata'}
+                                                                {(securityDossierUser as any)[s.ua] || 'No metadata'}
                                                             </p>
                                                         </div>
                                                     ))}
@@ -2177,7 +2220,10 @@ const AdminDashboardPage = () => {
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="py-12 text-center text-gray-500 font-black uppercase tracking-widestAlpha text-xs">Access Denied / No Data</div>
+                                        <div className="py-12 text-center text-gray-500 font-black uppercase tracking-widestAlpha text-xs flex flex-col items-center gap-4">
+                                            <div className="w-8 h-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                                            Loading security data...
+                                        </div>
                                     )}
                                 </div>
                             </div>
