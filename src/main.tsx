@@ -13,7 +13,7 @@ createRoot(document.getElementById('root')!).render(
     <HelmetProvider>
       <GoogleReCaptchaProvider
         reCaptchaKey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-        useEnterprise={true} // Enabled to support modern reCAPTCHA Enterprise keys
+        useEnterprise={false}
       >
         <CookieConsentProvider>
           <App />
