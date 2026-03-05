@@ -1,10 +1,5 @@
 Source code of the official website of the StoryLegends server.  
 
-### Purpose
-- server information
-- useful links
-- rules and general details
-
 ### License
 **All Rights Reserved (ARR)**
 
@@ -18,7 +13,7 @@ without prior permission from the copyright holder.
 
 —---
 
-*Developed by [datapeice](datapeice.me)*
+*Developed by [datapeice](https://datapeice.me)*
 
 Copyright (с) StoryLegends 2026 
 All rights reserved.
