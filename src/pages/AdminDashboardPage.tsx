@@ -1113,7 +1113,7 @@ const AdminDashboardPage = () => {
                                                                 )}
                                                             </>
                                                         )}
-                                                        <button onClick={(e) => { e.stopPropagation(); setShowSecurityDossier(u.id); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
+                                                        <button onClick={(e) => { e.stopPropagation(); openSecurityDossier(u); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
                                                             <div className="w-7 h-7 bg-blue-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-blue-500/20 transition-colors shrink-0">
                                                                 <Shield className="w-3.5 h-3.5 text-blue-400" />
                                                             </div>
