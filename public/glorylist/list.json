@@ -81,11 +81,24 @@
             ],
             "Discrod": "wywernt",
             "details": "Делает ролики по своим похождениям на нашем сервере."
+        },
+                {
+            "name": "SenzilBro",
+            "image": "senzil.webp",
+            "description": "Стример.",
+            "links": [
+                {
+                    "name": "YouTube",
+                    "url": "https://www.youtube.com/@%D0%A1%D1%8D%D0%BD%D0%B7%D0%B8%D0%BB"
+                },
+                {
+                    "name": "Twitch",
+                    "url": "https://www.twitch.tv/senzil00"
+                }
+            ],
+            "Discrod": "minion_stuart67_41820",
+            "details": "Время от времени стримит свои будни на сервере на разных платформах."
         }
     ]
 
 }
-
-
-
-
