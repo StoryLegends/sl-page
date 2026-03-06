@@ -2070,14 +2070,24 @@ const AdminDashboardPage = () => {
                                                     {(!currentApp.status || currentApp.status === 'PENDING') ? (
                                                         <div className="grid grid-cols-2 gap-2">
                                                             <button
-                                                                onClick={() => handleAppStatus(currentApp.id, 'ACCEPTED')}
-                                                                className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-3 rounded-xl transition-all shadow-xl shadow-green-900/40 uppercase tracking-widest text-[10px]"
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    handleAppStatus(currentApp.id, 'ACCEPTED');
+                                                                }}
+                                                                className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-3 rounded-xl transition-all shadow-xl shadow-green-900/40 uppercase tracking-widest text-[10px] cursor-pointer active:scale-95"
                                                             >
                                                                 Принять
                                                             </button>
                                                             <button
-                                                                onClick={() => handleAppStatus(currentApp.id, 'REJECTED')}
-                                                                className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl transition-all shadow-xl shadow-red-900/40 uppercase tracking-widest text-[10px]"
+                                                                type="button"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    handleAppStatus(currentApp.id, 'REJECTED');
+                                                                }}
+                                                                className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-3 rounded-xl transition-all shadow-xl shadow-red-900/40 uppercase tracking-widest text-[10px] cursor-pointer active:scale-95"
                                                             >
                                                                 Отклонить
                                                             </button>
