@@ -1997,7 +1997,17 @@ const AdminDashboardPage = () => {
                                                             </div>
                                                             <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
                                                                 <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Discord:</span>
-                                                                <span className="text-blue-400 font-bold text-sm">{currentApp.user?.discordNickname || '—'}</span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-blue-400 font-bold text-sm">{currentApp.user?.discordNickname || '—'}</span>
+                                                                    {currentApp.user?.discordNickname && (
+                                                                        <>
+                                                                            <span className={`text-[12px] leading-none shrink-0 ${currentApp.user.inDiscordServer ? 'text-indigo-400' : 'text-gray-600 grayscale opacity-50'}`} title={currentApp.user.inDiscordServer ? "На сервере" : "Не на сервере"}>🌐</span>
+                                                                            <span title={currentApp.user.discordVerified ? "Верифицирован" : "Не верифицирован"} className="flex items-center shrink-0">
+                                                                                <ShieldCheck className={`w-4 h-4 ${currentApp.user.discordVerified ? 'text-indigo-500' : 'text-gray-600 opacity-50'}`} />
+                                                                            </span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                             <div className="flex flex-col gap-1 p-3 bg-black/40 rounded-xl border border-white/5">
                                                                 <span className="text-xs text-gray-500 uppercase tracking-widest font-black opacity-60">Minecraft:</span>
