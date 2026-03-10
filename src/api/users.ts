@@ -27,6 +27,7 @@ export interface User {
     discordUserId?: string;
     inDiscordServer?: boolean;
     badges?: Badge[];
+    isBoosted?: boolean;
     // Admin-only security fields
     registrationIp?: string;
     registrationUserAgent?: string;

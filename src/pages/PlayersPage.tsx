@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import { Users, Search, X, MessageSquare, Gamepad2, Crown, ArrowRight } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
+import BoosterBadge from '../components/BoosterBadge';
 
 
 const PlayersPage = () => {
@@ -100,6 +101,7 @@ const PlayersPage = () => {
                         )}
                     </div>
                     <div className="flex flex-wrap gap-1.5 items-center">
+                        {user.isBoosted && <BoosterBadge />}
                         {user.badges && user.badges.map((badge: Badge) => (
                             <div key={badge.id} className="group/badge relative flex items-center justify-center">
                                 <div
@@ -258,6 +260,7 @@ const PlayersPage = () => {
                                     <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${(selectedUser.role === 'ROLE_ADMIN' || selectedUser.role === 'ROLE_MODERATOR') ? 'bg-red-500/20 text-red-300' : 'bg-blue-500/20 text-blue-300'}`}>
                                         {(selectedUser.role === 'ROLE_ADMIN' || selectedUser.role === 'ROLE_MODERATOR') ? 'Admin' : 'Player'}
                                     </span>
+                                    {selectedUser.isBoosted && <BoosterBadge />}
                                     {selectedUser.badges && selectedUser.badges.map((badge: Badge) => (
                                         <div
                                             key={badge.id}

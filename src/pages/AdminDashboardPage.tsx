@@ -6,6 +6,7 @@ import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import { Users, FileText, Shield, ShieldCheck, Ban, Search, Filter, MoreVertical, Edit, Key, Trash2, X, Copy, Mail, CheckCircle2, XCircle, Settings, AlertCircle, History, Send, Database, Download, Upload, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
+import BoosterBadge from '../components/BoosterBadge';
 
 
 const AdminDashboardPage = () => {
@@ -879,6 +880,7 @@ const AdminDashboardPage = () => {
                                                         </td>
                                                         <td className="px-3 py-3">
                                                             <div className="flex -space-x-1 transition-all">
+                                                                {u.isBoosted && <BoosterBadge />}
                                                                 {u.badges && u.badges.map((badge: any) => (
                                                                     <BadgeWithTooltip key={badge.id} badge={badge} />
                                                                 ))}
@@ -1048,9 +1050,10 @@ const AdminDashboardPage = () => {
                                                 </div>
 
                                                 {/* Badges Section */}
-                                                {u.badges && u.badges.length > 0 && (
+                                                {(u.isBoosted || (u.badges && u.badges.length > 0)) && (
                                                     <div className="flex flex-wrap gap-2 px-0.5 pt-1">
-                                                        {u.badges.map(badge => (
+                                                        {u.isBoosted && <BoosterBadge />}
+                                                        {u.badges?.map(badge => (
                                                             <BadgeWithTooltip key={badge.id} badge={badge} />
                                                         ))}
                                                     </div>

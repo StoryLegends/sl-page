@@ -7,6 +7,7 @@ import { User as UserIcon, Settings, Edit3, ShieldCheck, Mail, ExternalLink, Log
 import { applicationsApi, usersApi, totpApi, authApi } from '../api';
 import { useNotification } from '../context/NotificationContext';
 import UserAvatar from '../components/UserAvatar';
+import BoosterBadge from '../components/BoosterBadge';
 
 
 const ProfilePage = () => {
@@ -245,6 +246,7 @@ const ProfilePage = () => {
                                 </h2>
 
                                 <div className="flex flex-wrap justify-center gap-1.5 mb-4">
+                                    {user.isBoosted && <BoosterBadge />}
                                     {user.badges && user.badges.map(badge => (
                                         <div key={badge.id} className="group/badge relative flex items-center justify-center">
                                             <div
