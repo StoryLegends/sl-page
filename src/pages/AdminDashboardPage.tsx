@@ -31,6 +31,7 @@ const AdminDashboardPage = () => {
     // Pagination states
     const [usersPage, setUsersPage] = useState(0);
     const [totalUsersPages, setTotalUsersPages] = useState(0);
+    const [totalUsersElements, setTotalUsersElements] = useState(0);
     const [appsPage, setAppsPage] = useState(0);
     const [totalAppsPages, setTotalAppsPages] = useState(0);
 
@@ -383,6 +384,7 @@ const AdminDashboardPage = () => {
             const res = await adminApi.getAllUsers(page, 50);
             setUsers(res.content);
             setTotalUsersPages(res.totalPages);
+            setTotalUsersElements(res.totalElements);
             setUsersPage(page);
         } catch (err) {
             console.error('Failed to fetch users:', err);
@@ -721,7 +723,7 @@ const AdminDashboardPage = () => {
     });
 
     const stats = {
-        totalUsers: users.length,
+        totalUsers: totalUsersElements,
         pendingApps: pendingAppsCount !== null ? pendingAppsCount : applications.filter(a => a.status === 'PENDING' || !a.status).length,
         activeUsers: users.filter(u => u.isPlayer).length,
         bannedUsers: users.filter(u => u.banned).length
