@@ -25,7 +25,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ avatarUrl, username, className 
 
     if (isLetter) {
         return (
-            <div className={`${containerClass} ${rounded} bg-gradient-to-br from-story-gold to-story-gold-dark flex items-center justify-center text-black font-bold shadow-lg shadow-story-gold/10 ${className}`}>
+            <div className={`${containerClass} ${rounded} bg-gradient-to-br from-[#FFD700] to-[#B39700] flex items-center justify-center text-black font-bold shadow-lg shadow-[#FFD700]/10 ${className}`}>
                 {initial}
             </div>
         );
@@ -43,7 +43,7 @@ const UserAvatar: React.FC<UserAvatarProps> = ({ avatarUrl, username, className 
                     const parent = target.parentElement;
                     if (parent) {
                         const div = document.createElement('div');
-                        div.className = `${containerClass} ${rounded} bg-gradient-to-br from-story-gold to-story-gold-dark flex items-center justify-center text-black font-bold shadow-lg shadow-story-gold/10 ${className}`;
+                        div.className = `${containerClass} ${rounded} bg-gradient-to-br from-[#FFD700] to-[#B39700] flex items-center justify-center text-black font-bold shadow-lg shadow-[#FFD700]/10 ${className}`;
                         div.innerText = initial;
                         parent.replaceWith(div);
                     }

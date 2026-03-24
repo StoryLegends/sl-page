@@ -150,7 +150,7 @@ const Navbar: React.FC = () => {
                       />
                     </div>
                   ) : (
-                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border transition-all ${userMenuOpen ? 'bg-story-gold/20 text-story-gold border-story-gold' : 'bg-story-gold/10 text-story-gold border-story-gold/50'}`}>
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border transition-all ${userMenuOpen ? 'bg-[#FFD700]/20 text-[#FFD700] border-[#FFD700]' : 'bg-[#FFD700]/10 text-[#FFD700] border-[#FFD700]/50'}`}>
                       <User className="w-4 h-4 md:w-5 md:h-5" />
                     </div>
                   )}

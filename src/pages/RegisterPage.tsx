@@ -22,6 +22,7 @@ const RegisterPage = () => {
     const [error, setError] = useState('');
     const [settings, setSettings] = useState<any>(null);
     const [settingsLoading, setSettingsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     React.useEffect(() => {
         const fetchSettings = async () => {
@@ -41,6 +42,9 @@ const RegisterPage = () => {
 
     const handleSubmit = React.useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (isSubmitting) return;
+
         setError('');
 
         if (!executeRecaptcha) {
@@ -61,6 +65,8 @@ const RegisterPage = () => {
             return;
         }
 
+        setIsSubmitting(true);
+
         try {
             console.log('Executing reCAPTCHA...');
             const token = await executeRecaptcha('register');
@@ -68,6 +74,7 @@ const RegisterPage = () => {
             if (!token) {
                 console.error('reCAPTCHA returned null or empty token');
                 showNotification('Не удалось получить токен безопасности', 'error');
+                setIsSubmitting(false);
                 return;
             }
 
@@ -87,8 +94,9 @@ const RegisterPage = () => {
             const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Registration failed.';
             setError(errorMsg);
             showNotification(errorMsg, 'error');
+            setIsSubmitting(false);
         }
-    }, [executeRecaptcha, username, email, password, confirmPassword, minecraftNickname, register, navigate, showNotification]);
+    }, [executeRecaptcha, username, email, password, confirmPassword, minecraftNickname, register, navigate, showNotification, isSubmitting]);
 
     return (
         <Layout>
@@ -215,9 +223,14 @@ const RegisterPage = () => {
 
                                 <button
                                     type="submit"
-                                    className="w-full bg-gradient-to-r from-story-gold to-story-gold-dark hover:from-story-gold-light hover:to-story-gold text-black font-bold py-3.5 px-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-story-gold/20 mt-4"
+                                    disabled={isSubmitting}
+                                    className="w-full h-12 flex items-center justify-center bg-gradient-to-r from-story-gold to-story-gold-dark hover:from-story-gold-light hover:to-story-gold text-black font-bold py-3.5 px-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-story-gold/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                                 >
-                                    Создать аккаунт
+                                    {isSubmitting ? (
+                                        <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-black"></div>
+                                    ) : (
+                                        'Создать аккаунт'
+                                    )}
                                 </button>
 
                                 <div className="text-[10px] text-gray-500 text-center mt-3">

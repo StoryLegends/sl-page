@@ -5,13 +5,13 @@ const Loader: React.FC = () => {
         <div className="min-h-[50vh] flex flex-col items-center justify-center relative z-50">
             <div className="relative w-24 h-24">
                 {/* Outer Blue Ring */}
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-legends-blue border-r-legends-blue/50 animate-spin" style={{ animationDuration: '1.5s' }} />
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#00BFFF] border-r-[#00BFFF]/50 animate-spin" style={{ animationDuration: '1.5s' }} />
 
                 {/* Inner Gold Ring */}
-                <div className="absolute inset-2 rounded-full border-4 border-transparent border-b-story-gold border-l-story-gold/50 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }} />
+                <div className="absolute inset-2 rounded-full border-4 border-transparent border-b-[#FFD700] border-l-[#FFD700]/50 animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }} />
 
                 {/* Center Glow */}
-                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-story-gold/20 to-legends-blue/20 blur-xl animate-pulse" />
+                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-[#FFD700]/20 to-[#00BFFF]/20 blur-xl animate-pulse" />
 
                 {/* Center Static Dot/Logo */}
                 <div className="absolute inset-0 flex items-center justify-center">

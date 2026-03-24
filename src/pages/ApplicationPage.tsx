@@ -24,6 +24,7 @@ const ApplicationPage = () => {
     }, [user?.inDiscordServer, user?.discordVerified, refreshUser]);
     const [myApplications, setMyApplications] = useState<any[]>([]);
     const [expandedAppId, setExpandedAppId] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
         firstName: '',
@@ -105,10 +106,14 @@ const ApplicationPage = () => {
     const handleSubmit = React.useCallback(async (e: React.FormEvent) => {
         e.preventDefault();
 
+        if (isSubmitting) return;
+
         if (!executeRecaptcha) {
             showNotification('reCAPTCHA не готова', 'error');
             return;
         }
+
+        setIsSubmitting(true);
 
         try {
             console.log('Executing reCAPTCHA for application...');
@@ -117,6 +122,7 @@ const ApplicationPage = () => {
             if (!token) {
                 console.error('reCAPTCHA returned null or empty token');
                 showNotification('Не удалось получить токен безопасности', 'error');
+                setIsSubmitting(false);
                 return;
             }
 
@@ -167,8 +173,10 @@ const ApplicationPage = () => {
             }
 
             showNotification(msg, 'error');
+        } finally {
+            setIsSubmitting(false);
         }
-    }, [executeRecaptcha, formData, fetchMyApplications, showNotification]);
+    }, [executeRecaptcha, formData, fetchMyApplications, showNotification, isSubmitting]);
 
     return (
         <Layout>
@@ -404,8 +412,8 @@ const ApplicationPage = () => {
                                                                     onClick={handleAddLink}
                                                                     disabled={link.trim() === ''}
                                                                     className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-colors flex-shrink-0 ${link.trim() === ''
-                                                                            ? 'bg-story-gold/5 text-story-gold/30 border-story-gold/10 cursor-not-allowed'
-                                                                            : 'bg-story-gold/20 hover:bg-story-gold/40 text-story-gold border-story-gold/30'
+                                                                        ? 'bg-story-gold/5 text-story-gold/30 border-story-gold/10 cursor-not-allowed'
+                                                                        : 'bg-story-gold/20 hover:bg-story-gold/40 text-story-gold border-story-gold/30'
                                                                         }`}
                                                                 >
                                                                     +
@@ -428,13 +436,18 @@ const ApplicationPage = () => {
                                         <button
                                             type="submit"
                                             disabled={
+                                                isSubmitting ||
                                                 formData.additionalInfo.length < 200 ||
                                                 (formData.makeContent && contentLinks.some(l => l.trim() !== '' && !isValidUrl(l))) ||
                                                 (formData.makeContent && !contentLinks.some(l => l.trim() !== ''))
                                             }
-                                            className="w-full bg-white text-black font-bold py-3.5 px-4 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-full h-12 flex items-center justify-center bg-white text-black font-bold py-3.5 px-4 rounded-xl hover:bg-gray-100 transition-all duration-300 shadow-lg mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            Отправить
+                                            {isSubmitting ? (
+                                                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-black"></div>
+                                            ) : (
+                                                'Отправить'
+                                            )}
                                         </button>
                                     </form>
                                 )}

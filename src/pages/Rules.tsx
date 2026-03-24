@@ -113,6 +113,11 @@ const Rules = () => {
                     <li>Реклама сторонних ресурсов.</li>
                   </ul>
                 </div>
+
+                <div className="pl-4 border-l-2 border-white/10 hover:border-green-400 transition-colors">
+                  <span className="font-bold text-green-400 mr-2">2.2.</span>
+                  Запрещены высказывания которые запрещены на платформе Twitch(бан ворды и т.д) если у одного из игроков идёт там стрим. При таком поведении это будет считаться неадекватным поведением.
+                </div>
               </div>
             </div>
           </section>
@@ -130,20 +135,27 @@ const Rules = () => {
                 <div className="pl-4 border-l-2 border-white/10 hover:border-orange-400 transition-colors">
                   <span className="font-bold text-orange-400 mr-2">3.1.</span>
                   Для отметки занятой территории необходимо использовать явные и заметные признаки (таблички, полублоки). По умолчанию она охватывает всю высоту мира от -64 до 320.
+                  <br />
+                  Если ваша территория которую вы хотите занять прилегает или находится близко(до 50 блоков) к территории другого игрока, то вы обязаны спросить можете ли вы.
                 </div>
 
                 <div className="pl-4 border-l-2 border-white/10 hover:border-orange-400 transition-colors">
                   <span className="font-bold text-orange-400 mr-2">3.2.</span>
-                  Возврат вещей в случае смерти не производится.
+                  Если территория помечена как приватная(вход воспрещен), то без разрешения владельца территории пребывание на ней будет считаться нарушением. Если вы не покинете территорию после первой просьбы владельца - это тоже нарушение. Владелец территории в праве вас убить, если вы не покидаете территорию и мешаете ему как либо.
                 </div>
 
                 <div className="pl-4 border-l-2 border-white/10 hover:border-orange-400 transition-colors">
                   <span className="font-bold text-orange-400 mr-2">3.3.</span>
-                  Запрещена любая коммерческая деятельность кроме игровой.
+                  Возврат вещей со стороны администрации в случае смерти не производится, но могут быть исключения. Последнее слово за администрацией.
                 </div>
 
                 <div className="pl-4 border-l-2 border-white/10 hover:border-orange-400 transition-colors">
                   <span className="font-bold text-orange-400 mr-2">3.4.</span>
+                  Запрещена любая коммерческая деятельность кроме игровой.
+                </div>
+
+                <div className="pl-4 border-l-2 border-white/10 hover:border-orange-400 transition-colors">
+                  <span className="font-bold text-orange-400 mr-2">3.5.</span>
                   <span className="font-bold text-red-400">Запрещено:</span>
                   <ul className="list-disc list-inside mt-2 space-y-1 text-gray-400 ml-4">
                     <li>Гриферство, воровство и читерство в любом виде.</li>
@@ -162,7 +174,7 @@ const Rules = () => {
             <div className="relative bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
               <div className="flex items-center gap-4 mb-6">
                 <Map className="w-8 h-8 text-purple-400" />
-                <h2 className="text-2xl font-bold text-white">4. Правила лор момента</h2>
+                <h2 className="text-2xl font-bold text-white">4. Правила лора и RP</h2>
               </div>
 
               <div className="space-y-6 text-gray-300">
@@ -174,6 +186,16 @@ const Rules = () => {
                 <div className="pl-4 border-l-2 border-white/10 hover:border-purple-400 transition-colors">
                   <span className="font-bold text-purple-400 mr-2">4.2.</span>
                   Администратор является тем же игроком, что и вы. Выкрики по типу: "Админ балуется", "Никнейм устроил лор" и подобие - запрещены. Выкрики по типу "ЛОР" допустимы.
+                </div>
+
+                <div className="pl-4 border-l-2 border-white/10 hover:border-purple-400 transition-colors">
+                  <span className="font-bold text-purple-400 mr-2">4.3.</span>
+                  Никто не обязан участвовать в вашем RP и интересоваться им, вы не можете заставить человека принять участие.
+                </div>
+
+                <div className="pl-4 border-l-2 border-white/10 hover:border-purple-400 transition-colors">
+                  <span className="font-bold text-purple-400 mr-2">4.4.</span>
+                  RP должен не нарушать правила и соблюдать их. Исключение: Игроки проводят какие-то RP-действия по взаимному соглашению. Желательно иметь письменное(или другое) подтверждение взаимности, дабы исключить вопросы со стороны администрации.
                 </div>
               </div>
             </div>
