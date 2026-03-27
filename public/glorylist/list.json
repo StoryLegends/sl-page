@@ -70,19 +70,6 @@
             "details": "Стримит будни сервера на своем твич канале."
         },
                 {
-            "name": "Wywernt",
-            "image": "wyvernt.webp",
-            "description": "Снимает ролики.",
-            "links": [
-                {
-                    "name": "YouTube",
-                    "url": "https://www.youtube.com/@ImWyvernt"
-                }
-            ],
-            "Discrod": "wywernt",
-            "details": "Делает ролики по своим похождениям на нашем сервере."
-        },
-                {
             "name": "SenzilBro",
             "image": "senzil.webp",
             "description": "Стример.",
