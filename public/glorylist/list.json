@@ -70,6 +70,19 @@
             "details": "Стримит будни сервера на своем твич канале."
         },
                 {
+            "name": "MONNO_SMOKE",
+            "image": "monno_smoke.webp",
+            "description": "Твич стример.",
+            "links": [
+                {
+                    "name": "Twitch",
+                    "url": "https://www.twitch.tv/mono_smoke"
+                }
+            ],
+            "Discrod": "frokiiling",
+            "details": "Стримит на твиче свои будни в играх и на сервере."
+        },
+                {
             "name": "SenzilBro",
             "image": "senzil.webp",
             "description": "Стример.",
