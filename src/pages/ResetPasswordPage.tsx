@@ -35,8 +35,14 @@ const ResetPasswordPage = () => {
             return;
         }
 
-        if (passwords.newPassword.length < 6) {
-            setError('Пароль должен быть не менее 6 символов');
+        if (passwords.newPassword.length < 8) {
+            setError('Пароль должен быть не менее 8 символов');
+            return;
+        }
+
+        const passwordRegex = /^(?=.*[0-9])(?=.*[\p{Ll}])(?=.*[\p{Lu}])(?=.*[\p{P}\p{S}]).*$/u;
+        if (!passwordRegex.test(passwords.newPassword)) {
+            setError('Пароль должен содержать как минимум одну цифру, одну строчную, одну заглавную букву и один специальный символ');
             return;
         }
 
@@ -116,7 +122,7 @@ const ResetPasswordPage = () => {
                                             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-story-gold/50 focus:bg-white/10 transition-colors text-white placeholder-gray-500 pr-10"
                                             placeholder="••••••••"
                                             required
-                                            minLength={6}
+                                            minLength={8}
                                             disabled={!token}
                                             autoComplete="new-password"
                                         />
@@ -144,7 +150,7 @@ const ResetPasswordPage = () => {
                                             className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-story-gold/50 focus:bg-white/10 transition-colors text-white placeholder-gray-500 pr-10"
                                             placeholder="••••••••"
                                             required
-                                            minLength={6}
+                                            minLength={8}
                                             disabled={!token}
                                             autoComplete="new-password"
                                         />

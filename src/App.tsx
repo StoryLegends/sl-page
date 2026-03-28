@@ -30,6 +30,7 @@ import ProfilePage from './pages/ProfilePage';
 import ApplicationPage from './pages/ApplicationPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import GuestRoute from './components/GuestRoute';
 import DiscordCallbackPage from './pages/DiscordCallbackPage';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -57,8 +58,16 @@ function App() {
               <Route path="/licenses" element={<Licenses />} />
               <Route path="/faq" element={<FAQ />} />
 
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={
+                <GuestRoute>
+                  <RegisterPage />
+                </GuestRoute>
+              } />
+              <Route path="/login" element={
+                <GuestRoute>
+                  <LoginPage />
+                </GuestRoute>
+              } />
               <Route path="/verify-email" element={<EmailVerificationPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
