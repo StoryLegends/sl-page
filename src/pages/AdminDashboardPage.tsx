@@ -920,7 +920,7 @@ const AdminDashboardPage = () => {
                                                         <td className="px-3 py-3 text-center">
                                                             <div className={`w-2 h-2 rounded-full mx-auto ${u.totpEnabled ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-gray-700'}`} />
                                                         </td>
-                                                        <td className="px-3 py-3">
+                                                        <td className="px-3 py-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleTogglePlayer(u.id, !!u.isPlayer); }}>
                                                             {u.banned ? (
                                                                 <div className="bg-red-500/10 border border-red-500/20 px-2 py-1 rounded text-red-400 font-bold text-[10px] text-center">BANNED</div>
                                                             ) : u.isPlayer ? (
@@ -960,7 +960,7 @@ const AdminDashboardPage = () => {
                                                                             {isAdmin && (
                                                                                 <>
                                                                                     <div className="h-px bg-white/5 my-1" />
-                                                                                    <button onClick={async (e) => { e.stopPropagation(); if (confirm('Удалить навсегда?')) { try { await adminApi.deleteUser(u.id); refetchCurrentTab(); } catch (err) { console.error(err); } } }} className="w-full text-left px-4 py-2 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-red-600"><Trash2 className="w-4 h-4" /> Удалить</button>
+                                                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id); }} className="w-full text-left px-4 py-2 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-red-600"><Trash2 className="w-4 h-4" /> Удалить</button>
                                                                                 </>
                                                                             )}
                                                                         </>
@@ -1132,7 +1132,7 @@ const AdminDashboardPage = () => {
                                                                 {isAdmin && (
                                                                     <>
                                                                         <div className="h-px bg-white/5 mx-2 my-1" />
-                                                                        <button onClick={async (e) => { e.stopPropagation(); if (confirm('Удалить навсегда?')) { try { await adminApi.deleteUser(u.id); refetchCurrentTab(); } catch (err) { console.error(err); } } }} className="w-full text-left px-4 py-3 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-red-600 group/del">
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id); }} className="w-full text-left px-4 py-3 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-red-600 group/del">
                                                                             <div className="w-7 h-7 bg-red-500/10 rounded-lg flex items-center justify-center group-hover/del:bg-red-500/20 transition-colors shrink-0">
                                                                                 <Trash2 className="w-3.5 h-3.5" />
                                                                             </div>
