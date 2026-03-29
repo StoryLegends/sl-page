@@ -32,7 +32,20 @@ export interface SiteSettings {
     registrationOpen: boolean;
 }
 
+export interface DashboardStats {
+    totalUsers: number;
+    pendingApplications: number;
+    activePlayers: number;
+    bannedUsers: number;
+}
+
 export const adminApi = {
+    // Stats
+    getStats: async (): Promise<DashboardStats> => {
+        const response = await apiClient.get('/api/admin/stats');
+        return response.data;
+    },
+
     // Users
     resetSeason: async (totpCode?: string): Promise<void> => {
         await apiClient.post('/api/admin/reset-season', { totpCode });

@@ -20,6 +20,7 @@ const AdminDashboardPage = () => {
     const [allBadges, setAllBadges] = useState<any[]>([]);
     const [siteSettings, setSiteSettings] = useState<any>(null);
     const [pendingAppsCount, setPendingAppsCount] = useState<number | null>(null);
+    const [allUsersStats, setAllUsersStats] = useState<{ active: number, banned: number, total: number } | null>(null);
 
     // Filter states
     const [appStatusFilter, setAppStatusFilter] = useState<string>('PENDING');
@@ -422,6 +423,26 @@ const AdminDashboardPage = () => {
         }
     };
 
+    const fetchAllUsersForStats = async () => {
+        try {
+            // Using existing public endpoint to get all players/users for counts
+            const allUsers = await adminApi.getAllUsers(0, 10000); // Fetch a large enough sample or use public getAll if appropriate
+            const content = allUsers.content;
+            
+            const stats = {
+                total: allUsers.totalElements,
+                active: content.filter(u => u.isPlayer).length,
+                banned: content.filter(u => u.banned).length
+            };
+            setAllUsersStats(stats);
+        } catch (err) {
+            console.error('Failed to fetch users for stats:', err);
+        }
+    };
+
+        }
+    };
+
     const fetchPendingAppsCount = async () => {
         try {
             const res = await applicationsApi.getAll('PENDING', 0, 1);
@@ -432,6 +453,7 @@ const AdminDashboardPage = () => {
     };
 
     const refetchCurrentTab = () => {
+        fetchAllUsersForStats();
         fetchPendingAppsCount();
         if (activeTab === 'users') fetchUsers(usersPage);
         else if (activeTab === 'applications') fetchApplications(appsPage);
@@ -456,6 +478,7 @@ const AdminDashboardPage = () => {
             navigate('/');
         }
         if (user && (isAdmin || isModerator)) {
+            fetchAllUsersForStats();
             fetchPendingAppsCount();
             if (activeTab === 'users') {
                 fetchUsers(usersPage);
@@ -723,10 +746,10 @@ const AdminDashboardPage = () => {
     });
 
     const stats = {
-        totalUsers: totalUsersElements,
-        pendingApps: pendingAppsCount !== null ? pendingAppsCount : applications.filter(a => a.status === 'PENDING' || !a.status).length,
-        activeUsers: users.filter(u => u.isPlayer).length,
-        bannedUsers: users.filter(u => u.banned).length
+        totalUsers: allUsersStats?.total || totalUsersElements,
+        pendingApps: pendingAppsCount !== null ? pendingAppsCount : 0,
+        activeUsers: allUsersStats?.active ?? users.filter(u => u.isPlayer).length,
+        bannedUsers: allUsersStats?.banned ?? users.filter(u => u.banned).length
     };
 
     return (
