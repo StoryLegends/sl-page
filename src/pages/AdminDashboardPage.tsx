@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { adminApi, applicationsApi, type User, type Application } from '../api';
 import { useNavigate } from 'react-router-dom';
@@ -153,41 +153,22 @@ const AdminDashboardPage = () => {
                 .split('')
                 .map(char => 127397 + char.charCodeAt(0));
             return String.fromCodePoint(...codePoints);
-        }
+        };
 
         useEffect(() => {
-            if (!rawIpInput || rawIpInput === '—') {
-                setGeo(null);
-                return;
-            }
+            if (!rawIpInput || rawIpInput === '—') return;
 
-            const parts = rawIpInput.split(',');
-            if (parts.length === 3) {
-                const [cc, city, ip] = parts;
-                setGeo({
-                    city,
-                    country_name: cc,
-                    flag: getFlagEmoji(cc),
-                    ip: ip
-                });
-                return;
-            }
+            const ip = rawIpInput.includes(',') ? rawIpInput.split(',')[0].trim() : rawIpInput;
 
-            const ip = rawIpInput;
-            if (ip === '0:0:0:0:0:0:0:1' || ip === '127.0.0.1') {
-                setGeo({ ip, city: 'Localhost', country_name: 'Local', flag: '💻' });
-                return;
-            };
-
-            setLoading(true)
-            fetch(`https://ipwho.is/${ip}`)
+            setLoading(true);
+            fetch(`https://ipapi.co/${ip}/json/`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
+                    if (data && !data.error) {
                         setGeo({
                             city: data.city,
                             country_name: data.country_name,
-                            flag: data.flag.emoji,
+                            flag: data.country_code ? getFlagEmoji(data.country_code) : undefined,
                             ip: ip
                         });
                     } else {
@@ -320,6 +301,29 @@ const AdminDashboardPage = () => {
         }
     };
 
+    const handleTogglePlayer = async (id: number, currentStatus: boolean) => {
+        try {
+            await adminApi.updateUser(id, { isPlayer: !currentStatus });
+            refetchCurrentTab();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to update player status');
+        }
+    };
+
+    const handleDeleteUser = async (id: number) => {
+        if (!confirm('Вы уверены, что хотите УДАЛИТЬ этого пользователя? Это действие необратимо!')) return;
+        try {
+            await adminApi.deleteUser(id);
+            alert('Пользователь удален');
+            setOpenMenuUserId(null);
+            refetchCurrentTab();
+        } catch (err) {
+            console.error(err);
+            alert('Failed to delete user');
+        }
+    };
+
     const openEditModal = async (user: User) => {
         try {
             const fullUser = await adminApi.getUser(user.id);
@@ -437,9 +441,6 @@ const AdminDashboardPage = () => {
             setAllUsersStats(stats);
         } catch (err) {
             console.error('Failed to fetch users for stats:', err);
-        }
-    };
-
         }
     };
 

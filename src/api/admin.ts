@@ -40,11 +40,7 @@ export interface DashboardStats {
 }
 
 export const adminApi = {
-    // Stats
-    getStats: async (): Promise<DashboardStats> => {
-        const response = await apiClient.get('/api/admin/stats');
-        return response.data;
-    },
+    // (Removed getStats because backend changes were reverted)
 
     // Users
     resetSeason: async (totpCode?: string): Promise<void> => {
