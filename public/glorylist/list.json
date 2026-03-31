@@ -49,8 +49,7 @@
             "name": "datapeice",
             "image": "datapeice.webp",
             "description": "Java, Poland, Mimi lover<3.",
-            "links": [
-            ],
+            "links": [],
             "Discrod": "datapeice",
             "details": "Принёс на сервер модовую революцию! Без него сервер бы не имел прекрасные механики и выглядил бы иначе. Мотиватор Владельцу! И кто нибудь, найдите ему уже Польскую альтушку!"
         }
@@ -69,7 +68,7 @@
             "Discrod": "fpv.fixalex555",
             "details": "Стримит будни сервера на своем твич канале."
         },
-                {
+        {
             "name": "MONNO_SMOKE",
             "image": "monno_smoke.webp",
             "description": "Твич стример.",
@@ -82,10 +81,10 @@
             "Discrod": "frokiiling",
             "details": "Стримит на твиче свои будни в играх и на сервере."
         },
-                {
+        {
             "name": "SenzilBro",
             "image": "senzil.webp",
-            "description": "Стример.",
+            "description": "Контентмейкер.",
             "links": [
                 {
                     "name": "YouTube",
@@ -93,12 +92,28 @@
                 },
                 {
                     "name": "Twitch",
-                    "url": "https://www.twitch.tv/senzil00"
+                    "url": "https://www.twitch.tv/senzil8"
                 }
             ],
             "Discrod": "minion_stuart67_41820",
-            "details": "Время от времени стримит свои будни на сервере на разных платформах."
+            "details": "Время от времени стримит свои будни на сервере на разных платформах, и делает ролики по серверу."
+        },
+        {
+            "name": "_MrZippy_",
+            "image": "mrzippy.webp",
+            "description": "Контентмейкер.",
+            "links": [
+                {
+                    "name": "Twitch",
+                    "url": "https://www.twitch.tv/0mrzippy"
+                },
+                {
+                    "name": "YouTube",
+                    "url": "https://www.youtube.com/@mrzippy_game"
+                }
+            ],
+            "Discrod": "mrzippy4",
+            "details": "Делает ролики по серверу, а так-же стримит будни на твиче"
         }
     ]
-
 }
