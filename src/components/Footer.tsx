@@ -40,6 +40,9 @@ const Footer: React.FC = () => {
                 <a href="/user-agreement" className="hover:text-gray-400 transition-colors">Пользовательское соглашение</a>
                 <a href="/licenses" className="hover:text-gray-400 transition-colors">Лицензии (Mods)</a>
                 <a href="/faq" className="hover:text-gray-400 transition-colors">FAQ / ЧЗВ</a>
+                <a href="/brandkit" className="hover:text-story-gold font-medium transition-colors border-l-2 border-story-gold pl-2 my-1 flex items-center gap-1 group">
+                  <span className="group-hover:scale-110 transition-transform">Дизайн</span>
+                </a>
               </div>
             </div>
 

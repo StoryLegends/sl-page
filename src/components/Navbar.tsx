@@ -66,6 +66,7 @@ const Navbar: React.FC = () => {
     { name: 'Правила', href: '/rules' },
     { name: 'FAQ', href: '/faq' },
     { name: 'История', href: '/history' },
+    { name: 'Дизайн', href: '/brandkit' },
   ];
 
   navLinks.push({ name: 'Игроки', href: '/players' });

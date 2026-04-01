@@ -13,6 +13,7 @@ import Rules from './pages/Rules';
 import UserAgreement from './pages/UserAgreement';
 import Licenses from './pages/Licenses';
 import FAQ from './pages/FAQ';
+import BrandKit from './pages/BrandKit';
 import NotFound from './pages/NotFound';
 
 const History = lazy(() => import('./pages/History'));
@@ -57,6 +58,7 @@ function App() {
               <Route path="/user-agreement" element={<UserAgreement />} />
               <Route path="/licenses" element={<Licenses />} />
               <Route path="/faq" element={<FAQ />} />
+              <Route path="/brandkit" element={<BrandKit />} />
 
               <Route path="/register" element={
                 <GuestRoute>
