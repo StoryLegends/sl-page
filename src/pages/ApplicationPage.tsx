@@ -3,10 +3,19 @@ import { applicationsApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
-import { ScrollText, Send, Clock, CheckCircle, XCircle, Mail, ShieldCheck, AlertCircle } from 'lucide-react';
+import { ScrollText, Send, Clock, CheckCircle, XCircle, Mail, ShieldCheck, AlertCircle, Youtube, Twitch, Users, Music, MessageSquare } from 'lucide-react';
 import { useGoogleReCaptcha } from 'react19-google-recaptcha-v3';
 import { useNotification } from '../context/NotificationContext';
 import { useNavigate } from 'react-router-dom';
+
+
+const sourceOptions = [
+    { id: 'YouTube', label: 'YouTube', icon: Youtube, placeholder: 'Ссылка на канал или видео' },
+    { id: 'Twitch', label: 'Twitch', icon: Twitch, placeholder: 'Никнейм или ссылка' },
+    { id: 'TikTok', label: 'TikTok', icon: Music, placeholder: 'Никнейм или ссылка' },
+    { id: 'Friend', label: 'От друга', icon: Users, placeholder: 'Никнейм друга' },
+    { id: 'Other', label: 'Другое', icon: MessageSquare, placeholder: 'Расскажите подробнее...' }
+];
 
 const ApplicationPage = () => {
     const { user, loading: authLoading, refreshUser } = useAuth();
@@ -35,6 +44,18 @@ const ApplicationPage = () => {
         additionalInfo: '',
         selfRating: 5
     });
+
+    const [sourceCategory, setSourceCategory] = useState<string>('');
+    const [sourceDetail, setSourceDetail] = useState<string>('');
+
+    useEffect(() => {
+        if (!sourceCategory) {
+            setFormData(prev => ({ ...prev, source: '' }));
+            return;
+        }
+        const finalSource = (sourceCategory === 'Other') ? sourceDetail : (sourceDetail ? `${sourceCategory}: ${sourceDetail}` : sourceCategory);
+        setFormData(prev => ({ ...prev, source: finalSource }));
+    }, [sourceCategory, sourceDetail]);
 
     const [contentLinks, setContentLinks] = useState<string[]>(['']);
 
@@ -152,6 +173,8 @@ const ApplicationPage = () => {
                 selfRating: 5
             });
             setContentLinks(['']);
+            setSourceCategory('');
+            setSourceDetail('');
 
             fetchMyApplications();
             showNotification('Заявка успешно отправлена!', 'success');
@@ -328,16 +351,47 @@ const ApplicationPage = () => {
                                             ></textarea>
                                         </div>
 
-                                        <div>
+                                        <div className="space-y-4">
                                             <label className="block text-sm font-medium mb-1 text-gray-300">Откуда узнали о проекте?</label>
-                                            <input
-                                                type="text"
-                                                value={formData.source}
-                                                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-story-gold/50 focus:bg-white/10 transition-colors text-white"
-                                                required
-                                                maxLength={200}
-                                            />
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                                {sourceOptions.map(opt => (
+                                                    <button
+                                                        key={opt.id}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (sourceCategory === opt.id) {
+                                                                setSourceCategory('');
+                                                                setSourceDetail('');
+                                                            } else {
+                                                                setSourceCategory(opt.id);
+                                                                setSourceDetail('');
+                                                            }
+                                                        }}
+                                                        className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border transition-all text-xs font-medium ${
+                                                            sourceCategory === opt.id 
+                                                            ? 'bg-story-gold/20 border-story-gold text-story-gold shadow-lg shadow-story-gold/10' 
+                                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:border-white/20'
+                                                        }`}
+                                                    >
+                                                        <opt.icon className="w-4 h-4" />
+                                                        {opt.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            
+                                            {sourceCategory && (
+                                                <div className="animate-fadeIn">
+                                                    <input
+                                                        type="text"
+                                                        placeholder={sourceOptions.find(o => o.id === sourceCategory)?.placeholder}
+                                                        value={sourceDetail}
+                                                        onChange={(e) => setSourceDetail(e.target.value)}
+                                                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus:outline-none focus:border-story-gold/50 focus:bg-white/10 transition-colors text-white"
+                                                        required
+                                                        maxLength={200}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div>
@@ -438,6 +492,7 @@ const ApplicationPage = () => {
                                             disabled={
                                                 isSubmitting ||
                                                 formData.additionalInfo.length < 200 ||
+                                                !formData.source ||
                                                 (formData.makeContent && contentLinks.some(l => l.trim() !== '' && !isValidUrl(l))) ||
                                                 (formData.makeContent && !contentLinks.some(l => l.trim() !== ''))
                                             }

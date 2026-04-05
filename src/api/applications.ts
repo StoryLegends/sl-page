@@ -43,9 +43,10 @@ export const applicationsApi = {
         return response.data;
     },
 
-    getAll: async (status?: string, page = 0, size = 50): Promise<{ content: Application[], totalElements: number, totalPages: number }> => {
+    getAll: async (status?: string, page = 0, size = 50, query?: string): Promise<{ content: Application[], totalElements: number, totalPages: number }> => {
         const params: any = { page, size };
         if (status) params.status = status;
+        if (query) params.query = query;
         const response = await apiClient.get('/api/admin/applications', { params });
         return response.data;
     },

@@ -143,7 +143,7 @@ const AdminDashboardPage = () => {
 
     // IP Geo Information Helper
     const IPGeoInfo = ({ ip: rawIpInput, colorClasses }: { ip?: string, colorClasses: string }) => {
-        const [geo, setGeo] = useState<{ city?: string; country_name?: string; flag?: string; ip?: string } | null>(null);
+        const [geo, setGeo] = useState<{ city?: string; country_name?: string; country_code?: string; flag?: string; ip?: string } | null>(null);
         const [loading, setLoading] = useState(false);
 
         const getFlagEmoji = (countryCode: string) => {
@@ -155,19 +155,55 @@ const AdminDashboardPage = () => {
             return String.fromCodePoint(...codePoints);
         };
 
+        // Check if a string looks like a valid IPv4 or IPv6 address
+        const isValidIp = (s: string) => /^[\d.:a-fA-F]+$/.test(s) && s.length > 3;
+
         useEffect(() => {
             if (!rawIpInput || rawIpInput === '—') return;
 
-            const ip = rawIpInput.includes(',') ? rawIpInput.split(',')[0].trim() : rawIpInput;
+            // Handle new CC,City,IP format from backend
+            if (rawIpInput.includes(',')) {
+                const parts = rawIpInput.split(',').map(s => s.trim());
+                if (parts.length >= 3) {
+                    setGeo({
+                        country_code: parts[0],
+                        city: parts[1],
+                        ip: parts[2],
+                        flag: getFlagEmoji(parts[0])
+                    });
+                    setLoading(false);
+                    return;
+                }
+                // Handle legacy CC,IP format
+                if (parts.length === 2 && !isValidIp(parts[0])) {
+                    setGeo({
+                        country_code: parts[0],
+                        ip: parts[1],
+                        flag: getFlagEmoji(parts[0])
+                    });
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            const ip = rawIpInput.trim();
+
+            // If stored value is just a 2-letter country code (e.g. "RU")
+            if (!isValidIp(ip) && ip.length === 2) {
+                const flag = getFlagEmoji(ip);
+                setGeo({ country_code: ip, flag, ip: '' });
+                return;
+            }
 
             setLoading(true);
-            fetch(`https://ipapi.co/${ip}/json/`)
+            fetch(`https://ipwho.is/${ip}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data && !data.error) {
+                    if (data && data.success !== false) {
                         setGeo({
                             city: data.city,
-                            country_name: data.country_name,
+                            country_name: data.country,
+                            country_code: data.country_code,
                             flag: data.country_code ? getFlagEmoji(data.country_code) : undefined,
                             ip: ip
                         });
@@ -185,11 +221,18 @@ const AdminDashboardPage = () => {
 
         return (
             <div className="flex items-center gap-2 min-w-0">
-                <code className={`${colorClasses} text-base md:text-lg font-bold font-mono tracking-tight shrink-0`}>
-                    {displayIp}
-                </code>
+                {geo?.ip && (
+                    <code className={`${colorClasses} text-base md:text-lg font-bold font-mono tracking-tight shrink-0`}>
+                        {displayIp}
+                    </code>
+                )}
+                {!geo?.ip && !loading && (
+                    <code className={`${colorClasses} text-base md:text-lg font-bold font-mono tracking-tight shrink-0`}>
+                        {rawIpInput}
+                    </code>
+                )}
                 {geo?.flag && (
-                    <span className="text-base shrink-0" title={`${geo.city}, ${geo.country_name}`}>
+                    <span className="text-base shrink-0" title={geo.city ? `${geo.city}, ${geo.country_name}` : geo.country_name}>
                         {geo.flag}
                     </span>
                 )}
@@ -386,7 +429,7 @@ const AdminDashboardPage = () => {
     const fetchUsers = async (page: number) => {
         try {
             setLoading(true);
-            const res = await adminApi.getAllUsers(page, 50);
+            const res = await adminApi.getAllUsers(page, 50, userSearch, userRoleFilter);
             setUsers(res.content);
             setTotalUsersPages(res.totalPages);
             setTotalUsersElements(res.totalElements);
@@ -401,7 +444,8 @@ const AdminDashboardPage = () => {
     const fetchApplications = async (page: number) => {
         try {
             setLoading(true);
-            const res = await applicationsApi.getAll(undefined, page, 50);
+            const status = appStatusFilter === '' ? undefined : appStatusFilter;
+            const res = await applicationsApi.getAll(status, page, 50, appSearch);
             setApplications(res.content);
             setTotalAppsPages(res.totalPages);
             setAppsPage(page);
@@ -500,11 +544,32 @@ const AdminDashboardPage = () => {
     useEffect(() => {
         if (activeTab === 'logs') {
             const timer = setTimeout(() => {
+                setLogsPage(0);
                 fetchLogs(0);
             }, 500);
             return () => clearTimeout(timer);
         }
     }, [logsSearch]);
+
+    useEffect(() => {
+        if (user && (isAdmin || isModerator)) {
+            const timer = setTimeout(() => {
+                setAppsPage(0);
+                fetchApplications(0);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [appSearch, appStatusFilter]);
+
+    // Reset users page to 0 and re-fetch whenever the search query or role filter changes (with debounce)
+    useEffect(() => {
+        if (!user || (!isAdmin && !isModerator)) return;
+        const timer = setTimeout(() => {
+            setUsersPage(0);
+            fetchUsers(0);
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [userSearch, userRoleFilter]);
 
     const handleBan = async () => {
         if (!banReason) return alert('Введите причину бана');
@@ -811,11 +876,7 @@ const AdminDashboardPage = () => {
                                 ))}
                             </div>
 
-                            {loading ? (
-                                <div className="flex justify-center items-center flex-grow">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-story-gold"></div>
-                                </div>
-                            ) : activeTab === 'users' ? (
+                            {activeTab === 'users' ? (
                                 <div className="space-y-4 flex-grow flex flex-col">
                                     {/* Actions */}
                                     <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
@@ -854,340 +915,348 @@ const AdminDashboardPage = () => {
                                         </button>
                                     </div>
 
-                                    {/* Desktop Table */}
-                                    <div className="hidden md:block overflow-x-auto flex-grow pb-20 -mb-20">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead>
-                                                <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
-                                                    <th className="px-3 py-3">Пользователь</th>
-                                                    <th className="px-3 py-3">Email</th>
-                                                    <th className="px-3 py-3">Никнеймы</th>
-                                                    <th className="px-3 py-3">Значки</th>
-                                                    <th className="px-3 py-3">Роль</th>
-                                                    <th className="px-3 py-3 text-center">2FA</th>
-                                                    <th className="px-3 py-3">Статус</th>
-                                                    <th className="px-3 py-3 text-right">Действия</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="text-gray-300">
-                                                {filteredUsers.map((u, index) => (
-                                                    <tr key={u.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
-                                                        <td className="px-3 py-3">
-                                                            <div className="flex items-center gap-3">
-                                                                <UserAvatar
-                                                                    avatarUrl={u.avatarUrl}
-                                                                    username={u.username}
-                                                                    size="sm"
-                                                                />
-                                                                <div>
-                                                                    <div className="text-sm font-bold text-white leading-tight">{u.username}</div>
-                                                                    <div className="text-[10px] text-gray-500 font-mono tracking-tight">#{u.id}</div>
+                                    {loading ? (
+                                        <div className="flex-grow flex items-center justify-center py-20">
+                                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-story-gold"></div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {/* Desktop Table */}
+                                            <div className="hidden md:block overflow-x-auto flex-grow pb-20 -mb-20">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
+                                                            <th className="px-3 py-3">Пользователь</th>
+                                                            <th className="px-3 py-3">Email</th>
+                                                            <th className="px-3 py-3">Никнеймы</th>
+                                                            <th className="px-3 py-3">Значки</th>
+                                                            <th className="px-3 py-3">Роль</th>
+                                                            <th className="px-3 py-3 text-center">2FA</th>
+                                                            <th className="px-3 py-3">Статус</th>
+                                                            <th className="px-3 py-3 text-right">Действия</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="text-gray-300">
+                                                        {filteredUsers.map((u, index) => (
+                                                            <tr key={u.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                                                                <td className="px-3 py-3">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <UserAvatar
+                                                                            avatarUrl={u.avatarUrl}
+                                                                            username={u.username}
+                                                                            size="sm"
+                                                                        />
+                                                                        <div>
+                                                                            <div className="text-sm font-bold text-white leading-tight">{u.username}</div>
+                                                                            <div className="text-[10px] text-gray-500 font-mono tracking-tight">#{u.id}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-3 py-3">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-xs">{u.email}</span>
+                                                                        <span className={`text-[10px] font-bold ${u.emailVerified ? 'text-green-500/60' : 'text-red-500/60'} uppercase mt-0.5`}>
+                                                                            {u.emailVerified ? '✓ ПОДТВЕРЖДЕНО' : '✗ НЕ ПОДТВЕРЖДЕНО'}
+                                                                        </span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-3 py-3 text-xs">
+                                                                    <div className="space-y-0.5">
+                                                                        <div className="flex items-center gap-1.5"><span className="text-[10px] text-gray-600 font-bold uppercase w-5 text-right">MC:</span> <span className="text-gray-400">{u.minecraftNickname || '-'}</span></div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="text-[10px] text-gray-600 font-bold uppercase w-5 text-right">DS:</span>
+                                                                            <span className="text-gray-400">{u.discordNickname || '-'}</span>
+                                                                            <span className={`text-[10px] transition-colors ${u.inDiscordServer ? 'text-indigo-400' : 'text-gray-600 grayscale opacity-50'}`} title={u.inDiscordServer ? "На сервере" : "Не на сервере"}>🌐</span>
+                                                                            <span title={u.discordVerified ? "Верифицирован" : "Не верифицирован"} className="flex items-center"><ShieldCheck className={`w-3 h-3 transition-colors ${u.discordVerified ? 'text-indigo-500' : 'text-gray-600 opacity-50'}`} /></span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-3 py-3">
+                                                                    <div className="flex -space-x-1 transition-all">
+                                                                        {u.isBoosted && <BoosterBadge />}
+                                                                        {u.badges && u.badges.map((badge: any) => (
+                                                                            <BadgeWithTooltip key={badge.id} badge={badge} />
+                                                                        ))}
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-3 py-3">
+                                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${u.role === 'ROLE_ADMIN' ? 'bg-red-500/20 text-red-400 border border-red-500/10' : u.role === 'ROLE_MODERATOR' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/10' : 'bg-blue-500/20 text-blue-400 border border-blue-500/10'}`}>
+                                                                        {u.role.replace('ROLE_', '')}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-3 py-3 text-center">
+                                                                    <div className={`w-2 h-2 rounded-full mx-auto ${u.totpEnabled ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-gray-700'}`} />
+                                                                </td>
+                                                                <td className="px-3 py-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleTogglePlayer(u.id, !!u.isPlayer); }}>
+                                                                    {u.banned ? (
+                                                                        <div className="bg-red-500/10 border border-red-500/20 px-2 py-1 rounded text-red-400 font-bold text-[10px] text-center">BANNED</div>
+                                                                    ) : u.isPlayer ? (
+                                                                        <div className="bg-green-500/10 border border-green-500/20 px-2 py-1 rounded text-green-400 font-bold text-[10px] text-center">PLAYER</div>
+                                                                    ) : (
+                                                                        <div className="text-gray-600 text-[10px] font-medium text-center opacity-50">REG</div>
+                                                                    )}
+                                                                </td>
+                                                                <td className="px-3 py-3 text-right relative">
+                                                                    <button onClick={() => setOpenMenuUserId(openMenuUserId === u.id ? null : u.id)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors group-hover:text-white">
+                                                                        <MoreVertical className="w-5 h-5 text-gray-500" />
+                                                                    </button>
+
+                                                                    {openMenuUserId === u.id && (
+                                                                        <div ref={desktopMenuRef} className={`absolute right-3 ${index > filteredUsers.length - 5 && filteredUsers.length > 5 ? 'bottom-full mb-2' : 'top-12'} z-50 w-56 bg-[#0c0c0c] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 max-h-[350px] overflow-y-auto custom-scrollbar`} onClick={e => e.stopPropagation()}>
+                                                                            {(!isModerator || (u.role !== 'ROLE_ADMIN' && u.role !== 'ROLE_MODERATOR')) && (
+                                                                                <>
+                                                                                    {isAdmin && (
+                                                                                        <button onClick={(e) => { e.stopPropagation(); openEditModal(u); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
+                                                                                            <Edit className="w-4 h-4 text-story-gold" /> Редактировать
+                                                                                        </button>
+                                                                                    )}
+                                                                                    <button onClick={(e) => { e.stopPropagation(); handleResetPassword(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-yellow-400">
+                                                                                        <Key className="w-4 h-4" /> Сбросить пароль
+                                                                                    </button>
+                                                                                    <button onClick={(e) => { e.stopPropagation(); handleUnlinkDiscord(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-indigo-400">
+                                                                                        <div className="flex items-center justify-center w-4 h-4">
+                                                                                            <span className="text-[10px] uppercase font-black tracking-widest leading-none border border-indigo-500/30 rounded px-0.5">DS</span>
+                                                                                        </div>
+                                                                                        Отвязать Discord
+                                                                                    </button>
+                                                                                    {u.banned ? (
+                                                                                        <button onClick={(e) => { e.stopPropagation(); handleUnban(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-green-400"><Shield className="w-4 h-4" /> Разбанить</button>
+                                                                                    ) : (
+                                                                                        <button onClick={(e) => { e.stopPropagation(); openBanModal(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-red-400"><Ban className="w-4 h-4" /> Забанить</button>
+                                                                                    )}
+                                                                                    {isAdmin && (
+                                                                                        <>
+                                                                                            <div className="h-px bg-white/5 my-1" />
+                                                                                            <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id); }} className="w-full text-left px-4 py-2 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-red-600"><Trash2 className="w-4 h-4" /> Удалить</button>
+                                                                                        </>
+                                                                                    )}
+                                                                                </>
+                                                                            )}
+                                                                            <button onClick={(e) => { e.stopPropagation(); openSecurityDossier(u); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
+                                                                                <Shield className="w-4 h-4 text-blue-400" /> Security Dossier
+                                                                            </button>
+                                                                            <button onClick={(e) => { e.stopPropagation(); openWarningsModal(u); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
+                                                                                <AlertCircle className="w-4 h-4 text-orange-400" /> Предупреждения
+                                                                            </button>
+
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {/* Mobile List */}
+                                            <div className="md:hidden space-y-3 flex-grow overflow-y-auto pr-1">
+                                                {filteredUsers.map(u => (
+                                                    <div key={u.id} className="bg-[#0f0f0f]/80 border border-white/[0.04] rounded-2xl p-4 space-y-4 relative group hover:border-white/10 transition-all duration-300 shadow-xl overflow-visible">
+                                                        {/* Header Section */}
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex items-center gap-3.5">
+                                                                <div className="relative">
+                                                                    <UserAvatar
+                                                                        avatarUrl={u.avatarUrl}
+                                                                        username={u.username}
+                                                                        size="lg"
+                                                                        rounded="rounded-2xl"
+                                                                    />
+                                                                </div>
+                                                                <div className="flex-grow min-w-0">
+                                                                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                                                        <h3 className="font-bold text-white text-base leading-none tracking-tight truncate">{u.username}</h3>
+                                                                        <span className={`px-2 py-0.5 rounded-[6px] text-[8px] font-black uppercase tracking-widestAlpha border shrink-0 ${u.role === 'ROLE_ADMIN' ? 'bg-red-500/10 text-red-400 border-red-500/10' : u.role === 'ROLE_MODERATOR' ? 'bg-purple-500/10 text-purple-400 border-purple-500/10' : u.isPlayer ? 'bg-green-500/10 text-green-400 border-green-500/10' : 'bg-gray-500/10 text-gray-500 border-gray-500/10'}`}>
+                                                                            {u.role === 'ROLE_ADMIN' ? 'ADMIN' : u.role === 'ROLE_MODERATOR' ? 'MODERATOR' : u.isPlayer ? 'PLAYER' : 'REG'}
+                                                                        </span>
+                                                                        {u.banned && (
+                                                                            <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-1.5 py-0.5 rounded text-[8px] font-black tracking-widestAlpha uppercase shrink-0">Banned</span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-[10px] text-gray-500 font-mono opacity-50">#{u.id}</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </td>
-                                                        <td className="px-3 py-3">
-                                                            <div className="flex flex-col">
-                                                                <span className="text-xs">{u.email}</span>
-                                                                <span className={`text-[10px] font-bold ${u.emailVerified ? 'text-green-500/60' : 'text-red-500/60'} uppercase mt-0.5`}>
-                                                                    {u.emailVerified ? '✓ ПОДТВЕРЖДЕНО' : '✗ НЕ ПОДТВЕРЖДЕНО'}
-                                                                </span>
+
+                                                            <button
+                                                                onClick={() => setOpenMenuUserId(openMenuUserId === u.id ? null : u.id)}
+                                                                className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${openMenuUserId === u.id ? 'bg-story-gold border-story-gold text-black' : 'bg-white/5 border-white/5 text-gray-400 active:scale-95'}`}
+                                                            >
+                                                                <MoreVertical className="w-5 h-5" />
+                                                            </button>
+                                                        </div>
+
+                                                        {/* Data Section */}
+                                                        <div className="bg-black/40 rounded-xl p-3 border border-white/[0.03] space-y-3">
+                                                            <div className="flex items-center justify-between gap-3">
+                                                                <div className="flex items-center gap-3 min-w-0">
+                                                                    <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
+                                                                        <Mail className="w-4 h-4 text-gray-500" />
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest leading-none mb-1">Email</p>
+                                                                        <p className="text-gray-300 text-xs font-medium truncate leading-none">{u.email}</p>
+                                                                    </div>
+                                                                </div>
+                                                                {u.emailVerified ? (
+                                                                    <div className="flex items-center gap-1.5 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/10">
+                                                                        <CheckCircle2 className="w-3 h-3 text-green-500" />
+                                                                        <span className="text-[8px] font-black text-green-500 uppercase">Verified</span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex items-center gap-1.5 bg-red-500/10 px-2 py-1 rounded-lg border border-red-500/10">
+                                                                        <XCircle className="w-3 h-3 text-red-500" />
+                                                                        <span className="text-[8px] font-black text-red-500 uppercase">Unverified</span>
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-xs">
-                                                            <div className="space-y-0.5">
-                                                                <div className="flex items-center gap-1.5"><span className="text-[10px] text-gray-600 font-bold uppercase w-5 text-right">MC:</span> <span className="text-gray-400">{u.minecraftNickname || '-'}</span></div>
-                                                                <div className="flex items-center gap-1.5">
-                                                                    <span className="text-[10px] text-gray-600 font-bold uppercase w-5 text-right">DS:</span>
-                                                                    <span className="text-gray-400">{u.discordNickname || '-'}</span>
-                                                                    <span className={`text-[10px] transition-colors ${u.inDiscordServer ? 'text-indigo-400' : 'text-gray-600 grayscale opacity-50'}`} title={u.inDiscordServer ? "На сервере" : "Не на сервере"}>🌐</span>
-                                                                    <span title={u.discordVerified ? "Верифицирован" : "Не верифицирован"} className="flex items-center"><ShieldCheck className={`w-3 h-3 transition-colors ${u.discordVerified ? 'text-indigo-500' : 'text-gray-600 opacity-50'}`} /></span>
+
+                                                            <div className="flex items-center justify-between gap-3 border-t border-white/[0.03] pt-3 mt-1">
+                                                                <div className="flex items-center gap-3 w-1/2 min-w-0 pr-2 border-r border-white/[0.03]">
+                                                                    <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
+                                                                        <span className="text-[9px] font-black text-gray-500 uppercase">MC</span>
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-gray-300 text-[11px] font-medium truncate leading-none mt-0.5">{u.minecraftNickname || '-'}</p>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="flex items-center gap-3 w-1/2 min-w-0 pl-1">
+                                                                    <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
+                                                                        <span className="text-[9px] font-black text-gray-500 uppercase">DS</span>
+                                                                    </div>
+                                                                    <div className="min-w-0 flex items-center gap-1.5 mt-0.5">
+                                                                        <p className="text-gray-300 text-[11px] font-medium truncate leading-none">{u.discordNickname || '-'}</p>
+                                                                        {u.discordNickname && (
+                                                                            <>
+                                                                                <span className={`text-[10px] leading-none shrink-0 ${u.inDiscordServer ? 'text-indigo-400' : 'text-gray-600 grayscale opacity-50'}`} title={u.inDiscordServer ? "На сервере" : "Не на сервере"}>🌐</span>
+                                                                                <span title={u.discordVerified ? "Верифицирован" : "Не верифицирован"} className="flex items-center shrink-0">
+                                                                                    <ShieldCheck className={`w-3 h-3 ${u.discordVerified ? 'text-indigo-500' : 'text-gray-600 opacity-50'}`} />
+                                                                                </span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </td>
-                                                        <td className="px-3 py-3">
-                                                            <div className="flex -space-x-1 transition-all">
+
+                                                        </div>
+
+                                                        {/* Badges Section */}
+                                                        {(u.isBoosted || (u.badges && u.badges.length > 0)) && (
+                                                            <div className="flex flex-wrap gap-2 px-0.5 pt-1">
                                                                 {u.isBoosted && <BoosterBadge />}
-                                                                {u.badges && u.badges.map((badge: any) => (
+                                                                {u.badges?.map(badge => (
                                                                     <BadgeWithTooltip key={badge.id} badge={badge} />
                                                                 ))}
                                                             </div>
-                                                        </td>
-                                                        <td className="px-3 py-3">
-                                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${u.role === 'ROLE_ADMIN' ? 'bg-red-500/20 text-red-400 border border-red-500/10' : u.role === 'ROLE_MODERATOR' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/10' : 'bg-blue-500/20 text-blue-400 border border-blue-500/10'}`}>
-                                                                {u.role.replace('ROLE_', '')}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-3 py-3 text-center">
-                                                            <div className={`w-2 h-2 rounded-full mx-auto ${u.totpEnabled ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-gray-700'}`} />
-                                                        </td>
-                                                        <td className="px-3 py-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleTogglePlayer(u.id, !!u.isPlayer); }}>
-                                                            {u.banned ? (
-                                                                <div className="bg-red-500/10 border border-red-500/20 px-2 py-1 rounded text-red-400 font-bold text-[10px] text-center">BANNED</div>
-                                                            ) : u.isPlayer ? (
-                                                                <div className="bg-green-500/10 border border-green-500/20 px-2 py-1 rounded text-green-400 font-bold text-[10px] text-center">PLAYER</div>
-                                                            ) : (
-                                                                <div className="text-gray-600 text-[10px] font-medium text-center opacity-50">REG</div>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-3 py-3 text-right relative">
-                                                            <button onClick={() => setOpenMenuUserId(openMenuUserId === u.id ? null : u.id)} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors group-hover:text-white">
-                                                                <MoreVertical className="w-5 h-5 text-gray-500" />
-                                                            </button>
-
-                                                            {openMenuUserId === u.id && (
-                                                                <div ref={desktopMenuRef} className={`absolute right-3 ${index > filteredUsers.length - 5 && filteredUsers.length > 5 ? 'bottom-full mb-2' : 'top-12'} z-50 w-56 bg-[#0c0c0c] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 max-h-[350px] overflow-y-auto custom-scrollbar`} onClick={e => e.stopPropagation()}>
-                                                                    {(!isModerator || (u.role !== 'ROLE_ADMIN' && u.role !== 'ROLE_MODERATOR')) && (
-                                                                        <>
-                                                                            {isAdmin && (
-                                                                                <button onClick={(e) => { e.stopPropagation(); openEditModal(u); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
-                                                                                    <Edit className="w-4 h-4 text-story-gold" /> Редактировать
-                                                                                </button>
-                                                                            )}
-                                                                            <button onClick={(e) => { e.stopPropagation(); handleResetPassword(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-yellow-400">
-                                                                                <Key className="w-4 h-4" /> Сбросить пароль
-                                                                            </button>
-                                                                            <button onClick={(e) => { e.stopPropagation(); handleUnlinkDiscord(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-indigo-400">
-                                                                                <div className="flex items-center justify-center w-4 h-4">
-                                                                                    <span className="text-[10px] uppercase font-black tracking-widest leading-none border border-indigo-500/30 rounded px-0.5">DS</span>
-                                                                                </div>
-                                                                                Отвязать Discord
-                                                                            </button>
-                                                                            {u.banned ? (
-                                                                                <button onClick={(e) => { e.stopPropagation(); handleUnban(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-green-400"><Shield className="w-4 h-4" /> Разбанить</button>
-                                                                            ) : (
-                                                                                <button onClick={(e) => { e.stopPropagation(); openBanModal(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-red-400"><Ban className="w-4 h-4" /> Забанить</button>
-                                                                            )}
-                                                                            {isAdmin && (
-                                                                                <>
-                                                                                    <div className="h-px bg-white/5 my-1" />
-                                                                                    <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id); }} className="w-full text-left px-4 py-2 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-xs font-bold text-red-600"><Trash2 className="w-4 h-4" /> Удалить</button>
-                                                                                </>
-                                                                            )}
-                                                                        </>
-                                                                    )}
-                                                                    <button onClick={(e) => { e.stopPropagation(); openSecurityDossier(u); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
-                                                                        <Shield className="w-4 h-4 text-blue-400" /> Security Dossier
-                                                                    </button>
-                                                                    <button onClick={(e) => { e.stopPropagation(); openWarningsModal(u); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
-                                                                        <AlertCircle className="w-4 h-4 text-orange-400" /> Предупреждения
-                                                                    </button>
-
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    {/* Mobile List */}
-                                    <div className="md:hidden space-y-3 flex-grow overflow-y-auto pr-1">
-                                        {filteredUsers.map(u => (
-                                            <div key={u.id} className="bg-[#0f0f0f]/80 border border-white/[0.04] rounded-2xl p-4 space-y-4 relative group hover:border-white/10 transition-all duration-300 shadow-xl overflow-visible">
-                                                {/* Header Section */}
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex items-center gap-3.5">
-                                                        <div className="relative">
-                                                            <UserAvatar
-                                                                avatarUrl={u.avatarUrl}
-                                                                username={u.username}
-                                                                size="lg"
-                                                                rounded="rounded-2xl"
-                                                            />
-                                                        </div>
-                                                        <div className="flex-grow min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                                                                <h3 className="font-bold text-white text-base leading-none tracking-tight truncate">{u.username}</h3>
-                                                                <span className={`px-2 py-0.5 rounded-[6px] text-[8px] font-black uppercase tracking-widestAlpha border shrink-0 ${u.role === 'ROLE_ADMIN' ? 'bg-red-500/10 text-red-400 border-red-500/10' : u.role === 'ROLE_MODERATOR' ? 'bg-purple-500/10 text-purple-400 border-purple-500/10' : u.isPlayer ? 'bg-green-500/10 text-green-400 border-green-500/10' : 'bg-gray-500/10 text-gray-500 border-gray-500/10'}`}>
-                                                                    {u.role === 'ROLE_ADMIN' ? 'ADMIN' : u.role === 'ROLE_MODERATOR' ? 'MODERATOR' : u.isPlayer ? 'PLAYER' : 'REG'}
-                                                                </span>
-                                                                {u.banned && (
-                                                                    <span className="bg-red-500/10 text-red-500 border border-red-500/20 px-1.5 py-0.5 rounded text-[8px] font-black tracking-widestAlpha uppercase shrink-0">Banned</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[10px] text-gray-500 font-mono opacity-50">#{u.id}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <button
-                                                        onClick={() => setOpenMenuUserId(openMenuUserId === u.id ? null : u.id)}
-                                                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border ${openMenuUserId === u.id ? 'bg-story-gold border-story-gold text-black' : 'bg-white/5 border-white/5 text-gray-400 active:scale-95'}`}
-                                                    >
-                                                        <MoreVertical className="w-5 h-5" />
-                                                    </button>
-                                                </div>
-
-                                                {/* Data Section */}
-                                                <div className="bg-black/40 rounded-xl p-3 border border-white/[0.03] space-y-3">
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <div className="flex items-center gap-3 min-w-0">
-                                                            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-                                                                <Mail className="w-4 h-4 text-gray-500" />
-                                                            </div>
-                                                            <div className="min-w-0">
-                                                                <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest leading-none mb-1">Email</p>
-                                                                <p className="text-gray-300 text-xs font-medium truncate leading-none">{u.email}</p>
-                                                            </div>
-                                                        </div>
-                                                        {u.emailVerified ? (
-                                                            <div className="flex items-center gap-1.5 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/10">
-                                                                <CheckCircle2 className="w-3 h-3 text-green-500" />
-                                                                <span className="text-[8px] font-black text-green-500 uppercase">Verified</span>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="flex items-center gap-1.5 bg-red-500/10 px-2 py-1 rounded-lg border border-red-500/10">
-                                                                <XCircle className="w-3 h-3 text-red-500" />
-                                                                <span className="text-[8px] font-black text-red-500 uppercase">Unverified</span>
-                                                            </div>
                                                         )}
-                                                    </div>
 
-                                                    <div className="flex items-center justify-between gap-3 border-t border-white/[0.03] pt-3 mt-1">
-                                                        <div className="flex items-center gap-3 w-1/2 min-w-0 pr-2 border-r border-white/[0.03]">
-                                                            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-                                                                <span className="text-[9px] font-black text-gray-500 uppercase">MC</span>
-                                                            </div>
-                                                            <div className="min-w-0">
-                                                                <p className="text-gray-300 text-[11px] font-medium truncate leading-none mt-0.5">{u.minecraftNickname || '-'}</p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div className="flex items-center gap-3 w-1/2 min-w-0 pl-1">
-                                                            <div className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-                                                                <span className="text-[9px] font-black text-gray-500 uppercase">DS</span>
-                                                            </div>
-                                                            <div className="min-w-0 flex items-center gap-1.5 mt-0.5">
-                                                                <p className="text-gray-300 text-[11px] font-medium truncate leading-none">{u.discordNickname || '-'}</p>
-                                                                {u.discordNickname && (
+                                                        {/* Dropdown Menu - Inline for mobile */}
+                                                        {openMenuUserId === u.id && (
+                                                            <div ref={mobileMenuRef} className="mt-3 bg-[#0c0c0c] border border-white/10 rounded-2xl shadow-inner py-1.5 animate-fadeIn" onClick={e => e.stopPropagation()}>
+                                                                <div className="px-4 py-2 border-b border-white/5 mb-1">
+                                                                    <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.2em]">Действия</p>
+                                                                </div>
+                                                                {(!isModerator || (u.role !== 'ROLE_ADMIN' && u.role !== 'ROLE_MODERATOR')) && (
                                                                     <>
-                                                                        <span className={`text-[10px] leading-none shrink-0 ${u.inDiscordServer ? 'text-indigo-400' : 'text-gray-600 grayscale opacity-50'}`} title={u.inDiscordServer ? "На сервере" : "Не на сервере"}>🌐</span>
-                                                                        <span title={u.discordVerified ? "Верифицирован" : "Не верифицирован"} className="flex items-center shrink-0">
-                                                                            <ShieldCheck className={`w-3 h-3 ${u.discordVerified ? 'text-indigo-500' : 'text-gray-600 opacity-50'}`} />
-                                                                        </span>
+                                                                        {isAdmin && (
+                                                                            <button onClick={(e) => { e.stopPropagation(); openEditModal(u); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
+                                                                                <div className="w-7 h-7 bg-story-gold/10 rounded-lg flex items-center justify-center group-hover/item:bg-story-gold/20 transition-colors shrink-0">
+                                                                                    <Edit className="w-3.5 h-3.5 text-story-gold" />
+                                                                                </div>
+                                                                                Редактировать
+                                                                            </button>
+                                                                        )}
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleResetPassword(u.id); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
+                                                                            <div className="w-7 h-7 bg-yellow-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-yellow-500/20 transition-colors shrink-0">
+                                                                                <Key className="w-3.5 h-3.5 text-yellow-400" />
+                                                                            </div>
+                                                                            Сбросить пароль
+                                                                        </button>
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleUnlinkDiscord(u.id); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-indigo-400 group/item">
+                                                                            <div className="w-7 h-7 bg-indigo-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-indigo-500/20 transition-colors shrink-0">
+                                                                                <span className="text-[8px] uppercase font-black tracking-widest leading-none">DS</span>
+                                                                            </div>
+                                                                            Отвязать Discord
+                                                                        </button>
+                                                                        <div className="h-px bg-white/5 mx-2 my-1" />
+                                                                        {u.banned ? (
+                                                                            <button onClick={(e) => { e.stopPropagation(); handleUnban(u.id); }} className="w-full text-left px-4 py-3 hover:bg-green-500/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-green-400">
+                                                                                <div className="w-7 h-7 bg-green-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                                                                    <Shield className="w-3.5 h-3.5" />
+                                                                                </div>
+                                                                                Разбанить
+                                                                            </button>
+                                                                        ) : (
+                                                                            <button onClick={(e) => { e.stopPropagation(); openBanModal(u.id); }} className="w-full text-left px-4 py-3 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-red-500">
+                                                                                <div className="w-7 h-7 bg-red-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                                                                    <Ban className="w-3.5 h-3.5" />
+                                                                                </div>
+                                                                                Забанить
+                                                                            </button>
+                                                                        )}
+                                                                        {isAdmin && (
+                                                                            <>
+                                                                                <div className="h-px bg-white/5 mx-2 my-1" />
+                                                                                <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id); }} className="w-full text-left px-4 py-3 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-red-600 group/del">
+                                                                                    <div className="w-7 h-7 bg-red-500/10 rounded-lg flex items-center justify-center group-hover/del:bg-red-500/20 transition-colors shrink-0">
+                                                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                                                    </div>
+                                                                                    Удалить
+                                                                                </button>
+                                                                            </>
+                                                                        )}
                                                                     </>
                                                                 )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                </div>
-
-                                                {/* Badges Section */}
-                                                {(u.isBoosted || (u.badges && u.badges.length > 0)) && (
-                                                    <div className="flex flex-wrap gap-2 px-0.5 pt-1">
-                                                        {u.isBoosted && <BoosterBadge />}
-                                                        {u.badges?.map(badge => (
-                                                            <BadgeWithTooltip key={badge.id} badge={badge} />
-                                                        ))}
-                                                    </div>
-                                                )}
-
-                                                {/* Dropdown Menu - Inline for mobile */}
-                                                {openMenuUserId === u.id && (
-                                                    <div ref={mobileMenuRef} className="mt-3 bg-[#0c0c0c] border border-white/10 rounded-2xl shadow-inner py-1.5 animate-fadeIn" onClick={e => e.stopPropagation()}>
-                                                        <div className="px-4 py-2 border-b border-white/5 mb-1">
-                                                            <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.2em]">Действия</p>
-                                                        </div>
-                                                        {(!isModerator || (u.role !== 'ROLE_ADMIN' && u.role !== 'ROLE_MODERATOR')) && (
-                                                            <>
-                                                                {isAdmin && (
-                                                                    <button onClick={(e) => { e.stopPropagation(); openEditModal(u); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
-                                                                        <div className="w-7 h-7 bg-story-gold/10 rounded-lg flex items-center justify-center group-hover/item:bg-story-gold/20 transition-colors shrink-0">
-                                                                            <Edit className="w-3.5 h-3.5 text-story-gold" />
-                                                                        </div>
-                                                                        Редактировать
-                                                                    </button>
-                                                                )}
-                                                                <button onClick={(e) => { e.stopPropagation(); handleResetPassword(u.id); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
-                                                                    <div className="w-7 h-7 bg-yellow-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-yellow-500/20 transition-colors shrink-0">
-                                                                        <Key className="w-3.5 h-3.5 text-yellow-400" />
+                                                                <button onClick={(e) => { e.stopPropagation(); openSecurityDossier(u); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
+                                                                    <div className="w-7 h-7 bg-blue-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-blue-500/20 transition-colors shrink-0">
+                                                                        <Shield className="w-3.5 h-3.5 text-blue-400" />
                                                                     </div>
-                                                                    Сбросить пароль
+                                                                    Security Dossier
                                                                 </button>
-                                                                <button onClick={(e) => { e.stopPropagation(); handleUnlinkDiscord(u.id); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-indigo-400 group/item">
-                                                                    <div className="w-7 h-7 bg-indigo-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-indigo-500/20 transition-colors shrink-0">
-                                                                        <span className="text-[8px] uppercase font-black tracking-widest leading-none">DS</span>
+                                                                <button onClick={(e) => { e.stopPropagation(); openWarningsModal(u); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
+                                                                    <div className="w-7 h-7 bg-orange-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-orange-500/20 transition-colors shrink-0">
+                                                                        <AlertCircle className="w-3.5 h-3.5 text-orange-400" />
                                                                     </div>
-                                                                    Отвязать Discord
+                                                                    Предупреждения
                                                                 </button>
                                                                 <div className="h-px bg-white/5 mx-2 my-1" />
-                                                                {u.banned ? (
-                                                                    <button onClick={(e) => { e.stopPropagation(); handleUnban(u.id); }} className="w-full text-left px-4 py-3 hover:bg-green-500/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-green-400">
-                                                                        <div className="w-7 h-7 bg-green-500/10 rounded-lg flex items-center justify-center shrink-0">
-                                                                            <Shield className="w-3.5 h-3.5" />
-                                                                        </div>
-                                                                        Разбанить
-                                                                    </button>
-                                                                ) : (
-                                                                    <button onClick={(e) => { e.stopPropagation(); openBanModal(u.id); }} className="w-full text-left px-4 py-3 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-red-500">
-                                                                        <div className="w-7 h-7 bg-red-500/10 rounded-lg flex items-center justify-center shrink-0">
-                                                                            <Ban className="w-3.5 h-3.5" />
-                                                                        </div>
-                                                                        Забанить
-                                                                    </button>
-                                                                )}
-                                                                {isAdmin && (
-                                                                    <>
-                                                                        <div className="h-px bg-white/5 mx-2 my-1" />
-                                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteUser(u.id); }} className="w-full text-left px-4 py-3 hover:bg-red-500/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-red-600 group/del">
-                                                                            <div className="w-7 h-7 bg-red-500/10 rounded-lg flex items-center justify-center group-hover/del:bg-red-500/20 transition-colors shrink-0">
-                                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                                            </div>
-                                                                            Удалить
-                                                                        </button>
-                                                                    </>
-                                                                )}
-                                                            </>
+                                                                <button onClick={(e) => { e.stopPropagation(); setOpenMenuUserId(null); }} className="w-full text-left px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-500">
+                                                                    <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
+                                                                        <X className="w-3.5 h-3.5" />
+                                                                    </div>
+                                                                    Закрыть
+                                                                </button>
+                                                            </div>
                                                         )}
-                                                        <button onClick={(e) => { e.stopPropagation(); openSecurityDossier(u); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
-                                                            <div className="w-7 h-7 bg-blue-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-blue-500/20 transition-colors shrink-0">
-                                                                <Shield className="w-3.5 h-3.5 text-blue-400" />
-                                                            </div>
-                                                            Security Dossier
-                                                        </button>
-                                                        <button onClick={(e) => { e.stopPropagation(); openWarningsModal(u); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
-                                                            <div className="w-7 h-7 bg-orange-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-orange-500/20 transition-colors shrink-0">
-                                                                <AlertCircle className="w-3.5 h-3.5 text-orange-400" />
-                                                            </div>
-                                                            Предупреждения
-                                                        </button>
-                                                        <div className="h-px bg-white/5 mx-2 my-1" />
-                                                        <button onClick={(e) => { e.stopPropagation(); setOpenMenuUserId(null); }} className="w-full text-left px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-500">
-                                                            <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
-                                                                <X className="w-3.5 h-3.5" />
-                                                            </div>
-                                                            Закрыть
-                                                        </button>
                                                     </div>
-                                                )}
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
 
-                                    <div className="flex justify-center gap-2 py-4 border-t border-white/5 mt-auto shrink-0">
-                                        <button
-                                            onClick={() => fetchUsers(Math.max(0, usersPage - 1))}
-                                            disabled={usersPage === 0}
-                                            className="p-2 bg-white/5 hover:bg-white/10 rounded-xl disabled:opacity-50 transition-colors border border-white/10"
-                                        >
-                                            <ChevronLeft className="w-5 h-5 text-gray-400" />
-                                        </button>
-                                        <div className="flex items-center px-4 bg-white/5 rounded-xl border border-white/5">
-                                            <span className="text-xs font-mono text-gray-400 font-bold">
-                                                {totalUsersPages > 0 ? usersPage + 1 : 0} / {totalUsersPages}
-                                            </span>
-                                        </div>
-                                        <button
-                                            onClick={() => fetchUsers(Math.min(totalUsersPages - 1, usersPage + 1))}
-                                            disabled={usersPage >= totalUsersPages - 1}
-                                            className="p-2 bg-white/5 hover:bg-white/10 rounded-xl disabled:opacity-50 transition-colors border border-white/10"
-                                        >
-                                            <ChevronRight className="w-5 h-5 text-gray-400" />
-                                        </button>
-                                    </div>
+                                            <div className="flex justify-center gap-2 py-4 border-t border-white/5 mt-auto shrink-0">
+                                                <button
+                                                    onClick={() => fetchUsers(Math.max(0, usersPage - 1))}
+                                                    disabled={usersPage === 0}
+                                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl disabled:opacity-50 transition-colors border border-white/10"
+                                                >
+                                                    <ChevronLeft className="w-5 h-5 text-gray-400" />
+                                                </button>
+                                                <div className="flex items-center px-4 bg-white/5 rounded-xl border border-white/5">
+                                                    <span className="text-xs font-mono text-gray-400 font-bold">
+                                                        {totalUsersPages > 0 ? usersPage + 1 : 0} / {totalUsersPages}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => fetchUsers(Math.min(totalUsersPages - 1, usersPage + 1))}
+                                                    disabled={usersPage >= totalUsersPages - 1}
+                                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl disabled:opacity-50 transition-colors border border-white/10"
+                                                >
+                                                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             ) : activeTab === 'applications' ? (
                                 <div className="space-y-3 md:space-y-4 flex-grow flex flex-col overflow-hidden">
@@ -1223,59 +1292,64 @@ const AdminDashboardPage = () => {
                                         </div>
                                     </div>
 
-                                    <div className="bg-black/20 border border-white/5 rounded-xl md:rounded-2xl overflow-hidden shadow-xl flex-grow flex flex-col min-h-0">
-                                        {/* Desktop Table */}
-                                        <div className="hidden md:block overflow-y-auto flex-grow">
-                                            <table className="w-full text-left border-collapse">
-                                                <thead>
-                                                    <tr className="border-b border-white/10 text-gray-400 text-xs uppercase">
-                                                        <th className="px-6 py-4 font-medium">Кандидат</th>
-                                                        <th className="px-6 py-4 font-medium">ID / Дата</th>
-                                                        <th className="px-6 py-4 font-medium">Статус</th>
-                                                        <th className="px-6 py-4 font-medium text-right text-story-gold uppercase text-[10px] tracking-widestAlpha">Детали</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {filteredApplications.map(app => (
-                                                        <tr
-                                                            key={app.id}
-                                                            onClick={() => openApplicationModal(app.id)}
-                                                            className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
-                                                        >
-                                                            <td className="px-6 py-4">
-                                                                <div className="flex items-center gap-3">
-                                                                    <UserAvatar
-                                                                        avatarUrl={app.user?.avatarUrl}
-                                                                        username={app.user?.username || app.firstName}
-                                                                        size="sm"
-                                                                    />
-                                                                    <div className="flex flex-col">
-                                                                        <span className="text-white font-bold">{app.firstName} ({app.age} лет)</span>
-                                                                        <span className="text-xs text-gray-500">@{app.user?.username || app.user?.username}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-gray-400 text-xs font-mono">#{app.id}</span>
-                                                                    <span className="text-[10px] text-gray-500">{app.createdAt ? new Date(app.createdAt).toLocaleDateString() : '—'}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${app.status === 'ACCEPTED' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : app.status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'}`}>
-                                                                    {app.status || 'PENDING'}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <button className="text-story-gold opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <MoreVertical className="w-5 h-5 ml-auto text-gray-500" />
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                                    {loading ? (
+                                        <div className="flex-grow flex items-center justify-center py-20">
+                                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-story-gold"></div>
                                         </div>
+                                    ) : (
+                                        <div className="bg-black/20 border border-white/5 rounded-xl md:rounded-2xl overflow-hidden shadow-xl flex-grow flex flex-col min-h-0">
+                                            {/* Desktop Table */}
+                                            <div className="hidden md:block overflow-y-auto flex-grow">
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="border-b border-white/10 text-gray-400 text-xs uppercase">
+                                                            <th className="px-6 py-4 font-medium">Кандидат</th>
+                                                            <th className="px-6 py-4 font-medium">ID / Дата</th>
+                                                            <th className="px-6 py-4 font-medium">Статус</th>
+                                                            <th className="px-6 py-4 font-medium text-right text-story-gold uppercase text-[10px] tracking-widestAlpha">Детали</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {filteredApplications.map(app => (
+                                                            <tr
+                                                                key={app.id}
+                                                                onClick={() => openApplicationModal(app.id)}
+                                                                className="border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer group"
+                                                            >
+                                                                <td className="px-6 py-4">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <UserAvatar
+                                                                            avatarUrl={app.user?.avatarUrl}
+                                                                            username={app.user?.username || app.firstName}
+                                                                            size="sm"
+                                                                        />
+                                                                        <div className="flex flex-col">
+                                                                            <span className="text-white font-bold">{app.firstName} ({app.age} лет)</span>
+                                                                            <span className="text-xs text-gray-500">@{app.user?.username || app.user?.username}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-4">
+                                                                    <div className="flex flex-col">
+                                                                        <span className="text-gray-400 text-xs font-mono">#{app.id}</span>
+                                                                        <span className="text-[10px] text-gray-500">{app.createdAt ? new Date(app.createdAt).toLocaleDateString() : '—'}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-6 py-4">
+                                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${app.status === 'ACCEPTED' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : app.status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'}`}>
+                                                                        {app.status || 'PENDING'}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-6 py-4 text-right">
+                                                                    <button className="text-story-gold opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <MoreVertical className="w-5 h-5 ml-auto text-gray-500" />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
 
                                         {/* Mobile List */}
                                         <div className="md:hidden overflow-y-auto flex-grow p-2 space-y-2">
@@ -1342,6 +1416,7 @@ const AdminDashboardPage = () => {
                                             </button>
                                         </div>
                                     </div>
+                                    )}
                                 </div>
                             ) : activeTab === 'badges' ? (
                                 <div className="space-y-4 flex-grow flex flex-col overflow-hidden animate-fadeIn">
