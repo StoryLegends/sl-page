@@ -686,9 +686,13 @@ const AdminDashboardPage = () => {
 
     const handleAppStatus = async (id: number, status: string) => {
         try {
-            if (status === 'REJECTED' && currentApp?.user?.id) {
-                // If rejecting, remove isPlayer status
-                await adminApi.updateUser(currentApp.user.id, { isPlayer: false });
+            if (status === 'REJECTED' && currentApp?.user?.id && isAdmin) {
+                // If rejecting and is admin, remove isPlayer status
+                try {
+                    await adminApi.updateUser(currentApp.user.id, { isPlayer: false });
+                } catch (userErr) {
+                    console.error('Failed to remove isPlayer status, continuing with rejection', userErr);
+                }
             }
             await applicationsApi.updateStatus(id, status, adminComment);
             setAdminComment('');
