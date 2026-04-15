@@ -91,6 +91,11 @@ export const adminApi = {
         return response.data;
     },
 
+    resetUserMinecraftPassword: async (id: number): Promise<{ status: string, message: string }> => {
+        const response = await apiClient.post(`/api/admin/users/${id}/reset-minecraft-password`);
+        return response.data;
+    },
+
     // Badges
     getBadges: async (): Promise<Badge[]> => {
         const response = await apiClient.get('/api/admin/badges');

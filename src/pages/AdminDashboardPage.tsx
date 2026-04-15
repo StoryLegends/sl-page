@@ -301,6 +301,18 @@ const AdminDashboardPage = () => {
         }
     };
 
+    const handleResetMinecraftPassword = async (id: number) => {
+        if (!confirm('Сбросить пароль пользователя в Minecraft?')) return;
+        try {
+            const res = await adminApi.resetUserMinecraftPassword(id);
+            alert(res.message || 'Minecraft пароль пользователя сброшен');
+            setOpenMenuUserId(null);
+        } catch (err: any) {
+            console.error(err);
+            alert(err.response?.data || 'Failed to reset Minecraft password');
+        }
+    };
+
     const handleUnlinkDiscord = async (id: number) => {
         if (!confirm('Отвязать Discord аккаунт пользователя?')) return;
         try {
@@ -344,15 +356,7 @@ const AdminDashboardPage = () => {
         }
     };
 
-    const handleTogglePlayer = async (id: number, currentStatus: boolean) => {
-        try {
-            await adminApi.updateUser(id, { isPlayer: !currentStatus });
-            refetchCurrentTab();
-        } catch (err) {
-            console.error(err);
-            alert('Failed to update player status');
-        }
-    };
+
 
     const handleDeleteUser = async (id: number) => {
         if (!confirm('Вы уверены, что хотите УДАЛИТЬ этого пользователя? Это действие необратимо!')) return;
@@ -991,7 +995,7 @@ const AdminDashboardPage = () => {
                                                                 <td className="px-3 py-3 text-center">
                                                                     <div className={`w-2 h-2 rounded-full mx-auto ${u.totpEnabled ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-gray-700'}`} />
                                                                 </td>
-                                                                <td className="px-3 py-3 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleTogglePlayer(u.id, !!u.isPlayer); }}>
+                                                                <td className="px-3 py-3">
                                                                     {u.banned ? (
                                                                         <div className="bg-red-500/10 border border-red-500/20 px-2 py-1 rounded text-red-400 font-bold text-[10px] text-center">BANNED</div>
                                                                     ) : u.isPlayer ? (
@@ -1016,6 +1020,9 @@ const AdminDashboardPage = () => {
                                                                                     )}
                                                                                     <button onClick={(e) => { e.stopPropagation(); handleResetPassword(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-yellow-400">
                                                                                         <Key className="w-4 h-4" /> Сбросить пароль
+                                                                                    </button>
+                                                                                    <button onClick={(e) => { e.stopPropagation(); handleResetMinecraftPassword(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-green-400">
+                                                                                        <Key className="w-4 h-4" /> Сбросить MC пароль
                                                                                     </button>
                                                                                     <button onClick={(e) => { e.stopPropagation(); handleUnlinkDiscord(u.id); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-indigo-400">
                                                                                         <div className="flex items-center justify-center w-4 h-4">
@@ -1177,6 +1184,12 @@ const AdminDashboardPage = () => {
                                                                                 <Key className="w-3.5 h-3.5 text-yellow-400" />
                                                                             </div>
                                                                             Сбросить пароль
+                                                                        </button>
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleResetMinecraftPassword(u.id); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-300 group/item">
+                                                                            <div className="w-7 h-7 bg-green-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-green-500/20 transition-colors shrink-0">
+                                                                                <Key className="w-3.5 h-3.5 text-green-400" />
+                                                                            </div>
+                                                                            Сбросить MC пароль
                                                                         </button>
                                                                         <button onClick={(e) => { e.stopPropagation(); handleUnlinkDiscord(u.id); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-indigo-400 group/item">
                                                                             <div className="w-7 h-7 bg-indigo-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-indigo-500/20 transition-colors shrink-0">
