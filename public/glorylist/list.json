@@ -105,23 +105,6 @@
             ],
             "Discrod": "minion_stuart67_41820",
             "details": "Время от времени стримит свои будни на сервере на разных платформах, и делает ролики по серверу."
-        },
-        {
-            "name": "_MrZippy_",
-            "image": "mrzippy.webp",
-            "description": "Контентмейкер.",
-            "links": [
-                {
-                    "name": "Twitch",
-                    "url": "https://www.twitch.tv/0mrzippy"
-                },
-                {
-                    "name": "YouTube",
-                    "url": "https://www.youtube.com/@mrzippy_game"
-                }
-            ],
-            "Discrod": "mrzippy4",
-            "details": "Делает ролики по серверу, а так-же стримит будни на твиче"
         }
     ]
 }
