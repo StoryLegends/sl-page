@@ -90,10 +90,6 @@ const Rules = () => {
                   </ul>
                 </div>
 
-                <div className="pl-4 border-l-2 border-white/10 hover:border-blue-400 transition-colors">
-                  <span className="font-bold text-blue-400 mr-2">1.7.</span>
-                  Запрещено использование дополнительных аккаунтов (твинков) для получения любых игровых преимуществ, включая: прогрузку ферм в АФК режиме, облегчение прохождения игровых этапов и т.д.
-                </div>
               </div>
             </div>
           </section>
@@ -168,6 +164,11 @@ const Rules = () => {
                     <li>Установка голов игроков в одном месте в большом количестве.</li>
                     <li>Добыча руд, ресурсов и поиск данжей с помощью модификаций.</li>
                   </ul>
+                </div>
+
+                <div className="pl-4 border-l-2 border-white/10 hover:border-orange-400 transition-colors">
+                  <span className="font-bold text-orange-400 mr-2">3.6.</span>
+                  Запрещено использование дополнительных аккаунтов (твинков) для получения любых игровых преимуществ, включая: прогрузку ферм в АФК режиме, облегчение прохождения игровых этапов и т.д.
                 </div>
               </div>
             </div>
