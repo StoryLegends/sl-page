@@ -119,6 +119,11 @@ const Rules = () => {
                   <span className="font-bold text-green-400 mr-2">2.2.</span>
                   Запрещены высказывания которые запрещены на платформе Twitch(бан ворды и т.д) если у одного из игроков идёт там стрим. При таком поведении это будет считаться неадекватным поведением.
                 </div>
+
+                <div className="pl-4 border-l-2 border-white/10 hover:border-green-400 transition-colors">
+                  <span className="font-bold text-green-400 mr-2">2.3.</span>
+                  Уважительное отношение к администрации и выполнение её требований обязательно.
+                </div>
               </div>
             </div>
           </section>
