@@ -54,7 +54,7 @@ const Rules = () => {
                   Играть можно только с модификациями, которые не дают преимущества над игроками или преимущества в развитии.
                   <div className="mt-2 text-sm text-gray-400 bg-black/30 p-3 rounded-lg">
                     <span className="text-green-400 font-bold">Разрешено:</span> Уменьшенный огонь, FullBright, Показ хп.<br />
-                    <span className="text-red-400 font-bold">Запрещено:</span> X-Ray, AutoSwitch.<br />
+                    <span className="text-red-400 font-bold">Запрещено:</span> X-Ray, AutoSwitch, Автокликеры.<br />
                     <span className="text-gray-500 italic">Если есть вопросы, напишите администратору.</span>
                   </div>
                 </div>
