@@ -74,12 +74,12 @@
                 }
             ],
             "Discrod": "fpv.fixalex555",
-            "details": "Стримит будни сервера на своем твич канале."
+            "details": "Стримит будни сервера на своем Twitch канале."
         },
         {
             "name": "MONNO_SMOKE",
             "image": "monno_smoke.webp",
-            "description": "Твич стример.",
+            "description": "Twitch стример.",
             "links": [
                 {
                     "name": "Twitch",
@@ -87,7 +87,7 @@
                 }
             ],
             "Discrod": "frokiiling",
-            "details": "Стримит на твиче свои будни в играх и на сервере."
+            "details": "Стримит на Twitch свои будни в играх и на сервере."
         },
         {
             "name": "SenzilBro",
@@ -104,7 +104,37 @@
                 }
             ],
             "Discrod": "minion_stuart67_41820",
-            "details": "Время от времени стримит свои будни на сервере на разных платформах, и делает ролики по серверу."
+            "details": "Время от времени стримит свои серверные будни на разных платформах, а так-же делает ролики по серверу."
+      },
+        {
+            "name": "_MrZippy_",
+            "image": "mrzippy.webp",
+            "description": "Контентмейкер.",
+            "links": [
+                {
+                    "name": "Twitch",
+                    "url": "https://www.twitch.tv/0mrzippy"
+                },
+                {
+                    "name": "YouTube",
+                    "url": "https://www.youtube.com/@mrzippy_game"
+                }
+            ],
+            "Discrod": "mrzippy4",
+            "details": "Делает ролики по серверу, а так-же стримит будни на Twitch"
+     },
+        {
+            "name": "bbbsss_UwU",
+            "image": "bbbsss_uwu.webp",
+            "description": "Twitch стример.",
+            "links": [
+                {
+                    "name": "Twitch",
+                    "url": "https://www.twitch.tv/fayncovers"
+                }
+            ],
+            "Discrod": "fame.akira",
+            "details": "Запускает трансояции на Twitch и проводит свои будни стримера в нашей атмосфере."
         }
     ]
 }
