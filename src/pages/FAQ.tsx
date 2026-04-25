@@ -52,7 +52,7 @@ const FAQ = () => {
                             </h3>
                             <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
                                 <span className="font-bold text-blue-400 mr-2">О:</span>
-                                Вам придет уведомление от нашего Discord сервера, также вы можете следить за статусом заявки в своем профиле на сайте.
+                                Вам придет уведомление от нашего Discord бота, также вы можете следить за статусом заявки в своем профиле на сайте.
                             </div>
                         </div>
                     </div>
@@ -126,7 +126,7 @@ const FAQ = () => {
                             </h3>
                             <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
                                 <span className="font-bold text-blue-400 mr-2">О:</span>
-                                Читайте правила. <Link to="/rules" className="text-story-gold hover:underline inline-flex items-center gap-1">https://www.storylegends.xyz/rules <LinkIcon className="w-3 h-3" /></Link>. Если чего-то нет в правилах, напишите тех-админу проекта (lendspele_).
+                                Читайте правила. <Link to="/rules" className="text-story-gold hover:underline inline-flex items-center gap-1">https://www.storylegends.xyz/rules <LinkIcon className="w-3 h-3" /></Link>. Если чего-то нет в правилах, напишите в поддержку на Discord сервере.
                             </div>
                         </div>
                     </div>
