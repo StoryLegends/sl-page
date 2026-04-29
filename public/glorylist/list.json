@@ -135,6 +135,19 @@
             ],
             "Discrod": "fame.akira",
             "details": "Запускает трансляции на Twitch и проводит свои будни стримера в нашей атмосфере."
+        },
+        {
+            "name": "eggnuts",
+            "image": "eggnuts.webp",
+            "description": "Рофло тип. Ютубер.",
+            "links": [
+                {
+                    "name": "YouTube",
+                    "url": "https://www.youtube.com/@eggnuts14"
+                }
+            ],
+            "Discrod": "_eggnuts_",
+            "details": "Завоз. Рофл. Делает ролики по серверу на свой YouTube канал."
         }
     ]
 }
