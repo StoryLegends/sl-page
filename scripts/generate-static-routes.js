@@ -94,8 +94,8 @@ const routes = [
     },
     {
         path: '404',
-        title: 'Страница не найдена - StoryLegends',
-        description: 'Кажется вы заблудились...'
+        title: 'Загрузка... - StoryLegends',
+        description: 'Загрузка...'
     }
 ];
 

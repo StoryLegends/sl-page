@@ -14,13 +14,12 @@ const CustomDynamicPage: React.FC = () => {
 
   useEffect(() => {
     if (!customPath) return;
-    
+
     setLoading(true);
     customPagesApi.getByPath(customPath)
       .then(data => {
         setPageData(data);
         setError(false);
-        document.title = data.title ? `${data.title} | StoryLegends` : 'StoryLegends';
       })
       .catch((err) => {
         console.error('Failed to load custom page', err);
@@ -34,7 +33,7 @@ const CustomDynamicPage: React.FC = () => {
   if (loading) {
     return (
       <Layout>
-        <SEO title="Загрузка..." description="Загрузка динамической страницы" />
+        <SEO title="Загрузка..." description="Загрузка..." />
         <div className="pt-24 min-h-screen text-white flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
         </div>
@@ -48,6 +47,10 @@ const CustomDynamicPage: React.FC = () => {
 
   return (
     <Layout>
+      <SEO
+        title={pageData.title || 'StoryLegends'}
+        description={pageData.title || 'Страница...'}
+      />
       <div className="pt-32 pb-16 min-h-screen text-white container mx-auto px-4">
         <div className="w-full max-w-5xl mx-auto min-h-[60vh] flex flex-col relative z-10">
           <iframe
