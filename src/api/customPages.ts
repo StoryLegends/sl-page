@@ -10,9 +10,9 @@ export interface CustomPage {
 }
 
 export const customPagesApi = {
-  getMany: () => apiClient.get<CustomPage[]>('/admin/pages').then(res => res.data),
-  getByPath: (path: string) => apiClient.get<CustomPage>(`/pages/${path}`).then(res => res.data),
-  create: (data: Partial<CustomPage>) => apiClient.post<CustomPage>('/admin/pages', data).then(res => res.data),
-  update: (id: number, data: Partial<CustomPage>) => apiClient.put<CustomPage>(`/admin/pages/${id}`, data).then(res => res.data),
-  delete: (id: number) => apiClient.delete(`/admin/pages/${id}`).then(res => res.data),
+  getMany: () => apiClient.get<CustomPage[]>('/api/admin/pages').then(res => res.data),
+  getByPath: (path: string) => apiClient.get<CustomPage>(`/api/pages/${path}`).then(res => res.data),
+  create: (data: Partial<CustomPage>) => apiClient.post<CustomPage>('/api/admin/pages', data).then(res => res.data),
+  update: (id: number, data: Partial<CustomPage>) => apiClient.put<CustomPage>(`/api/admin/pages/${id}`, data).then(res => res.data),
+  delete: (id: number) => apiClient.delete(`/api/admin/pages/${id}`).then(res => res.data),
 };
