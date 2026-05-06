@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import NotFound from './NotFound';
 import { customPagesApi, type CustomPage } from '../api';
 import { renderCustomPageHtml } from '../utils/pageHtml';
+import SEO from '../components/SEO';
 
 const CustomDynamicPage: React.FC = () => {
   const { customPath } = useParams<{ customPath: string }>();
@@ -33,6 +34,7 @@ const CustomDynamicPage: React.FC = () => {
   if (loading) {
     return (
       <Layout>
+        <SEO title="Загрузка..." description="Загрузка динамической страницы" />
         <div className="pt-24 min-h-screen text-white flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
         </div>
