@@ -21,6 +21,7 @@ const HistoryDetail = lazy(() => import('./pages/HistoryDetail'));
 const GloryList = lazy(() => import('./pages/GloryList'));
 const PlayersPage = lazy(() => import('./pages/PlayersPage'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const CustomDynamicPage = lazy(() => import('./pages/CustomDynamicPage'));
 
 import RegisterPage from './pages/RegisterPage';
 import LoginPage from './pages/LoginPage';
@@ -93,6 +94,7 @@ function App() {
                 </ProtectedRoute>
               } />
 
+              <Route path="/:customPath" element={<CustomDynamicPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

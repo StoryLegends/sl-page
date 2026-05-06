@@ -1,22 +1,23 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { adminApi, applicationsApi, type User, type Application } from '../api';
+import { adminApi, applicationsApi, customPagesApi, type User, type Application, type CustomPage } from '../api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
-import { Users, FileText, Shield, ShieldCheck, Ban, Search, Filter, MoreVertical, Edit, Key, Trash2, X, Copy, Mail, CheckCircle2, XCircle, Settings, AlertCircle, History, Send, Database, Download, Upload, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Users, FileText, Shield, ShieldCheck, Ban, Search, Filter, MoreVertical, Edit, Key, Trash2, X, Copy, Mail, CheckCircle2, XCircle, Settings, AlertCircle, History, Send, Database, Download, Upload, ChevronLeft, ChevronRight, RefreshCw, FileCode } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
 import BoosterBadge from '../components/BoosterBadge';
-
+import { useAdminWebSocket } from '../hooks/useAdminWebSocket';
 
 const AdminDashboardPage = () => {
     const { user, isAdmin, isModerator } = useAuth();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'users' | 'applications' | 'badges' | 'settings' | 'logs'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'applications' | 'badges' | 'settings' | 'logs' | 'pages'>('users');
 
     // Data states
     const [users, setUsers] = useState<User[]>([]);
     const [applications, setApplications] = useState<Application[]>([]);
+    const [customPagesData, setCustomPagesData] = useState<CustomPage[]>([]);
     const [allBadges, setAllBadges] = useState<any[]>([]);
     const [siteSettings, setSiteSettings] = useState<any>(null);
     const [pendingAppsCount, setPendingAppsCount] = useState<number | null>(null);
@@ -64,6 +65,29 @@ const AdminDashboardPage = () => {
     const [showResetSeasonModal, setShowResetSeasonModal] = useState(false);
     const [confirmTypeText, setConfirmTypeText] = useState('');
     const [confirmTotpCode, setConfirmTotpCode] = useState('');
+
+    useAdminWebSocket(
+        (updatedApp) => {
+            setApplications(prev => {
+                const exists = prev.find(app => app.id === updatedApp.id);
+                if (exists) {
+                    return prev.map(app => app.id === updatedApp.id ? updatedApp : app);
+                } else {
+                    return [updatedApp, ...prev];
+                }
+            });
+        },
+        (updatedUser) => {
+            setUsers(prev => {
+                const exists = prev.find(user => user.id === updatedUser.id);
+                if (exists) {
+                    return prev.map(user => user.id === updatedUser.id ? updatedUser : user);
+                } else {
+                    return [updatedUser, ...prev];
+                }
+            });
+        }
+    );
 
     const [badgeForm, setBadgeForm] = useState({
         name: '',
@@ -268,6 +292,49 @@ const AdminDashboardPage = () => {
         bio: '',
         isPlayer: false
     });
+
+    // Custom Pages State
+    const [showPageModal, setShowPageModal] = useState(false);
+    const [editingPage, setEditingPage] = useState<CustomPage | null>(null);
+    const [pageForm, setPageForm] = useState({
+        path: '',
+        title: '',
+        htmlContent: ''
+    });
+
+    const loadCustomPages = async () => {
+        try {
+            const pages = await customPagesApi.getMany();
+            setCustomPagesData(pages);
+        } catch (error) {
+            console.error('Failed to load custom pages', error);
+        }
+    };
+
+    const handleSavePage = async () => {
+        try {
+            if (editingPage && editingPage.id) {
+                await customPagesApi.update(editingPage.id, pageForm);
+            } else {
+                await customPagesApi.create(pageForm);
+            }
+            setShowPageModal(false);
+            setEditingPage(null);
+            loadCustomPages();
+        } catch (err) {
+            console.error('Failed to save page', err);
+        }
+    };
+
+    const handleDeletePage = async (id: number) => {
+        if (!window.confirm("Вы уверены, что хотите удалить эту страницу?")) return;
+        try {
+            await customPagesApi.delete(id);
+            loadCustomPages();
+        } catch (err) {
+            console.error('Failed to delete page', err);
+        }
+    };
 
     // Refs for clicking outside to close
     const desktopMenuRef = useRef<HTMLDivElement>(null);
@@ -506,6 +573,7 @@ const AdminDashboardPage = () => {
         fetchPendingAppsCount();
         if (activeTab === 'users') fetchUsers(usersPage);
         else if (activeTab === 'applications') fetchApplications(appsPage);
+        else if (activeTab === 'pages') loadCustomPages();
     };
 
     const fetchLogs = async (page: number) => {
@@ -535,6 +603,8 @@ const AdminDashboardPage = () => {
                 fetchApplications(appsPage);
             } else if (activeTab === 'logs') {
                 fetchLogs(logsPage);
+            } else if (activeTab === 'pages') {
+                loadCustomPages();
             }
         }
     }, [user, isAdmin, navigate, activeTab]);
@@ -869,6 +939,7 @@ const AdminDashboardPage = () => {
                                     { id: 'applications', label: 'Заявки', icon: FileText },
                                     ...(isAdmin ? [
                                         { id: 'badges', label: 'Значки', icon: Shield },
+                                        { id: 'pages', label: 'Страницы', icon: FileCode },
                                         { id: 'logs', label: 'Логи', icon: History },
                                         { id: 'settings', label: 'Настройки', icon: Settings },
                                     ] : []),
@@ -1636,6 +1707,68 @@ const AdminDashboardPage = () => {
                                                 </button>
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            ) : activeTab === 'pages' ? (
+                                <div className="space-y-4 flex-grow flex flex-col overflow-hidden animate-fadeIn">
+                                    <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
+                                        <div className="flex flex-col gap-1">
+                                            <h2 className="text-2xl font-bold text-white font-minecraft">Кастомные страницы</h2>
+                                            <p className="text-gray-500 text-sm font-medium">Управление динамическими страницами</p>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setEditingPage(null);
+                                                setPageForm({ path: '', title: '', htmlContent: '' });
+                                                setShowPageModal(true);
+                                            }}
+                                            className="px-4 py-2 bg-story-gold/10 hover:bg-story-gold/20 text-story-gold border border-story-gold/30 rounded-xl font-bold transition-all text-sm uppercase tracking-wider"
+                                        >
+                                            Создать страницу
+                                        </button>
+                                    </div>
+
+                                    <div className="flex-grow overflow-x-auto rounded-xl border border-white/5 bg-white/5 custom-scrollbar relative">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-black/40">
+                                                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Path</th>
+                                                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Title</th>
+                                                    <th className="p-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Действия</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {customPagesData.map((page) => (
+                                                    <tr key={page.id} className="border-t border-white/5 hover:bg-white/[0.02] transition-colors">
+                                                        <td className="p-4 font-mono text-sm text-gray-300">/{page.path}</td>
+                                                        <td className="p-4 font-bold text-white">{page.title}</td>
+                                                        <td className="p-4 text-right space-x-2">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setEditingPage(page);
+                                                                    setPageForm({ path: page.path, title: page.title, htmlContent: page.htmlContent });
+                                                                    setShowPageModal(true);
+                                                                }}
+                                                                className="text-gray-400 hover:text-white transition-colors"
+                                                            >
+                                                                <Edit className="w-4 h-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeletePage(page.id)}
+                                                                className="text-red-400 hover:text-red-300 transition-colors"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                                {customPagesData.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan={3} className="p-8 text-center text-gray-500 font-bold">Страниц нет</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             ) : activeTab === 'logs' ? (
@@ -2670,6 +2803,75 @@ const AdminDashboardPage = () => {
                                     >
                                         Подтвердить сброс
                                     </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Custom Page Modal */}
+                {showPageModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPageModal(false)} />
+                        <div className="bg-[#111] w-full max-w-6xl h-[90vh] rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl relative z-10 animate-scaleIn">
+                            <div className="p-6 border-b border-white/5 flex gap-4 items-center shrink-0">
+                                <div className="w-12 h-12 rounded-2xl bg-story-gold/10 flex items-center justify-center border border-story-gold/20 shrink-0">
+                                    <FileCode className="w-6 h-6 text-story-gold" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-white font-minecraft">
+                                        {editingPage ? 'Редактировать страницу' : 'Новая страница'}
+                                    </h2>
+                                    <p className="text-sm font-medium text-gray-500">
+                                        Задайте путь, заголовок и HTML-содержимое страницы.
+                                    </p>
+                                </div>
+                                <button onClick={() => setShowPageModal(false)} className="ml-auto text-gray-500 hover:text-white"><X className="w-6 h-6" /></button>
+                            </div>
+                            <div className="flex-grow flex flex-col md:flex-row overflow-hidden">
+                                <div className="w-full md:w-1/2 p-6 border-r border-white/5 overflow-y-auto custom-scrollbar flex flex-col gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Путь (Path)</label>
+                                        <input 
+                                            type="text" 
+                                            value={pageForm.path} 
+                                            onChange={e => setPageForm({ ...pageForm, path: e.target.value })} 
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-story-gold/50 transition-colors"
+                                            placeholder="например: about-us"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Заголовок (Title)</label>
+                                        <input 
+                                            type="text" 
+                                            value={pageForm.title} 
+                                            onChange={e => setPageForm({ ...pageForm, title: e.target.value })} 
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-story-gold/50 transition-colors"
+                                            placeholder="Название вкладки и header страницы"
+                                        />
+                                    </div>
+                                    <div className="flex-grow flex flex-col min-h-[300px]">
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">HTML Содержимое</label>
+                                        <textarea 
+                                            value={pageForm.htmlContent} 
+                                            onChange={e => setPageForm({ ...pageForm, htmlContent: e.target.value })} 
+                                            className="w-full h-full flex-grow bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-story-gold/50 transition-colors custom-scrollbar"
+                                            placeholder="<h1>Ваш контент здесь</h1>"
+                                        />
+                                    </div>
+                                    <button onClick={handleSavePage} className="w-full py-4 bg-story-gold hover:bg-yellow-400 text-black font-black uppercase tracking-widest rounded-xl transition-colors mt-4">
+                                        Сохранить
+                                    </button>
+                                </div>
+                                <div className="w-full md:w-1/2 p-6 flex flex-col bg-[#050505]">
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Предпросмотр</label>
+                                    <div className="flex-grow rounded-2xl bg-black border border-white/10 overflow-hidden flex flex-col relative h-full min-h-[400px]">
+                                        <iframe 
+                                            srcDoc={pageForm.htmlContent} 
+                                            className="w-full h-full border-none pointer-events-auto bg-transparent relative z-10" 
+                                            sandbox="allow-scripts allow-same-origin"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
