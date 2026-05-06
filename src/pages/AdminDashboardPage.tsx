@@ -4,7 +4,6 @@ import { adminApi, applicationsApi, customPagesApi, type User, type Application,
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
-import Background from '../components/Background';
 import { Users, FileText, Shield, ShieldCheck, Ban, Search, Filter, MoreVertical, Edit, Key, Trash2, X, Copy, Mail, CheckCircle2, XCircle, Settings, AlertCircle, History, Send, Database, Download, Upload, ChevronLeft, ChevronRight, RefreshCw, FileCode } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
 import BoosterBadge from '../components/BoosterBadge';
@@ -2867,15 +2866,13 @@ const AdminDashboardPage = () => {
                                 </div>
                                 <div className="w-full md:w-1/2 p-6 flex flex-col bg-[#050505]">
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Предпросмотр</label>
-                                    <div className="flex-grow rounded-2xl bg-black border border-white/10 overflow-hidden flex flex-col relative h-full min-h-[400px]">
-                                        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-0">
-                                            <Background />
-                                        </div>
+                                    <div className="flex-grow flex flex-col relative h-full min-h-[400px]">
                                         <iframe 
                                             srcDoc={renderCustomPageHtml(pageForm.htmlContent)} 
                                             className="w-full h-full border-none pointer-events-auto bg-transparent relative z-10" 
                                             sandbox="allow-scripts allow-same-origin"
                                             style={{ background: 'transparent' }}
+                                            allowTransparency={true}
                                         />
                                     </div>
                                 </div>

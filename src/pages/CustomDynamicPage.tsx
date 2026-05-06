@@ -54,6 +54,7 @@ const CustomDynamicPage: React.FC = () => {
             className="w-full flex-grow border-none bg-transparent"
             sandbox="allow-scripts allow-same-origin"
             style={{ background: 'transparent' }}
+            allowTransparency={true}
           />
         </div>
       </div>

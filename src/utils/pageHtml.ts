@@ -3,6 +3,7 @@ export const renderCustomPageHtml = (htmlContent: string) => `
 <html>
 <head>
   <meta charset="utf-8">
+  <meta name="color-scheme" content="dark light">
   <style>
     @font-face {
         font-family: 'Minecraft';
