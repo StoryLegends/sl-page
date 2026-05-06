@@ -95,7 +95,7 @@ const routes = [
     {
         path: '404',
         title: 'Загрузка... - StoryLegends',
-        description: 'Загрузка...'
+        description: 'StoryLegends - Бесплатный ванильный сервер Minecraft'
     }
 ];
 
@@ -126,8 +126,6 @@ function generateStaticRoutes() {
         let targetPath;
         if (route.path === '404') {
             targetPath = path.join(distDir, '404.html');
-            // override for 404
-            route.image = saulImage;
         } else {
             const routeDir = path.join(distDir, route.path);
             if (!fs.existsSync(routeDir)) {

@@ -2812,9 +2812,9 @@ const AdminDashboardPage = () => {
 
                 {/* Custom Page Modal */}
                 {showPageModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPageModal(false)} />
-                        <div className="bg-[#111] w-[95vw] h-[95vh] max-w-[1600px] rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl relative z-10 animate-scaleIn">
+                    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-24 overflow-y-auto">
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPageModal(false)} />
+                        <div className="bg-[#111] w-[95vw] h-fit min-h-[85vh] max-w-[1600px] rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl relative z-10 animate-scaleIn mb-8">
                             <div className="p-6 border-b border-white/5 flex gap-4 items-center shrink-0">
                                 <div className="w-12 h-12 rounded-2xl bg-story-gold/10 flex items-center justify-center border border-story-gold/20 shrink-0">
                                     <FileCode className="w-6 h-6 text-story-gold" />
