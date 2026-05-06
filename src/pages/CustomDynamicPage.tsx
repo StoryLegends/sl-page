@@ -46,13 +46,14 @@ const CustomDynamicPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="pt-32 pb-16 min-h-screen text-white flex items-center justify-center container mx-auto px-4">
-        <div className="w-full max-w-5xl bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden shadow-2xl p-4 md:p-8 min-h-[60vh] flex flex-col relative z-10">
+      <div className="pt-32 pb-16 min-h-screen text-white container mx-auto px-4">
+        <div className="w-full max-w-5xl mx-auto min-h-[60vh] flex flex-col relative z-10">
           <iframe
             title={pageData.title}
             srcDoc={renderCustomPageHtml(pageData.htmlContent)}
-            className="w-full flex-grow border-none"
+            className="w-full flex-grow border-none bg-transparent"
             sandbox="allow-scripts allow-same-origin"
+            style={{ background: 'transparent' }}
           />
         </div>
       </div>

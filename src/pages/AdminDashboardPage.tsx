@@ -2875,6 +2875,7 @@ const AdminDashboardPage = () => {
                                             srcDoc={renderCustomPageHtml(pageForm.htmlContent)} 
                                             className="w-full h-full border-none pointer-events-auto bg-transparent relative z-10" 
                                             sandbox="allow-scripts allow-same-origin"
+                                            style={{ background: 'transparent' }}
                                         />
                                     </div>
                                 </div>

@@ -3,7 +3,6 @@ export const renderCustomPageHtml = (htmlContent: string) => `
 <html>
 <head>
   <meta charset="utf-8">
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @font-face {
         font-family: 'Minecraft';
@@ -12,9 +11,10 @@ export const renderCustomPageHtml = (htmlContent: string) => `
         font-style: normal;
         font-display: swap;
     }
-    body {
+    html, body {
       margin: 0;
-      background: transparent;
+      padding: 0;
+      background: transparent !important;
       color: white;
       font-family: system-ui, -apple-system, sans-serif;
       overflow-x: hidden;
@@ -22,7 +22,6 @@ export const renderCustomPageHtml = (htmlContent: string) => `
     
     .sl-content-wrapper {
       width: 100%;
-      /* Default Tailwind base reset handles rest */
     }
     /* Style scrollbars to match the main site */
     ::-webkit-scrollbar {
