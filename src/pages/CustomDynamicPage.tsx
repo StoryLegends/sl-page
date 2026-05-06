@@ -9,8 +9,20 @@ import SEO from '../components/SEO';
 const CustomDynamicPage: React.FC = () => {
   const { customPath } = useParams<{ customPath: string }>();
   const [pageData, setPageData] = useState<CustomPage | null>(null);
+  const [iframeHeight, setIframeHeight] = useState(500);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'iframeHeight') {
+        setIframeHeight(event.data.height);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   useEffect(() => {
     if (!customPath) return;
@@ -52,13 +64,17 @@ const CustomDynamicPage: React.FC = () => {
         description={pageData.title || 'Страница...'}
       />
       <div className="pt-32 pb-16 min-h-screen text-white container mx-auto px-4">
-        <div className="w-full max-w-5xl mx-auto min-h-[60vh] flex flex-col relative z-10">
+        <div className="w-full max-w-5xl mx-auto flex flex-col relative z-10">
           <iframe
             title={pageData.title}
             srcDoc={renderCustomPageHtml(pageData.htmlContent)}
-            className="w-full flex-grow border-none bg-transparent"
+            className="w-full border-none bg-transparent"
             sandbox="allow-scripts allow-same-origin"
-            style={{ background: 'transparent' }}
+            style={{ 
+              background: 'transparent',
+              height: `${iframeHeight}px`,
+              minHeight: '60vh'
+            }}
             allowTransparency={true}
           />
         </div>

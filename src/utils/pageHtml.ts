@@ -44,6 +44,16 @@ export const renderCustomPageHtml = (htmlContent: string) => `
   <div class="sl-content-wrapper">
     ${htmlContent}
   </div>
+  <script>
+    const sendHeight = () => {
+      const height = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: 'iframeHeight', height }, '*');
+    };
+    window.addEventListener('load', sendHeight);
+    const observer = new ResizeObserver(sendHeight);
+    observer.observe(document.body);
+    setInterval(sendHeight, 1000);
+  </script>
 </body>
 </html>
 `;
