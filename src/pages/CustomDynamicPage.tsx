@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import Layout from '../components/Layout';
 import NotFound from './NotFound';
 import { customPagesApi, type CustomPage } from '../api';
+import { renderCustomPageHtml } from '../utils/pageHtml';
 
 const CustomDynamicPage: React.FC = () => {
   const { customPath } = useParams<{ customPath: string }>();
@@ -45,13 +46,15 @@ const CustomDynamicPage: React.FC = () => {
 
   return (
     <Layout>
-      <div className="pt-24 min-h-screen text-white flex flex-col">
-        <iframe
-          title={pageData.title}
-          srcDoc={pageData.htmlContent}
-          className="flex-grow w-full border-none h-[calc(100vh-6rem)]"
-          sandbox="allow-scripts allow-same-origin"
-        />
+      <div className="pt-32 pb-16 min-h-screen text-white flex items-center justify-center container mx-auto px-4">
+        <div className="w-full max-w-5xl bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden shadow-2xl p-4 md:p-8 min-h-[60vh] flex flex-col relative z-10">
+          <iframe
+            title={pageData.title}
+            srcDoc={renderCustomPageHtml(pageData.htmlContent)}
+            className="w-full flex-grow border-none"
+            sandbox="allow-scripts allow-same-origin"
+          />
+        </div>
       </div>
     </Layout>
   );

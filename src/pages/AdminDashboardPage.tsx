@@ -4,10 +4,12 @@ import { adminApi, applicationsApi, customPagesApi, type User, type Application,
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
+import Background from '../components/Background';
 import { Users, FileText, Shield, ShieldCheck, Ban, Search, Filter, MoreVertical, Edit, Key, Trash2, X, Copy, Mail, CheckCircle2, XCircle, Settings, AlertCircle, History, Send, Database, Download, Upload, ChevronLeft, ChevronRight, RefreshCw, FileCode } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
 import BoosterBadge from '../components/BoosterBadge';
 import { useAdminWebSocket } from '../hooks/useAdminWebSocket';
+import { renderCustomPageHtml } from '../utils/pageHtml';
 
 const AdminDashboardPage = () => {
     const { user, isAdmin, isModerator } = useAuth();
@@ -2813,7 +2815,7 @@ const AdminDashboardPage = () => {
                 {showPageModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowPageModal(false)} />
-                        <div className="bg-[#111] w-full max-w-6xl h-[90vh] rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl relative z-10 animate-scaleIn">
+                        <div className="bg-[#111] w-[95vw] h-[95vh] max-w-[1600px] rounded-3xl border border-white/10 flex flex-col overflow-hidden shadow-2xl relative z-10 animate-scaleIn">
                             <div className="p-6 border-b border-white/5 flex gap-4 items-center shrink-0">
                                 <div className="w-12 h-12 rounded-2xl bg-story-gold/10 flex items-center justify-center border border-story-gold/20 shrink-0">
                                     <FileCode className="w-6 h-6 text-story-gold" />
@@ -2866,8 +2868,11 @@ const AdminDashboardPage = () => {
                                 <div className="w-full md:w-1/2 p-6 flex flex-col bg-[#050505]">
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Предпросмотр</label>
                                     <div className="flex-grow rounded-2xl bg-black border border-white/10 overflow-hidden flex flex-col relative h-full min-h-[400px]">
+                                        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-0">
+                                            <Background />
+                                        </div>
                                         <iframe 
-                                            srcDoc={pageForm.htmlContent} 
+                                            srcDoc={renderCustomPageHtml(pageForm.htmlContent)} 
                                             className="w-full h-full border-none pointer-events-auto bg-transparent relative z-10" 
                                             sandbox="allow-scripts allow-same-origin"
                                         />
