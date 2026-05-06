@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type AxiosError } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://slbackend-7a8596651d0c.herokuapp.com' : 'http://localhost:8080');
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({

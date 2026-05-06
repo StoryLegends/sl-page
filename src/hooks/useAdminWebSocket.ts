@@ -9,8 +9,15 @@ export const useAdminWebSocket = (onApplicationUpdate: (app: any) => void, onUse
         const token = localStorage.getItem('token');
         if (!token) return;
 
+        const wsUrl = window.location.protocol === 'https:' 
+            ? 'https://slbackend-7a8596651d0c.herokuapp.com/ws/admin' 
+            : 'http://localhost:8080/ws/admin';
+
+        // Add correct protocols for SockJS
         const client = new Client({
-            webSocketFactory: () => new SockJS('http://localhost:8080/ws/admin'),
+            webSocketFactory: () => new SockJS(wsUrl, null, {
+                transports: ['websocket', 'xhr-streaming', 'xhr-polling']
+            }),
             connectHeaders: {
                 Authorization: `Bearer ${token}`
             },
