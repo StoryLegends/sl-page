@@ -90,23 +90,6 @@
             "details": "Стримит на Twitch свои будни в играх и на сервере."
         },
         {
-            "name": "SenzilBro",
-            "image": "senzil.webp",
-            "description": "Контентмейкер.",
-            "links": [
-                {
-                    "name": "YouTube",
-                    "url": "https://www.youtube.com/@%D0%A1%D1%8D%D0%BD%D0%B7%D0%B8%D0%BB"
-                },
-                {
-                    "name": "Twitch",
-                    "url": "https://www.twitch.tv/senzil8"
-                }
-            ],
-            "Discrod": "minion_stuart67_41820",
-            "details": "Время от времени стримит свои серверные будни на разных платформах, а так-же делает ролики по серверу."
-      },
-        {
             "name": "bbbsss_UwU",
             "image": "bbbsss_uwu.webp",
             "description": "Twitch стример.",
@@ -118,19 +101,6 @@
             ],
             "Discrod": "fame.akira",
             "details": "Запускает трансляции на Twitch и проводит свои будни стримера в нашей атмосфере."
-        },
-        {
-            "name": "eggnuts",
-            "image": "eggnuts.webp",
-            "description": "Рофло тип. Ютубер.",
-            "links": [
-                {
-                    "name": "YouTube",
-                    "url": "https://www.youtube.com/@eggnuts14"
-                }
-            ],
-            "Discrod": "_eggnuts_",
-            "details": "Завоз. Рофл. Делает ролики по серверу на свой YouTube канал."
         }
     ]
 }
