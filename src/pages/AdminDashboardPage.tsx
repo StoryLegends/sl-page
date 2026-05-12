@@ -558,7 +558,7 @@ const AdminDashboardPage = () => {
             // Using existing public endpoint to get all players/users for counts
             const allUsers = await adminApi.getAllUsers(0, 10000); // Fetch a large enough sample or use public getAll if appropriate
             const content = allUsers.content;
-            
+
             const stats = {
                 total: allUsers.totalElements,
                 active: content.filter(u => u.isPlayer).length,
@@ -1512,71 +1512,71 @@ const AdminDashboardPage = () => {
                                                 </table>
                                             </div>
 
-                                        {/* Mobile List */}
-                                        <div className="md:hidden overflow-y-auto flex-grow p-2 space-y-2">
-                                            {filteredApplications.length === 0 ? (
-                                                <div className="text-center py-10 text-gray-500">Заявок нет</div>
-                                            ) : (
-                                                filteredApplications.map(app => (
-                                                    <div
-                                                        key={app.id}
-                                                        onClick={() => openApplicationModal(app.id)}
-                                                        className="bg-[#0f0f0f]/80 border border-white/[0.04] rounded-2xl p-4 active:scale-[0.98] transition-all duration-200 relative overflow-hidden group shadow-lg"
-                                                    >
-                                                        <div className="flex justify-between items-start mb-3">
-                                                            <div className="flex items-center gap-3">
-                                                                <UserAvatar
-                                                                    avatarUrl={app.user?.avatarUrl}
-                                                                    username={app.user?.username || app.firstName}
-                                                                    size="lg"
-                                                                    rounded="rounded-xl"
-                                                                />
-                                                                <div>
-                                                                    <h4 className="text-white font-bold text-sm leading-tight">{app.firstName} ({app.age})</h4>
-                                                                    <p className="text-[10px] text-gray-500 font-medium">@{app.user?.username}</p>
+                                            {/* Mobile List */}
+                                            <div className="md:hidden overflow-y-auto flex-grow p-2 space-y-2">
+                                                {filteredApplications.length === 0 ? (
+                                                    <div className="text-center py-10 text-gray-500">Заявок нет</div>
+                                                ) : (
+                                                    filteredApplications.map(app => (
+                                                        <div
+                                                            key={app.id}
+                                                            onClick={() => openApplicationModal(app.id)}
+                                                            className="bg-[#0f0f0f]/80 border border-white/[0.04] rounded-2xl p-4 active:scale-[0.98] transition-all duration-200 relative overflow-hidden group shadow-lg"
+                                                        >
+                                                            <div className="flex justify-between items-start mb-3">
+                                                                <div className="flex items-center gap-3">
+                                                                    <UserAvatar
+                                                                        avatarUrl={app.user?.avatarUrl}
+                                                                        username={app.user?.username || app.firstName}
+                                                                        size="lg"
+                                                                        rounded="rounded-xl"
+                                                                    />
+                                                                    <div>
+                                                                        <h4 className="text-white font-bold text-sm leading-tight">{app.firstName} ({app.age})</h4>
+                                                                        <p className="text-[10px] text-gray-500 font-medium">@{app.user?.username}</p>
+                                                                    </div>
                                                                 </div>
+                                                                <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${app.status === 'ACCEPTED' ? 'bg-green-500/10 text-green-400 border-green-500/10' :
+                                                                    app.status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border-red-500/10' :
+                                                                        'bg-yellow-500/10 text-yellow-400 border-yellow-500/10'
+                                                                    }`}>
+                                                                    {app.status || 'PENDING'}
+                                                                </span>
                                                             </div>
-                                                            <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border ${app.status === 'ACCEPTED' ? 'bg-green-500/10 text-green-400 border-green-500/10' :
-                                                                app.status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border-red-500/10' :
-                                                                    'bg-yellow-500/10 text-yellow-400 border-yellow-500/10'
-                                                                }`}>
-                                                                {app.status || 'PENDING'}
-                                                            </span>
+                                                            <div className="flex justify-between items-center bg-black/40 rounded-lg px-3 py-2 border border-white/[0.03]">
+                                                                <span className="text-[9px] font-mono text-gray-500">REF: #{app.id}</span>
+                                                                <span className="text-[9px] font-medium text-gray-500 flex items-center gap-1.5">
+                                                                    <FileText className="w-3 h-3 opacity-50" />
+                                                                    {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : '—'}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex justify-between items-center bg-black/40 rounded-lg px-3 py-2 border border-white/[0.03]">
-                                                            <span className="text-[9px] font-mono text-gray-500">REF: #{app.id}</span>
-                                                            <span className="text-[9px] font-medium text-gray-500 flex items-center gap-1.5">
-                                                                <FileText className="w-3 h-3 opacity-50" />
-                                                                {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : '—'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-
-                                        <div className="flex justify-center gap-2 py-4 border-t border-white/5 mt-auto bg-black/20 shrink-0">
-                                            <button
-                                                onClick={() => fetchApplications(Math.max(0, appsPage - 1))}
-                                                disabled={appsPage === 0}
-                                                className="p-2 bg-white/5 hover:bg-white/10 rounded-xl disabled:opacity-50 transition-colors border border-white/10"
-                                            >
-                                                <ChevronLeft className="w-5 h-5 text-gray-400" />
-                                            </button>
-                                            <div className="flex items-center px-4 bg-white/5 rounded-xl border border-white/5">
-                                                <span className="text-xs font-mono text-gray-400 font-bold">
-                                                    {totalAppsPages > 0 ? appsPage + 1 : 0} / {totalAppsPages}
-                                                </span>
+                                                    ))
+                                                )}
                                             </div>
-                                            <button
-                                                onClick={() => fetchApplications(Math.min(totalAppsPages - 1, appsPage + 1))}
-                                                disabled={appsPage >= totalAppsPages - 1}
-                                                className="p-2 bg-white/5 hover:bg-white/10 rounded-xl disabled:opacity-50 transition-colors border border-white/10"
-                                            >
-                                                <ChevronRight className="w-5 h-5 text-gray-400" />
-                                            </button>
+
+                                            <div className="flex justify-center gap-2 py-4 border-t border-white/5 mt-auto bg-black/20 shrink-0">
+                                                <button
+                                                    onClick={() => fetchApplications(Math.max(0, appsPage - 1))}
+                                                    disabled={appsPage === 0}
+                                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl disabled:opacity-50 transition-colors border border-white/10"
+                                                >
+                                                    <ChevronLeft className="w-5 h-5 text-gray-400" />
+                                                </button>
+                                                <div className="flex items-center px-4 bg-white/5 rounded-xl border border-white/5">
+                                                    <span className="text-xs font-mono text-gray-400 font-bold">
+                                                        {totalAppsPages > 0 ? appsPage + 1 : 0} / {totalAppsPages}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => fetchApplications(Math.min(totalAppsPages - 1, appsPage + 1))}
+                                                    disabled={appsPage >= totalAppsPages - 1}
+                                                    className="p-2 bg-white/5 hover:bg-white/10 rounded-xl disabled:opacity-50 transition-colors border border-white/10"
+                                                >
+                                                    <ChevronRight className="w-5 h-5 text-gray-400" />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
                                     )}
                                 </div>
                             ) : activeTab === 'badges' ? (
@@ -1988,33 +1988,16 @@ const AdminDashboardPage = () => {
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => fetchAnticheat(anticheatPage)}
-                                                className="p-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 hover:bg-white/10 hover:text-cyan-400 transition-all"
-                                                title="Обновить"
+                                                className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-400 hover:bg-white/10 hover:text-cyan-400 transition-all text-sm font-bold flex items-center gap-2"
                                             >
                                                 <RefreshCw className="w-4 h-4" />
-                                            </button>
-                                            <button
-                                                disabled={anticheatPage === 0 || isAnticheatLoading}
-                                                onClick={() => fetchAnticheat(anticheatPage - 1)}
-                                                className="p-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
-                                            >
-                                                <ChevronLeft className="w-4 h-4" />
-                                            </button>
-                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widestAlpha bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
-                                                {anticheatPage + 1} / {totalAnticheatPages || 1}
-                                            </span>
-                                            <button
-                                                disabled={anticheatPage >= totalAnticheatPages - 1 || isAnticheatLoading}
-                                                onClick={() => fetchAnticheat(anticheatPage + 1)}
-                                                className="p-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
-                                            >
-                                                <ChevronRight className="w-4 h-4" />
+                                                <span className="hidden md:inline">Обновить</span>
                                             </button>
                                         </div>
                                     </div>
 
                                     {/* Snapshot List */}
-                                    <div className="flex-grow overflow-y-auto custom-scrollbar">
+                                    <div className="flex-grow overflow-x-auto pb-20 -mb-20">
                                         {isAnticheatLoading ? (
                                             <div className="flex items-center justify-center py-20">
                                                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
@@ -2025,67 +2008,93 @@ const AdminDashboardPage = () => {
                                                     <Crosshair className="w-8 h-8 text-cyan-500/50" />
                                                 </div>
                                                 <p className="text-gray-500 font-medium text-sm">Снимки не найдены</p>
-                                                <p className="text-gray-600 text-xs">Используйте кнопку «Сделать снимок» в меню игрока</p>
                                             </div>
                                         ) : (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                                                {anticheatSnapshots.map(snap => (
-                                                    <div
-                                                        key={snap.id}
-                                                        onClick={() => openSnapshotDetail(snap.id)}
-                                                        className="bg-[#0c0c0c] border border-white/5 hover:border-cyan-500/20 rounded-2xl p-4 cursor-pointer transition-all duration-300 group hover:shadow-[0_0_30px_rgba(6,182,212,0.05)]"
-                                                    >
-                                                        {/* Header */}
-                                                        <div className="flex items-center justify-between mb-3">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-colors">
-                                                                    <Crosshair className="w-5 h-5 text-cyan-400" />
-                                                                </div>
-                                                                <div>
-                                                                    <h4 className="text-white font-bold text-sm leading-tight group-hover:text-cyan-300 transition-colors">{snap.playerName}</h4>
-                                                                    <p className="text-[10px] text-gray-500 font-mono">{snap.playerUuid?.substring(0, 8)}...</p>
-                                                                </div>
-                                                            </div>
-                                                            <Eye className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 transition-colors" />
-                                                        </div>
-
-                                                        {/* Date */}
-                                                        <div className="flex items-center gap-2 mb-3">
-                                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                                                                {new Date(snap.createdAt).toLocaleDateString('ru-RU')}
-                                                            </span>
-                                                            <span className="text-[10px] text-gray-600 font-mono">
-                                                                {new Date(snap.createdAt).toLocaleTimeString('ru-RU')}
-                                                            </span>
-                                                        </div>
-
-                                                        {/* Stats Grid */}
-                                                        <div className="grid grid-cols-3 gap-2">
-                                                            <div className="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
-                                                                <Package className="w-3.5 h-3.5 text-green-400 mx-auto mb-1" />
-                                                                <span className="text-white font-black text-sm block">{snap.mods?.length || 0}</span>
-                                                                <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Моды</span>
-                                                            </div>
-                                                            <div className="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
-                                                                <Monitor className="w-3.5 h-3.5 text-blue-400 mx-auto mb-1" />
-                                                                <span className="text-white font-black text-sm block">{snap.processes?.length || 0}</span>
-                                                                <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Процессы</span>
-                                                            </div>
-                                                            <div className="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
-                                                                <FileText className="w-3.5 h-3.5 text-purple-400 mx-auto mb-1" />
-                                                                <span className="text-white font-black text-sm block">{snap.resourcePacks?.length || 0}</span>
-                                                                <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Паки</span>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Launcher */}
-                                                        <div className="mt-3 flex items-center gap-2">
-                                                            <span className="text-[9px] text-gray-600 font-bold uppercase">Лаунчер:</span>
-                                                            <span className="text-[10px] text-gray-400 font-mono truncate">{snap.launcherBrand || 'N/A'}</span>
-                                                        </div>
+                                            <>
+                                                <table className="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
+                                                            <th className="px-3 py-3">Игрок</th>
+                                                            <th className="px-3 py-3">Дата</th>
+                                                            <th className="px-3 py-3 text-center">Моды</th>
+                                                            <th className="px-3 py-3 text-center">Процессы</th>
+                                                            <th className="px-3 py-3 text-center">Паки</th>
+                                                            <th className="px-3 py-3">Лаунчер</th>
+                                                            <th className="px-3 py-3 text-right">Действия</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-white/5">
+                                                        {anticheatSnapshots.map(snap => (
+                                                            <tr key={snap.id} className="hover:bg-white/5 transition-colors group cursor-pointer" onClick={() => openSnapshotDetail(snap.id)}>
+                                                                <td className="px-3 py-3">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-colors">
+                                                                            <Crosshair className="w-4 h-4 text-cyan-400" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <div className="text-white font-bold text-sm leading-tight group-hover:text-cyan-300 transition-colors">{snap.playerName}</div>
+                                                                            <div className="text-[10px] text-gray-500 font-mono">{snap.playerUuid?.substring(0, 8)}...</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-3 py-3">
+                                                                    <div className="text-sm text-gray-300">{new Date(snap.createdAt).toLocaleDateString('ru-RU')}</div>
+                                                                    <div className="text-xs text-gray-500 font-mono">{new Date(snap.createdAt).toLocaleTimeString('ru-RU')}</div>
+                                                                </td>
+                                                                <td className="px-3 py-3 text-center">
+                                                                    <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-black">{snap.mods?.length || 0}</span>
+                                                                </td>
+                                                                <td className="px-3 py-3 text-center">
+                                                                    <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20 text-xs font-black">{snap.processes?.length || 0}</span>
+                                                                </td>
+                                                                <td className="px-3 py-3 text-center">
+                                                                    <span className="inline-flex items-center justify-center px-2 py-1 rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-black">{snap.resourcePacks?.length || 0}</span>
+                                                                </td>
+                                                                <td className="px-3 py-3">
+                                                                    <div className="text-xs text-gray-400 font-mono truncate max-w-[150px]">{snap.launcherBrand || 'unknown'}</div>
+                                                                </td>
+                                                                <td className="px-3 py-3 text-right">
+                                                                    <button onClick={(e) => { e.stopPropagation(); openSnapshotDetail(snap.id); }} className="p-2 bg-white/5 hover:bg-cyan-500/20 rounded-lg transition-all border border-white/10 hover:border-cyan-500/30 text-gray-400 hover:text-cyan-400 inline-flex">
+                                                                        <Eye className="w-4 h-4" />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                                <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-4 pb-4">
+                                                    <div className="text-xs text-gray-500 font-medium">
+                                                        Страница {anticheatPage + 1} из {totalAnticheatPages || 1}
                                                     </div>
-                                                ))}
-                                            </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            disabled={anticheatPage === 0 || isAnticheatLoading}
+                                                            onClick={() => fetchAnticheat(anticheatPage - 1)}
+                                                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-xl transition-all border border-white/10 text-gray-400 disabled:cursor-not-allowed"
+                                                        >
+                                                            <ChevronLeft className="w-5 h-5" />
+                                                        </button>
+                                                        <div className="flex gap-1">
+                                                            {[...Array(totalAnticheatPages)].map((_, i) => (
+                                                                <button
+                                                                    key={i}
+                                                                    onClick={() => fetchAnticheat(i)}
+                                                                    className={`w-8 h-8 rounded-xl font-bold text-xs transition-all ${anticheatPage === i ? 'bg-cyan-500 text-black' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'}`}
+                                                                >
+                                                                    {i + 1}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        <button
+                                                            disabled={anticheatPage >= totalAnticheatPages - 1 || isAnticheatLoading}
+                                                            onClick={() => fetchAnticheat(anticheatPage + 1)}
+                                                            className="p-2 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 rounded-xl transition-all border border-white/10 text-gray-400 disabled:cursor-not-allowed"
+                                                        >
+                                                            <ChevronRight className="w-5 h-5" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </>
                                         )}
                                     </div>
                                 </div>
@@ -3027,13 +3036,14 @@ const AdminDashboardPage = () => {
 
                             <div className="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-6">
                                 {/* Launcher Info */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
-                                        <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest block mb-2">Лаунчер</span>
+                                <div className="flex flex-wrap gap-4 bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Лаунчер</span>
                                         <span className="text-white font-bold text-sm">{selectedSnapshot.launcherName || 'N/A'}</span>
                                     </div>
-                                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
-                                        <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest block mb-2">Бренд</span>
+                                    <div className="w-px bg-white/10 hidden md:block"></div>
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Бренд</span>
                                         <span className="text-white font-bold text-sm">{selectedSnapshot.launcherBrand || 'N/A'}</span>
                                     </div>
                                 </div>
@@ -3047,24 +3057,23 @@ const AdminDashboardPage = () => {
                                         <h3 className="text-white font-bold text-sm">Моды ({selectedSnapshot.mods?.length || 0})</h3>
                                     </div>
                                     {selectedSnapshot.mods && selectedSnapshot.mods.length > 0 ? (
-                                        <div className="flex flex-wrap gap-2">
-                                            {selectedSnapshot.mods.map((mod, i) => {
-                                                const isKnown = ['fabric-api', 'sodium', 'iris', 'voicechat', 'cloth-config', 'slbase', 'slcomp', 'sl-camera', 'voicemessages', 'emotecraft', 'PlayerAnimationLib', 'handbooks', 'BendableCuboids', 'ArmorPoser'].some(known => mod.toLowerCase().includes(known.toLowerCase()));
-                                                return (
-                                                    <span
-                                                        key={i}
-                                                        className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${
-                                                            isKnown
-                                                                ? 'bg-green-500/5 text-green-400/70 border-green-500/10'
-                                                                : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]'
-                                                        }`}
-                                                        title={isKnown ? 'Разрешённый мод' : '⚠️ Неизвестный мод — проверьте!'}
-                                                    >
-                                                        {!isKnown && <span className="mr-1">⚠️</span>}
-                                                        {mod}
-                                                    </span>
-                                                );
-                                            })}
+                                        <div className="max-h-48 overflow-y-auto custom-scrollbar pr-2">
+                                            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                {selectedSnapshot.mods.map((mod, i) => {
+                                                    const isKnown = ['fabric-api', 'sodium', 'iris', 'voicechat', 'cloth-config', 'slbase', 'slcomp', 'sl-camera', 'voicemessages', 'emotecraft', 'PlayerAnimationLib', 'handbooks', 'BendableCuboids', 'ArmorPoser'].some(known => mod.toLowerCase().includes(known.toLowerCase()));
+                                                    return (
+                                                        <li
+                                                            key={i}
+                                                            className={`text-[11px] font-mono flex items-center gap-2 py-1.5 px-2.5 rounded border transition-all ${isKnown ? 'bg-green-500/5 text-green-400/80 border-green-500/10' : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]'}`}
+                                                            title={isKnown ? 'Разрешённый мод' : '⚠️ Неизвестный мод — проверьте!'}
+                                                        >
+                                                            {!isKnown && <span className="text-[10px] shrink-0">⚠️</span>}
+                                                            {isKnown && <Package className="w-3.5 h-3.5 shrink-0 opacity-50" />}
+                                                            <span className="truncate">{mod}</span>
+                                                        </li>
+                                                    );
+                                                })}
+                                            </ul>
                                         </div>
                                     ) : (
                                         <p className="text-gray-600 text-xs italic">Нет модов</p>
@@ -3080,12 +3089,15 @@ const AdminDashboardPage = () => {
                                         <h3 className="text-white font-bold text-sm">Ресурспаки ({selectedSnapshot.resourcePacks?.length || 0})</h3>
                                     </div>
                                     {selectedSnapshot.resourcePacks && selectedSnapshot.resourcePacks.length > 0 ? (
-                                        <div className="flex flex-wrap gap-2">
-                                            {selectedSnapshot.resourcePacks.map((pack, i) => (
-                                                <span key={i} className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                                                    {pack}
-                                                </span>
-                                            ))}
+                                        <div className="max-h-32 overflow-y-auto custom-scrollbar pr-2">
+                                            <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                                                {selectedSnapshot.resourcePacks.map((pack, i) => (
+                                                    <li key={i} className="text-[11px] font-mono text-purple-300 flex items-center gap-2 py-1.5 px-2.5 rounded bg-purple-500/5 border border-purple-500/10 transition-colors">
+                                                        <FileText className="w-3.5 h-3.5 text-purple-500/50 shrink-0" />
+                                                        <span className="truncate" title={pack}>{pack}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         </div>
                                     ) : (
                                         <p className="text-gray-600 text-xs italic">Нет ресурспаков</p>
@@ -3129,8 +3141,8 @@ const AdminDashboardPage = () => {
                                                             if (!snapshotProcessSearch) return true;
                                                             const q = snapshotProcessSearch.toLowerCase();
                                                             return p.imageName?.toLowerCase().includes(q) ||
-                                                                   p.windowTitle?.toLowerCase().includes(q) ||
-                                                                   p.pid?.includes(q);
+                                                                p.windowTitle?.toLowerCase().includes(q) ||
+                                                                p.pid?.includes(q);
                                                         })
                                                         .map((proc, i) => {
                                                             const isSystem = ['svchost.exe', 'csrss.exe', 'services.exe', 'lsass.exe', 'smss.exe', 'wininit.exe', 'winlogon.exe', 'fontdrvhost.exe', 'dwm.exe', 'System', 'Registry', 'Secure System', 'System Idle Process', 'Memory Compression', 'conhost.exe', 'dllhost.exe', 'spoolsv.exe', 'SearchIndexer.exe', 'LsaIso.exe', 'dasHost.exe', 'WUDFHost.exe', 'wlanext.exe', 'audiodg.exe', 'ctfmon.exe', 'sihost.exe', 'taskhostw.exe', 'RuntimeBroker.exe', 'explorer.exe', 'SearchApp.exe', 'StartMenuExperienceHost.exe', 'TextInputHost.exe', 'ShellExperienceHost.exe', 'ApplicationFrameHost.exe', 'SecurityHealthService.exe', 'WmiPrvSE.exe', 'NisSrv.exe', 'MsMpEng.exe', 'MpDefenderCoreService.exe', 'SearchProtocolHost.exe', 'SearchFilterHost.exe', 'NTKDaemon.exe', 'crashpad_handler.exe', 'tasklist.exe', 'UserOOBEBroker.exe', 'LockApp.exe', 'AggregatorHost.exe'].includes(proc.imageName);
@@ -3147,11 +3159,10 @@ const AdminDashboardPage = () => {
                                                                         <span className="text-[10px] text-gray-400 font-mono">{proc.memUsage}</span>
                                                                     </td>
                                                                     <td className="px-3 py-2">
-                                                                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ${
-                                                                            proc.status === 'Running' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                                            proc.status === 'Not Responding' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                                                            'bg-gray-500/10 text-gray-500 border-gray-500/20'
-                                                                        }`}>
+                                                                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ${proc.status === 'Running' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                                                proc.status === 'Not Responding' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                                                    'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                                                                            }`}>
                                                                             {proc.status}
                                                                         </span>
                                                                     </td>
@@ -3198,29 +3209,29 @@ const AdminDashboardPage = () => {
                                 <div className="w-full md:w-1/2 p-6 border-r border-white/5 overflow-y-auto custom-scrollbar flex flex-col gap-4">
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Путь (Path)</label>
-                                        <input 
-                                            type="text" 
-                                            value={pageForm.path} 
-                                            onChange={e => setPageForm({ ...pageForm, path: e.target.value })} 
+                                        <input
+                                            type="text"
+                                            value={pageForm.path}
+                                            onChange={e => setPageForm({ ...pageForm, path: e.target.value })}
                                             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-story-gold/50 transition-colors"
                                             placeholder="например: about-us"
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">Заголовок (Title)</label>
-                                        <input 
-                                            type="text" 
-                                            value={pageForm.title} 
-                                            onChange={e => setPageForm({ ...pageForm, title: e.target.value })} 
+                                        <input
+                                            type="text"
+                                            value={pageForm.title}
+                                            onChange={e => setPageForm({ ...pageForm, title: e.target.value })}
                                             className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-medium focus:outline-none focus:border-story-gold/50 transition-colors"
                                             placeholder="Название вкладки и header страницы"
                                         />
                                     </div>
                                     <div className="flex-grow flex flex-col min-h-[300px]">
                                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5 ml-1">HTML Содержимое</label>
-                                        <textarea 
-                                            value={pageForm.htmlContent} 
-                                            onChange={e => setPageForm({ ...pageForm, htmlContent: e.target.value })} 
+                                        <textarea
+                                            value={pageForm.htmlContent}
+                                            onChange={e => setPageForm({ ...pageForm, htmlContent: e.target.value })}
                                             className="w-full h-full flex-grow bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-story-gold/50 transition-colors custom-scrollbar"
                                             placeholder="<h1>Ваш контент здесь</h1>"
                                         />
@@ -3232,9 +3243,9 @@ const AdminDashboardPage = () => {
                                 <div className="w-full md:w-1/2 p-6 flex flex-col bg-[#050505]">
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 ml-1">Предпросмотр</label>
                                     <div className="flex-grow flex flex-col relative h-full min-h-[400px]">
-                                        <iframe 
-                                            srcDoc={renderCustomPageHtml(pageForm.htmlContent)} 
-                                            className="w-full h-full border-none pointer-events-auto bg-transparent relative z-10" 
+                                        <iframe
+                                            srcDoc={renderCustomPageHtml(pageForm.htmlContent)}
+                                            className="w-full h-full border-none pointer-events-auto bg-transparent relative z-10"
                                             sandbox="allow-scripts allow-same-origin"
                                             style={{ background: 'transparent' }}
                                             allowTransparency={true}
