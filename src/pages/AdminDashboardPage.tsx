@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { adminApi, applicationsApi, customPagesApi, anticheatApi, type User, type Application, type CustomPage, type AnticheatSnapshot, type ProcessInfo } from '../api';
+import { adminApi, applicationsApi, customPagesApi, anticheatApi, type User, type Application, type CustomPage, type AnticheatSnapshot } from '../api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
