@@ -200,3 +200,50 @@ export interface AuditLog {
     createdAt: string;
 }
 
+// ==================== Anticheat ====================
+
+export interface ProcessInfo {
+    imageName: string;
+    pid: string;
+    memUsage: string;
+    status: string;
+    windowTitle: string;
+}
+
+export interface AnticheatSnapshot {
+    id: number;
+    playerName: string;
+    playerUuid: string;
+    launcherName: string;
+    launcherBrand: string;
+    mods: string[];
+    resourcePacks: string[];
+    processes: ProcessInfo[];
+    createdAt: string;
+}
+
+export const anticheatApi = {
+    getAllSnapshots: async (query?: string, page = 0, size = 20): Promise<{ content: AnticheatSnapshot[], totalElements: number, totalPages: number }> => {
+        const params: any = { page, size };
+        if (query) params.query = query;
+        const response = await apiClient.get('/api/admin/anticheat/snapshots', { params });
+        return response.data;
+    },
+
+    getPlayerSnapshots: async (playerName: string, page = 0, size = 20): Promise<{ content: AnticheatSnapshot[], totalElements: number, totalPages: number }> => {
+        const response = await apiClient.get(`/api/admin/anticheat/players/${encodeURIComponent(playerName)}`, {
+            params: { page, size }
+        });
+        return response.data;
+    },
+
+    getSnapshot: async (id: number): Promise<AnticheatSnapshot> => {
+        const response = await apiClient.get(`/api/admin/anticheat/snapshots/${id}`);
+        return response.data;
+    },
+
+    requestSnapshot: async (playerName: string): Promise<{ status: string, message: string }> => {
+        const response = await apiClient.post(`/api/admin/anticheat/request/${encodeURIComponent(playerName)}`);
+        return response.data;
+    }
+};

@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { adminApi, applicationsApi, customPagesApi, type User, type Application, type CustomPage } from '../api';
+import { adminApi, applicationsApi, customPagesApi, anticheatApi, type User, type Application, type CustomPage, type AnticheatSnapshot, type ProcessInfo } from '../api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
-import { Users, FileText, Shield, ShieldCheck, Ban, Search, Filter, MoreVertical, Edit, Key, Trash2, X, Copy, Mail, CheckCircle2, XCircle, Settings, AlertCircle, History, Send, Database, Download, Upload, ChevronLeft, ChevronRight, RefreshCw, FileCode } from 'lucide-react';
+import { Users, FileText, Shield, ShieldCheck, Ban, Search, Filter, MoreVertical, Edit, Key, Trash2, X, Copy, Mail, CheckCircle2, XCircle, Settings, AlertCircle, History, Send, Database, Download, Upload, ChevronLeft, ChevronRight, RefreshCw, FileCode, Camera, Eye, Package, Monitor, Crosshair } from 'lucide-react';
 import UserAvatar from '../components/UserAvatar';
 import BoosterBadge from '../components/BoosterBadge';
 import { useAdminWebSocket } from '../hooks/useAdminWebSocket';
@@ -13,7 +13,7 @@ import { renderCustomPageHtml } from '../utils/pageHtml';
 const AdminDashboardPage = () => {
     const { user, isAdmin, isModerator } = useAuth();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState<'users' | 'applications' | 'badges' | 'settings' | 'logs' | 'pages'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'applications' | 'badges' | 'settings' | 'logs' | 'pages' | 'anticheat'>('users');
 
     // Data states
     const [users, setUsers] = useState<User[]>([]);
@@ -44,6 +44,16 @@ const AdminDashboardPage = () => {
     const [logsPage, setLogsPage] = useState(0);
     const [totalLogsPages, setTotalLogsPages] = useState(0);
     const [isLogsLoading, setIsLogsLoading] = useState(false);
+
+    // Anticheat state
+    const [anticheatSnapshots, setAnticheatSnapshots] = useState<AnticheatSnapshot[]>([]);
+    const [anticheatSearch, setAnticheatSearch] = useState('');
+    const [anticheatPage, setAnticheatPage] = useState(0);
+    const [totalAnticheatPages, setTotalAnticheatPages] = useState(0);
+    const [isAnticheatLoading, setIsAnticheatLoading] = useState(false);
+    const [selectedSnapshot, setSelectedSnapshot] = useState<AnticheatSnapshot | null>(null);
+    const [showSnapshotModal, setShowSnapshotModal] = useState(false);
+    const [snapshotProcessSearch, setSnapshotProcessSearch] = useState('');
 
     // Modal & Action states
     const [showBadgeModal, setShowBadgeModal] = useState(false);
@@ -575,6 +585,7 @@ const AdminDashboardPage = () => {
         if (activeTab === 'users') fetchUsers(usersPage);
         else if (activeTab === 'applications') fetchApplications(appsPage);
         else if (activeTab === 'pages') loadCustomPages();
+        else if (activeTab === 'anticheat') fetchAnticheat(anticheatPage);
     };
 
     const fetchLogs = async (page: number) => {
@@ -588,6 +599,41 @@ const AdminDashboardPage = () => {
             console.error('Failed to fetch logs:', err);
         } finally {
             setIsLogsLoading(false);
+        }
+    };
+
+    const fetchAnticheat = async (page: number) => {
+        try {
+            setIsAnticheatLoading(true);
+            const res = await anticheatApi.getAllSnapshots(anticheatSearch || undefined, page, 20);
+            setAnticheatSnapshots(res.content);
+            setTotalAnticheatPages(res.totalPages);
+            setAnticheatPage(page);
+        } catch (err) {
+            console.error('Failed to fetch anticheat snapshots:', err);
+        } finally {
+            setIsAnticheatLoading(false);
+        }
+    };
+
+    const handleRequestSnapshot = async (playerName: string) => {
+        try {
+            const res = await anticheatApi.requestSnapshot(playerName);
+            alert(res.message || 'Запрос на снимок отправлен!');
+        } catch (err: any) {
+            console.error('Failed to request snapshot:', err);
+            alert(err.response?.data?.message || 'Не удалось запросить снимок. RCON не доступен.');
+        }
+    };
+
+    const openSnapshotDetail = async (id: number) => {
+        try {
+            const snapshot = await anticheatApi.getSnapshot(id);
+            setSelectedSnapshot(snapshot);
+            setShowSnapshotModal(true);
+            setSnapshotProcessSearch('');
+        } catch (err) {
+            console.error('Failed to load snapshot:', err);
         }
     };
 
@@ -606,6 +652,8 @@ const AdminDashboardPage = () => {
                 fetchLogs(logsPage);
             } else if (activeTab === 'pages') {
                 loadCustomPages();
+            } else if (activeTab === 'anticheat') {
+                fetchAnticheat(anticheatPage);
             }
         }
     }, [user, isAdmin, navigate, activeTab]);
@@ -625,6 +673,16 @@ const AdminDashboardPage = () => {
             return () => clearTimeout(timer);
         }
     }, [logsSearch]);
+
+    useEffect(() => {
+        if (activeTab === 'anticheat') {
+            const timer = setTimeout(() => {
+                setAnticheatPage(0);
+                fetchAnticheat(0);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [anticheatSearch]);
 
     useEffect(() => {
         if (user && (isAdmin || isModerator)) {
@@ -938,6 +996,7 @@ const AdminDashboardPage = () => {
                                 {[
                                     { id: 'users', label: 'Пользователи', icon: Users },
                                     { id: 'applications', label: 'Заявки', icon: FileText },
+                                    { id: 'anticheat', label: 'Античит', icon: Crosshair },
                                     ...(isAdmin ? [
                                         { id: 'badges', label: 'Значки', icon: Shield },
                                         { id: 'pages', label: 'Страницы', icon: FileCode },
@@ -1121,6 +1180,11 @@ const AdminDashboardPage = () => {
                                                                             <button onClick={(e) => { e.stopPropagation(); openWarningsModal(u); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-gray-300">
                                                                                 <AlertCircle className="w-4 h-4 text-orange-400" /> Предупреждения
                                                                             </button>
+                                                                            {u.minecraftNickname && (
+                                                                                <button onClick={(e) => { e.stopPropagation(); handleRequestSnapshot(u.minecraftNickname!); setOpenMenuUserId(null); }} className="w-full text-left px-4 py-2 hover:bg-white/10 flex items-center gap-3 transition-colors text-xs font-bold text-cyan-400">
+                                                                                    <Camera className="w-4 h-4" /> Сделать снимок
+                                                                                </button>
+                                                                            )}
 
                                                                         </div>
                                                                     )}
@@ -1310,6 +1374,14 @@ const AdminDashboardPage = () => {
                                                                     </div>
                                                                     Предупреждения
                                                                 </button>
+                                                                {u.minecraftNickname && (
+                                                                    <button onClick={(e) => { e.stopPropagation(); handleRequestSnapshot(u.minecraftNickname!); setOpenMenuUserId(null); }} className="w-full text-left px-4 py-3 hover:bg-white/5 flex items-center gap-3 transition-colors text-[11px] font-bold text-cyan-400 group/item">
+                                                                        <div className="w-7 h-7 bg-cyan-500/10 rounded-lg flex items-center justify-center group-hover/item:bg-cyan-500/20 transition-colors shrink-0">
+                                                                            <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                                                                        </div>
+                                                                        Сделать снимок
+                                                                    </button>
+                                                                )}
                                                                 <div className="h-px bg-white/5 mx-2 my-1" />
                                                                 <button onClick={(e) => { e.stopPropagation(); setOpenMenuUserId(null); }} className="w-full text-left px-4 py-3 hover:bg-white/10 flex items-center gap-3 transition-colors text-[11px] font-bold text-gray-500">
                                                                     <div className="w-7 h-7 bg-white/5 rounded-lg flex items-center justify-center shrink-0">
@@ -1896,6 +1968,125 @@ const AdminDashboardPage = () => {
                                                 </tbody>
                                             </table>
                                         </div>
+                                    </div>
+                                </div>
+                            ) : activeTab === 'anticheat' ? (
+                                <div className="space-y-4 flex-grow flex flex-col overflow-hidden animate-fadeIn">
+                                    {/* Anticheat Header */}
+                                    <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
+                                        <div className="relative w-full md:w-96">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400/40" />
+                                            <input
+                                                type="text"
+                                                placeholder="Поиск по нику игрока..."
+                                                value={anticheatSearch}
+                                                onChange={e => setAnticheatSearch(e.target.value)}
+                                                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:border-cyan-500/50 outline-none transition-all placeholder:text-gray-600"
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => fetchAnticheat(anticheatPage)}
+                                                className="p-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 hover:bg-white/10 hover:text-cyan-400 transition-all"
+                                                title="Обновить"
+                                            >
+                                                <RefreshCw className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                disabled={anticheatPage === 0 || isAnticheatLoading}
+                                                onClick={() => fetchAnticheat(anticheatPage - 1)}
+                                                className="p-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                                            >
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </button>
+                                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widestAlpha bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                                                {anticheatPage + 1} / {totalAnticheatPages || 1}
+                                            </span>
+                                            <button
+                                                disabled={anticheatPage >= totalAnticheatPages - 1 || isAnticheatLoading}
+                                                onClick={() => fetchAnticheat(anticheatPage + 1)}
+                                                className="p-2 bg-white/5 border border-white/10 rounded-lg text-gray-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-white/10 transition-all"
+                                            >
+                                                <ChevronRight className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Snapshot List */}
+                                    <div className="flex-grow overflow-y-auto custom-scrollbar">
+                                        {isAnticheatLoading ? (
+                                            <div className="flex items-center justify-center py-20">
+                                                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
+                                            </div>
+                                        ) : anticheatSnapshots.length === 0 ? (
+                                            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                                <div className="w-16 h-16 rounded-2xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                                                    <Crosshair className="w-8 h-8 text-cyan-500/50" />
+                                                </div>
+                                                <p className="text-gray-500 font-medium text-sm">Снимки не найдены</p>
+                                                <p className="text-gray-600 text-xs">Используйте кнопку «Сделать снимок» в меню игрока</p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                                                {anticheatSnapshots.map(snap => (
+                                                    <div
+                                                        key={snap.id}
+                                                        onClick={() => openSnapshotDetail(snap.id)}
+                                                        className="bg-[#0c0c0c] border border-white/5 hover:border-cyan-500/20 rounded-2xl p-4 cursor-pointer transition-all duration-300 group hover:shadow-[0_0_30px_rgba(6,182,212,0.05)]"
+                                                    >
+                                                        {/* Header */}
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20 group-hover:bg-cyan-500/20 transition-colors">
+                                                                    <Crosshair className="w-5 h-5 text-cyan-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <h4 className="text-white font-bold text-sm leading-tight group-hover:text-cyan-300 transition-colors">{snap.playerName}</h4>
+                                                                    <p className="text-[10px] text-gray-500 font-mono">{snap.playerUuid?.substring(0, 8)}...</p>
+                                                                </div>
+                                                            </div>
+                                                            <Eye className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 transition-colors" />
+                                                        </div>
+
+                                                        {/* Date */}
+                                                        <div className="flex items-center gap-2 mb-3">
+                                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                                                {new Date(snap.createdAt).toLocaleDateString('ru-RU')}
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-600 font-mono">
+                                                                {new Date(snap.createdAt).toLocaleTimeString('ru-RU')}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Stats Grid */}
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            <div className="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
+                                                                <Package className="w-3.5 h-3.5 text-green-400 mx-auto mb-1" />
+                                                                <span className="text-white font-black text-sm block">{snap.mods?.length || 0}</span>
+                                                                <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Моды</span>
+                                                            </div>
+                                                            <div className="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
+                                                                <Monitor className="w-3.5 h-3.5 text-blue-400 mx-auto mb-1" />
+                                                                <span className="text-white font-black text-sm block">{snap.processes?.length || 0}</span>
+                                                                <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Процессы</span>
+                                                            </div>
+                                                            <div className="bg-white/5 rounded-xl p-2.5 text-center border border-white/5">
+                                                                <FileText className="w-3.5 h-3.5 text-purple-400 mx-auto mb-1" />
+                                                                <span className="text-white font-black text-sm block">{snap.resourcePacks?.length || 0}</span>
+                                                                <span className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">Паки</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Launcher */}
+                                                        <div className="mt-3 flex items-center gap-2">
+                                                            <span className="text-[9px] text-gray-600 font-bold uppercase">Лаунчер:</span>
+                                                            <span className="text-[10px] text-gray-400 font-mono truncate">{snap.launcherBrand || 'N/A'}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ) : null}
@@ -2804,6 +2995,180 @@ const AdminDashboardPage = () => {
                                     >
                                         Подтвердить сброс
                                     </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Anticheat Snapshot Detail Modal */}
+                {showSnapshotModal && selectedSnapshot && (
+                    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-12 overflow-y-auto">
+                        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm" onClick={() => setShowSnapshotModal(false)} />
+                        <div className="bg-[#0a0a0a] w-[95vw] max-w-[1400px] rounded-3xl border border-cyan-500/10 flex flex-col overflow-hidden shadow-2xl relative z-10 animate-scaleIn mb-8">
+                            {/* Modal Header */}
+                            <div className="p-6 border-b border-white/5 flex gap-4 items-center shrink-0 bg-gradient-to-r from-cyan-500/5 to-transparent">
+                                <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20 shrink-0">
+                                    <Crosshair className="w-6 h-6 text-cyan-400" />
+                                </div>
+                                <div className="flex-grow min-w-0">
+                                    <h2 className="text-xl font-bold text-white tracking-tight leading-tight flex items-center gap-3">
+                                        <span>{selectedSnapshot.playerName}</span>
+                                        <span className="text-[10px] font-mono text-gray-500 bg-white/5 px-2 py-0.5 rounded border border-white/5">{selectedSnapshot.playerUuid}</span>
+                                    </h2>
+                                    <p className="text-sm text-gray-500 font-medium mt-0.5">
+                                        {new Date(selectedSnapshot.createdAt).toLocaleString('ru-RU')} · Снимок #{selectedSnapshot.id}
+                                    </p>
+                                </div>
+                                <button onClick={() => setShowSnapshotModal(false)} className="ml-auto text-gray-500 hover:text-white p-2 hover:bg-white/5 rounded-xl transition-all">
+                                    <X className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="flex-grow overflow-y-auto custom-scrollbar p-6 space-y-6">
+                                {/* Launcher Info */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+                                        <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest block mb-2">Лаунчер</span>
+                                        <span className="text-white font-bold text-sm">{selectedSnapshot.launcherName || 'N/A'}</span>
+                                    </div>
+                                    <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-4">
+                                        <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest block mb-2">Бренд</span>
+                                        <span className="text-white font-bold text-sm">{selectedSnapshot.launcherBrand || 'N/A'}</span>
+                                    </div>
+                                </div>
+
+                                {/* Mods Section */}
+                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                                            <Package className="w-4 h-4 text-green-400" />
+                                        </div>
+                                        <h3 className="text-white font-bold text-sm">Моды ({selectedSnapshot.mods?.length || 0})</h3>
+                                    </div>
+                                    {selectedSnapshot.mods && selectedSnapshot.mods.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedSnapshot.mods.map((mod, i) => {
+                                                const isKnown = ['fabric-api', 'sodium', 'iris', 'voicechat', 'cloth-config', 'slbase', 'slcomp', 'sl-camera', 'voicemessages', 'emotecraft', 'PlayerAnimationLib', 'handbooks', 'BendableCuboids', 'ArmorPoser'].some(known => mod.toLowerCase().includes(known.toLowerCase()));
+                                                return (
+                                                    <span
+                                                        key={i}
+                                                        className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all ${
+                                                            isKnown
+                                                                ? 'bg-green-500/5 text-green-400/70 border-green-500/10'
+                                                                : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]'
+                                                        }`}
+                                                        title={isKnown ? 'Разрешённый мод' : '⚠️ Неизвестный мод — проверьте!'}
+                                                    >
+                                                        {!isKnown && <span className="mr-1">⚠️</span>}
+                                                        {mod}
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-600 text-xs italic">Нет модов</p>
+                                    )}
+                                </div>
+
+                                {/* Resource Packs Section */}
+                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                                            <FileText className="w-4 h-4 text-purple-400" />
+                                        </div>
+                                        <h3 className="text-white font-bold text-sm">Ресурспаки ({selectedSnapshot.resourcePacks?.length || 0})</h3>
+                                    </div>
+                                    {selectedSnapshot.resourcePacks && selectedSnapshot.resourcePacks.length > 0 ? (
+                                        <div className="flex flex-wrap gap-2">
+                                            {selectedSnapshot.resourcePacks.map((pack, i) => (
+                                                <span key={i} className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                                                    {pack}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-600 text-xs italic">Нет ресурспаков</p>
+                                    )}
+                                </div>
+
+                                {/* Processes Section */}
+                                <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                                            <Monitor className="w-4 h-4 text-blue-400" />
+                                        </div>
+                                        <h3 className="text-white font-bold text-sm flex-grow">Процессы ({selectedSnapshot.processes?.length || 0})</h3>
+                                        <div className="relative w-64">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
+                                            <input
+                                                type="text"
+                                                placeholder="Фильтр процессов..."
+                                                value={snapshotProcessSearch}
+                                                onChange={e => setSnapshotProcessSearch(e.target.value)}
+                                                className="w-full pl-9 pr-3 py-1.5 bg-black/40 border border-white/10 rounded-lg text-xs text-white focus:border-blue-500/50 outline-none transition-all placeholder:text-gray-600"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {selectedSnapshot.processes && selectedSnapshot.processes.length > 0 ? (
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-white/10 text-gray-500 text-[9px] uppercase tracking-widest font-black">
+                                                        <th className="px-3 py-2.5">Процесс</th>
+                                                        <th className="px-3 py-2.5">PID</th>
+                                                        <th className="px-3 py-2.5">Память</th>
+                                                        <th className="px-3 py-2.5">Статус</th>
+                                                        <th className="px-3 py-2.5">Окно</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-white/5">
+                                                    {selectedSnapshot.processes
+                                                        .filter(p => {
+                                                            if (!snapshotProcessSearch) return true;
+                                                            const q = snapshotProcessSearch.toLowerCase();
+                                                            return p.imageName?.toLowerCase().includes(q) ||
+                                                                   p.windowTitle?.toLowerCase().includes(q) ||
+                                                                   p.pid?.includes(q);
+                                                        })
+                                                        .map((proc, i) => {
+                                                            const isSystem = ['svchost.exe', 'csrss.exe', 'services.exe', 'lsass.exe', 'smss.exe', 'wininit.exe', 'winlogon.exe', 'fontdrvhost.exe', 'dwm.exe', 'System', 'Registry', 'Secure System', 'System Idle Process', 'Memory Compression', 'conhost.exe', 'dllhost.exe', 'spoolsv.exe', 'SearchIndexer.exe', 'LsaIso.exe', 'dasHost.exe', 'WUDFHost.exe', 'wlanext.exe', 'audiodg.exe', 'ctfmon.exe', 'sihost.exe', 'taskhostw.exe', 'RuntimeBroker.exe', 'explorer.exe', 'SearchApp.exe', 'StartMenuExperienceHost.exe', 'TextInputHost.exe', 'ShellExperienceHost.exe', 'ApplicationFrameHost.exe', 'SecurityHealthService.exe', 'WmiPrvSE.exe', 'NisSrv.exe', 'MsMpEng.exe', 'MpDefenderCoreService.exe', 'SearchProtocolHost.exe', 'SearchFilterHost.exe', 'NTKDaemon.exe', 'crashpad_handler.exe', 'tasklist.exe', 'UserOOBEBroker.exe', 'LockApp.exe', 'AggregatorHost.exe'].includes(proc.imageName);
+                                                            const hasWindow = proc.windowTitle && proc.windowTitle !== 'N/A' && proc.windowTitle !== '';
+                                                            return (
+                                                                <tr key={i} className={`transition-colors ${isSystem ? 'opacity-40 hover:opacity-70' : hasWindow ? 'hover:bg-blue-500/5 bg-blue-500/[0.02]' : 'hover:bg-white/[0.02]'}`}>
+                                                                    <td className="px-3 py-2">
+                                                                        <span className={`text-xs font-bold ${isSystem ? 'text-gray-500' : 'text-white'}`}>{proc.imageName}</span>
+                                                                    </td>
+                                                                    <td className="px-3 py-2">
+                                                                        <span className="text-[10px] text-gray-500 font-mono">{proc.pid}</span>
+                                                                    </td>
+                                                                    <td className="px-3 py-2">
+                                                                        <span className="text-[10px] text-gray-400 font-mono">{proc.memUsage}</span>
+                                                                    </td>
+                                                                    <td className="px-3 py-2">
+                                                                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border ${
+                                                                            proc.status === 'Running' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                                            proc.status === 'Not Responding' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                                            'bg-gray-500/10 text-gray-500 border-gray-500/20'
+                                                                        }`}>
+                                                                            {proc.status}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-3 py-2">
+                                                                        <span className={`text-[10px] truncate max-w-[300px] block ${hasWindow ? 'text-blue-300 font-medium' : 'text-gray-600'}`} title={proc.windowTitle}>
+                                                                            {proc.windowTitle || 'N/A'}
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    ) : (
+                                        <p className="text-gray-600 text-xs italic">Нет данных о процессах</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
