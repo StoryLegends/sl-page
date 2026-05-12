@@ -1997,7 +1997,7 @@ const AdminDashboardPage = () => {
                                     </div>
 
                                     {/* Snapshot List */}
-                                    <div className="flex-grow overflow-x-auto pb-20 -mb-20">
+                                    <div className="flex-grow flex flex-col min-h-0">
                                         {isAnticheatLoading ? (
                                             <div className="flex items-center justify-center py-20">
                                                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div>
@@ -2011,8 +2011,9 @@ const AdminDashboardPage = () => {
                                             </div>
                                         ) : (
                                             <>
-                                                <table className="w-full text-left border-collapse">
-                                                    <thead>
+                                                <div className="flex-grow overflow-x-auto pb-4 custom-scrollbar">
+                                                    <table className="w-full text-left border-collapse min-w-[800px]">
+                                                        <thead>
                                                         <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
                                                             <th className="px-3 py-3">Игрок</th>
                                                             <th className="px-3 py-3">Дата</th>
@@ -2061,8 +2062,9 @@ const AdminDashboardPage = () => {
                                                             </tr>
                                                         ))}
                                                     </tbody>
-                                                </table>
-                                                <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-4 pb-4">
+                                                    </table>
+                                                </div>
+                                                <div className="shrink-0 flex items-center justify-between pt-4 border-t border-white/5 pb-2 mt-auto">
                                                     <div className="text-xs text-gray-500 font-medium">
                                                         Страница {anticheatPage + 1} из {totalAnticheatPages || 1}
                                                     </div>
@@ -3012,9 +3014,9 @@ const AdminDashboardPage = () => {
 
                 {/* Anticheat Snapshot Detail Modal */}
                 {showSnapshotModal && selectedSnapshot && (
-                    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-12 overflow-y-auto">
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm" onClick={() => setShowSnapshotModal(false)} />
-                        <div className="bg-[#0a0a0a] w-[95vw] max-w-[1400px] rounded-3xl border border-cyan-500/10 flex flex-col overflow-hidden shadow-2xl relative z-10 animate-scaleIn mb-8">
+                        <div className="bg-[#0a0a0a] w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl border border-cyan-500/10 flex flex-col overflow-hidden shadow-2xl relative z-10 animate-scaleIn">
                             {/* Modal Header */}
                             <div className="p-6 border-b border-white/5 flex gap-4 items-center shrink-0 bg-gradient-to-r from-cyan-500/5 to-transparent">
                                 <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20 shrink-0">
