@@ -2240,11 +2240,12 @@ const AdminDashboardPage = () => {
                                                         </button>
                                                     </div>
                                                 </div>
+                                            </>
                                         )}
                                     </div>
-                                    )} {/* end anticheatSubTab ternary */}
-                                </div>
-                            ) : null}
+                                )} {/* end anticheatSubTab ternary */}
+                            </div>
+                        ) : null}
                         </div>
                     </div>
                 </div>
