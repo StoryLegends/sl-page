@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { adminApi, applicationsApi, customPagesApi, anticheatApi, type User, type Application, type CustomPage, type AnticheatSnapshot } from '../api';
+import { adminApi, applicationsApi, customPagesApi, anticheatApi, knownModsApi, type User, type Application, type CustomPage, type AnticheatSnapshot, type KnownMod, type KnownModStatus } from '../api';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
@@ -55,6 +55,14 @@ const AdminDashboardPage = () => {
     const [selectedSnapshot, setSelectedSnapshot] = useState<AnticheatSnapshot | null>(null);
     const [showSnapshotModal, setShowSnapshotModal] = useState(false);
     const [snapshotProcessSearch, setSnapshotProcessSearch] = useState('');
+    const [anticheatSubTab, setAnticheatSubTab] = useState<'snapshots' | 'known-mods'>('snapshots');
+
+    // Known mods state
+    const [knownMods, setKnownMods] = useState<KnownMod[]>([]);
+    const [isKnownModsLoading, setIsKnownModsLoading] = useState(false);
+    const [showKnownModModal, setShowKnownModModal] = useState(false);
+    const [knownModForm, setKnownModForm] = useState<{ name: string; status: KnownModStatus; notes: string }>({ name: '', status: 'TRUSTED', notes: '' });
+    const [knownModSearch, setKnownModSearch] = useState('');
 
     // Modal & Action states
     const [showBadgeModal, setShowBadgeModal] = useState(false);
@@ -586,7 +594,7 @@ const AdminDashboardPage = () => {
         if (activeTab === 'users') fetchUsers(usersPage);
         else if (activeTab === 'applications') fetchApplications(appsPage);
         else if (activeTab === 'pages') loadCustomPages();
-        else if (activeTab === 'anticheat') fetchAnticheat(anticheatPage);
+        else if (activeTab === 'anticheat') { fetchAnticheat(anticheatPage); fetchKnownMods(); }
     };
 
     const fetchLogs = async (page: number) => {
@@ -617,6 +625,41 @@ const AdminDashboardPage = () => {
         }
     };
 
+    const fetchKnownMods = async () => {
+        try {
+            setIsKnownModsLoading(true);
+            const data = await knownModsApi.getAll();
+            setKnownMods(data);
+        } catch (err) {
+            console.error('Failed to fetch known mods:', err);
+        } finally {
+            setIsKnownModsLoading(false);
+        }
+    };
+
+    const handleSaveKnownMod = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await knownModsApi.save({ name: knownModForm.name, status: knownModForm.status, notes: knownModForm.notes || undefined });
+            setShowKnownModModal(false);
+            setKnownModForm({ name: '', status: 'TRUSTED', notes: '' });
+            fetchKnownMods();
+        } catch (err) {
+            console.error('Failed to save known mod:', err);
+            alert('Ошибка при сохранении');
+        }
+    };
+
+    const handleDeleteKnownMod = async (id: number) => {
+        if (!confirm('Удалить эту запись?')) return;
+        try {
+            await knownModsApi.delete(id);
+            fetchKnownMods();
+        } catch (err) {
+            console.error('Failed to delete known mod:', err);
+        }
+    };
+
     const handleRequestSnapshot = async (playerName: string) => {
         try {
             const res = await anticheatApi.requestSnapshot(playerName);
@@ -626,6 +669,7 @@ const AdminDashboardPage = () => {
             alert(err.response?.data?.message || 'Не удалось запросить снимок. RCON не доступен.');
         }
     };
+
 
     const openSnapshotDetail = async (id: number) => {
         try {
@@ -1988,31 +2032,115 @@ const AdminDashboardPage = () => {
                                 </div>
                             ) : activeTab === 'anticheat' ? (
                                 <div className="space-y-4 flex-grow flex flex-col overflow-hidden animate-fadeIn">
-                                    {/* Anticheat Header */}
+                                    {/* Anticheat Header with sub-tabs */}
                                     <div className="flex flex-col gap-3 md:flex-row md:justify-between md:items-center">
-                                        <div className="relative w-full md:w-96">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400/40" />
-                                            <input
-                                                type="text"
-                                                placeholder="Поиск по нику игрока..."
-                                                value={anticheatSearch}
-                                                onChange={e => setAnticheatSearch(e.target.value)}
-                                                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:border-cyan-500/50 outline-none transition-all placeholder:text-gray-600"
-                                            />
-                                        </div>
-
                                         <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => fetchAnticheat(anticheatPage)}
-                                                className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-400 hover:bg-white/10 hover:text-cyan-400 transition-all text-sm font-bold flex items-center gap-2"
+                                                onClick={() => setAnticheatSubTab('snapshots')}
+                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${anticheatSubTab === 'snapshots' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
                                             >
-                                                <RefreshCw className="w-4 h-4" />
-                                                <span className="hidden md:inline">Обновить</span>
+                                                📋 Снимки
+                                            </button>
+                                            <button
+                                                onClick={() => setAnticheatSubTab('known-mods')}
+                                                className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${anticheatSubTab === 'known-mods' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
+                                            >
+                                                🗂️ Известные моды
+                                                {knownMods.length > 0 && <span className="ml-2 text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded">{knownMods.length}</span>}
                                             </button>
                                         </div>
+
+                                        {anticheatSubTab === 'snapshots' && (
+                                            <div className="flex items-center gap-2">
+                                                <div className="relative w-full md:w-96">
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400/40" />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Поиск по нику игрока..."
+                                                        value={anticheatSearch}
+                                                        onChange={e => setAnticheatSearch(e.target.value)}
+                                                        className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:border-cyan-500/50 outline-none transition-all placeholder:text-gray-600"
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={() => fetchAnticheat(anticheatPage)}
+                                                    className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-400 hover:bg-white/10 hover:text-cyan-400 transition-all text-sm font-bold flex items-center gap-2"
+                                                >
+                                                    <RefreshCw className="w-4 h-4" />
+                                                    <span className="hidden md:inline">Обновить</span>
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {anticheatSubTab === 'known-mods' && isAdmin && (
+                                            <button
+                                                onClick={() => { setKnownModForm({ name: '', status: 'TRUSTED', notes: '' }); setShowKnownModModal(true); }}
+                                                className="px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-cyan-400 hover:bg-cyan-500/20 transition-all text-sm font-bold flex items-center gap-2"
+                                            >
+                                                + Добавить мод
+                                            </button>
+                                        )}
                                     </div>
 
                                     {/* Snapshot List */}
+                                    {anticheatSubTab === 'known-mods' ? (
+                                        /* ====== Known Mods Panel ====== */
+                                        <div className="flex-grow overflow-y-auto custom-scrollbar">
+                                            {isKnownModsLoading ? (
+                                                <div className="flex items-center justify-center py-20">
+                                                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-cyan-500"></div>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {/* Search */}
+                                                    <div className="relative mb-4">
+                                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Поиск по названию мода..."
+                                                            value={knownModSearch}
+                                                            onChange={e => setKnownModSearch(e.target.value)}
+                                                            className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm text-white focus:border-cyan-500/50 outline-none transition-all placeholder:text-gray-600"
+                                                        />
+                                                    </div>
+
+                                                    {knownMods.length === 0 ? (
+                                                        <div className="flex flex-col items-center justify-center py-16 gap-3">
+                                                            <span className="text-5xl">🗂️</span>
+                                                            <p className="text-gray-500 text-sm font-medium">Нет записей. Добавьте первый мод.</p>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                                                            {knownMods
+                                                                .filter(m => !knownModSearch || m.name.toLowerCase().includes(knownModSearch.toLowerCase()))
+                                                                .map(m => (
+                                                                    <div key={m.id} className={`flex items-start gap-3 p-4 rounded-xl border transition-all ${m.status === 'TRUSTED' ? 'bg-green-500/5 border-green-500/20 hover:bg-green-500/10' : 'bg-red-500/5 border-red-500/20 hover:bg-red-500/10'}`}>
+                                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-sm ${m.status === 'TRUSTED' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                                                                            {m.status === 'TRUSTED' ? '✅' : '🚫'}
+                                                                        </div>
+                                                                        <div className="flex-grow min-w-0">
+                                                                            <div className={`font-bold font-mono text-sm truncate ${m.status === 'TRUSTED' ? 'text-green-300' : 'text-red-300'}`}>{m.name}</div>
+                                                                            <div className="text-[10px] text-gray-500 mt-0.5">Добавил: {m.addedBy}</div>
+                                                                            {m.notes && <div className="text-[11px] text-gray-400 mt-1 italic truncate">{m.notes}</div>}
+                                                                        </div>
+                                                                        {isAdmin && (
+                                                                            <button
+                                                                                onClick={() => handleDeleteKnownMod(m.id)}
+                                                                                className="shrink-0 p-1.5 text-gray-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                                                                                title="Удалить"
+                                                                            >
+                                                                                <X className="w-3.5 h-3.5" />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                    /* ====== Snapshot List ====== */
                                     <div className="flex-grow flex flex-col min-h-0">
                                         {isAnticheatLoading ? (
                                             <div className="flex items-center justify-center py-20">
@@ -2112,14 +2240,76 @@ const AdminDashboardPage = () => {
                                                         </button>
                                                     </div>
                                                 </div>
-                                            </>
                                         )}
                                     </div>
+                                    )} {/* end anticheatSubTab ternary */}
                                 </div>
                             ) : null}
                         </div>
                     </div>
                 </div>
+
+                {/* Known Mod Modal */}
+                {showKnownModModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl relative animate-fadeIn">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                                    <span className="text-lg">🗂️</span>
+                                </div>
+                                <h3 className="text-xl font-bold text-white">Добавить / обновить мод</h3>
+                                <button onClick={() => setShowKnownModModal(false)} className="ml-auto text-gray-500 hover:text-white p-1"><X className="w-5 h-5" /></button>
+                            </div>
+                            <form onSubmit={handleSaveKnownMod} className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Название (ключевое слово)</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="например: sodium, xray, wurst"
+                                        value={knownModForm.name}
+                                        onChange={e => setKnownModForm({ ...knownModForm, name: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white font-mono text-sm focus:border-cyan-500/50 outline-none"
+                                    />
+                                    <p className="text-[10px] text-gray-600 mt-1 ml-1">Матчинг по вхождению подстроки в имя .jar файла (регистр не важен)</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Статус</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setKnownModForm({ ...knownModForm, status: 'TRUSTED' })}
+                                            className={`py-2.5 rounded-xl text-sm font-bold transition-all border ${knownModForm.status === 'TRUSTED' ? 'bg-green-500/20 text-green-400 border-green-500/30' : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'}`}
+                                        >
+                                            ✅ Доверенный
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setKnownModForm({ ...knownModForm, status: 'SUSPICIOUS' })}
+                                            className={`py-2.5 rounded-xl text-sm font-bold transition-all border ${knownModForm.status === 'SUSPICIOUS' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 text-gray-500 border-white/10 hover:bg-white/10'}`}
+                                        >
+                                            🚫 Подозрительный
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5">Заметка (необязательно)</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Например: стандартный мод модпака"
+                                        value={knownModForm.notes}
+                                        onChange={e => setKnownModForm({ ...knownModForm, notes: e.target.value })}
+                                        className="w-full px-4 py-2.5 bg-black/50 border border-white/10 rounded-xl text-white text-sm focus:border-cyan-500/50 outline-none"
+                                    />
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                    <button type="submit" className="flex-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-400 font-bold py-2.5 rounded-xl transition-colors border border-cyan-500/30">Сохранить</button>
+                                    <button type="button" onClick={() => setShowKnownModModal(false)} className="flex-1 bg-white/5 hover:bg-white/10 text-gray-400 font-bold py-2.5 rounded-xl transition-colors">Отмена</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
                 {/* Create User Modal */}
                 {
@@ -3078,16 +3268,30 @@ const AdminDashboardPage = () => {
                                         <div className="max-h-48 overflow-y-auto custom-scrollbar pr-2">
                                             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                                                 {selectedSnapshot.mods.map((mod, i) => {
-                                                    const isKnown = ['fabric-api', 'sodium', 'iris', 'voicechat', 'cloth-config', 'slbase', 'slcomp', 'sl-camera', 'voicemessages', 'emotecraft', 'PlayerAnimationLib', 'handbooks', 'BendableCuboids', 'ArmorPoser'].some(known => mod.toLowerCase().includes(known.toLowerCase()));
+                                                    const status = mod.status; // "TRUSTED" | "SUSPICIOUS" | "UNKNOWN"
+                                                    const styleMap: Record<string, string> = {
+                                                        TRUSTED: 'bg-green-500/5 text-green-400/80 border-green-500/10',
+                                                        SUSPICIOUS: 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]',
+                                                        UNKNOWN: 'bg-white/[0.03] text-gray-400 border-white/5',
+                                                    };
+                                                    const titleMap: Record<string, string> = {
+                                                        TRUSTED: '✅ Доверенный мод',
+                                                        SUSPICIOUS: '⚠️ Подозрительный мод!',
+                                                        UNKNOWN: 'Неизвестный мод',
+                                                    };
+                                                    const iconMap: Record<string, React.ReactNode> = {
+                                                        TRUSTED: <Package className="w-3.5 h-3.5 shrink-0 opacity-50" />,
+                                                        SUSPICIOUS: <span className="text-[10px] shrink-0">⚠️</span>,
+                                                        UNKNOWN: <span className="text-[10px] shrink-0 opacity-40">?</span>,
+                                                    };
                                                     return (
                                                         <li
                                                             key={i}
-                                                            className={`text-[11px] font-mono flex items-center gap-2 py-1.5 px-2.5 rounded border transition-all ${isKnown ? 'bg-green-500/5 text-green-400/80 border-green-500/10' : 'bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]'}`}
-                                                            title={isKnown ? 'Разрешённый мод' : '⚠️ Неизвестный мод — проверьте!'}
+                                                            className={`text-[11px] font-mono flex items-center gap-2 py-1.5 px-2.5 rounded border transition-all ${styleMap[status] || styleMap.UNKNOWN}`}
+                                                            title={titleMap[status] || 'Неизвестный мод'}
                                                         >
-                                                            {!isKnown && <span className="text-[10px] shrink-0">⚠️</span>}
-                                                            {isKnown && <Package className="w-3.5 h-3.5 shrink-0 opacity-50" />}
-                                                            <span className="truncate">{mod}</span>
+                                                            {iconMap[status] || iconMap.UNKNOWN}
+                                                            <span className="truncate">{mod.name}</span>
                                                         </li>
                                                     );
                                                 })}

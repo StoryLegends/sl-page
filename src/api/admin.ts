@@ -211,13 +211,19 @@ export interface ProcessInfo {
     windowTitle: string;
 }
 
+export interface ModEntry {
+    name: string;
+    /** "TRUSTED" | "SUSPICIOUS" | "UNKNOWN" */
+    status: string;
+}
+
 export interface AnticheatSnapshot {
     id: number;
     playerName: string;
     playerUuid: string;
     launcherName: string;
     launcherBrand: string;
-    mods: string[];
+    mods: ModEntry[];
     resourcePacks: string[];
     processes: ProcessInfo[];
     createdAt: string;
@@ -248,3 +254,39 @@ export const anticheatApi = {
         return response.data;
     }
 };
+
+// ==================== Known Mods ====================
+
+export type KnownModStatus = 'TRUSTED' | 'SUSPICIOUS';
+
+export interface KnownMod {
+    id: number;
+    name: string;
+    status: KnownModStatus;
+    addedBy: string;
+    notes: string | null;
+    createdAt: string;
+}
+
+export interface KnownModRequest {
+    name: string;
+    status: KnownModStatus;
+    notes?: string;
+}
+
+export const knownModsApi = {
+    getAll: async (): Promise<KnownMod[]> => {
+        const response = await apiClient.get('/api/admin/anticheat/known-mods');
+        return response.data;
+    },
+
+    save: async (data: KnownModRequest): Promise<KnownMod> => {
+        const response = await apiClient.post('/api/admin/anticheat/known-mods', data);
+        return response.data;
+    },
+
+    delete: async (id: number): Promise<void> => {
+        await apiClient.delete(`/api/admin/anticheat/known-mods/${id}`);
+    },
+};
+
