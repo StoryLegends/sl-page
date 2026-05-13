@@ -47,10 +47,11 @@ export const adminApi = {
         await apiClient.post('/api/admin/reset-season', { totpCode });
     },
 
-    getAllUsers: async (page = 0, size = 50, query?: string, role?: string): Promise<{ content: User[], totalElements: number, totalPages: number }> => {
+    getAllUsers: async (page = 0, size = 50, query?: string, role?: string, status?: string): Promise<{ content: User[], totalElements: number, totalPages: number }> => {
         const params: any = { page, size };
         if (query) params.query = query;
         if (role) params.role = role;
+        if (status) params.status = status;
         const response = await apiClient.get('/api/admin/users', {
             params
         });

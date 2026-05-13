@@ -30,6 +30,7 @@ const AdminDashboardPage = () => {
     const [userSearch, setUserSearch] = useState('');
     const [appSearch, setAppSearch] = useState('');
     const [userRoleFilter, setUserRoleFilter] = useState<string>('');
+    const [userStatusFilter, setUserStatusFilter] = useState<string>('');
 
     // Pagination states
     const [usersPage, setUsersPage] = useState(0);
@@ -511,7 +512,7 @@ const AdminDashboardPage = () => {
     const fetchUsers = async (page: number) => {
         try {
             setLoading(true);
-            const res = await adminApi.getAllUsers(page, 50, userSearch, userRoleFilter);
+            const res = await adminApi.getAllUsers(page, 50, userSearch, userRoleFilter, userStatusFilter);
             setUsers(res.content);
             setTotalUsersPages(res.totalPages);
             setTotalUsersElements(res.totalElements);
@@ -702,7 +703,7 @@ const AdminDashboardPage = () => {
             fetchUsers(0);
         }, 500);
         return () => clearTimeout(timer);
-    }, [userSearch, userRoleFilter]);
+    }, [userSearch, userRoleFilter, userStatusFilter]);
 
     const handleBan = async () => {
         if (!banReason) return alert('Введите причину бана');
@@ -1041,6 +1042,21 @@ const AdminDashboardPage = () => {
                                                             }`}
                                                     >
                                                         {role === '' ? 'Все' : role.replace('ROLE_', '')}
+                                                    </button>
+                                                ))}
+                                                <div className="w-px h-6 bg-white/10 mx-1"></div>
+                                                {['BANNED', 'WARNED'].map(status => (
+                                                    <button
+                                                        key={status}
+                                                        onClick={() => setUserStatusFilter(userStatusFilter === status ? '' : status)}
+                                                        className={`px-3 py-1.5 rounded-lg text-[10px] md:text-xs font-bold transition-all border whitespace-nowrap flex items-center gap-1.5 ${userStatusFilter === status
+                                                            ? (status === 'BANNED' ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-orange-500/20 text-orange-400 border-orange-500/30')
+                                                            : 'bg-white/5 text-gray-500 border-transparent hover:text-gray-300'
+                                                            }`}
+                                                    >
+                                                        {status === 'BANNED' && <Ban className="w-3 h-3" />}
+                                                        {status === 'WARNED' && <AlertCircle className="w-3 h-3" />}
+                                                        {status === 'BANNED' ? 'Забанен' : 'С предупреждением'}
                                                     </button>
                                                 ))}
                                             </div>
