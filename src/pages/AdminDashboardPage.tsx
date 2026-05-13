@@ -650,6 +650,23 @@ const AdminDashboardPage = () => {
         }
     };
 
+    const handleQuickSaveMod = async (name: string, status: KnownModStatus) => {
+        try {
+            await knownModsApi.save({ name, status });
+            fetchKnownMods();
+            if (selectedSnapshot) {
+                const updatedSnapshot = await anticheatApi.getSnapshot(selectedSnapshot.id);
+                setSelectedSnapshot(updatedSnapshot);
+                // Also update the main list so colors show up there too if needed
+                fetchAnticheat(anticheatPage);
+            }
+        } catch (err) {
+            console.error('Failed to quick save mod:', err);
+            alert('Ошибка при сохранении мода');
+        }
+    };
+
+
     const handleDeleteKnownMod = async (id: number) => {
         if (!confirm('Удалить эту запись?')) return;
         try {
@@ -3288,11 +3305,30 @@ const AdminDashboardPage = () => {
                                                     return (
                                                         <li
                                                             key={i}
-                                                            className={`text-[11px] font-mono flex items-center gap-2 py-1.5 px-2.5 rounded border transition-all ${styleMap[status] || styleMap.UNKNOWN}`}
+                                                            className={`group text-[11px] font-mono flex items-center gap-2 py-1.5 px-2.5 rounded border transition-all ${styleMap[status] || styleMap.UNKNOWN}`}
                                                             title={titleMap[status] || 'Неизвестный мод'}
                                                         >
                                                             {iconMap[status] || iconMap.UNKNOWN}
-                                                            <span className="truncate">{mod.name}</span>
+                                                            <span className="truncate flex-grow">{mod.name}</span>
+                                                            
+                                                            {isAdmin && (
+                                                                <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); handleQuickSaveMod(mod.name, 'TRUSTED'); }}
+                                                                        className="p-0.5 hover:bg-green-500/20 text-gray-500 hover:text-green-400 rounded transition-colors"
+                                                                        title="Пометить как Доверенный"
+                                                                    >
+                                                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={(e) => { e.stopPropagation(); handleQuickSaveMod(mod.name, 'SUSPICIOUS'); }}
+                                                                        className="p-0.5 hover:bg-red-500/20 text-gray-500 hover:text-red-400 rounded transition-colors"
+                                                                        title="Пометить как Подозрительный"
+                                                                    >
+                                                                        <XCircle className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                         </li>
                                                     );
                                                 })}
