@@ -244,8 +244,10 @@ export const anticheatApi = {
         return response.data;
     },
 
-    getSnapshot: async (id: number): Promise<AnticheatSnapshot> => {
-        const response = await apiClient.get(`/api/admin/anticheat/snapshots/${id}`);
+    getSnapshot: async (id: number, log: boolean = false): Promise<AnticheatSnapshot> => {
+        const response = await apiClient.get(`/api/admin/anticheat/snapshots/${id}`, {
+            params: { log }
+        });
         return response.data;
     },
 

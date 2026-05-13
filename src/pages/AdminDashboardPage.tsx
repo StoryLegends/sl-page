@@ -690,7 +690,7 @@ const AdminDashboardPage = () => {
 
     const openSnapshotDetail = async (id: number) => {
         try {
-            const snapshot = await anticheatApi.getSnapshot(id);
+            const snapshot = await anticheatApi.getSnapshot(id, true);
             setSelectedSnapshot(snapshot);
             setShowSnapshotModal(true);
             setSnapshotProcessSearch('');
