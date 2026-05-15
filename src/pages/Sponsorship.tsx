@@ -1,0 +1,538 @@
+import React, { useState, useEffect, useRef } from 'react';
+import Layout from '../components/Layout';
+import SEO from '../components/SEO';
+import { Check, Heart, X, Sparkles, Shield, Crown } from 'lucide-react';
+
+const Level1Icon = () => (
+  <svg viewBox="0 0 758 758" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-20 h-20 md:w-24 md:h-24 drop-shadow-[0_0_15px_rgba(0,191,255,0.5)]">
+    <path d="M438.066 297.502C440.75 308.251 449.14 316.646 459.888 319.337L696.23 378.5L459.888 437.663C449.14 440.354 440.75 448.749 438.066 459.498L379 696.076L319.934 459.498C317.25 448.749 308.86 440.354 298.112 437.663L61.7695 378.5L298.112 319.337C308.86 316.646 317.25 308.251 319.934 297.502L379 60.9238L438.066 297.502Z" stroke="#00BFFF" strokeWidth="30"/>
+    <path d="M379 221L410.6 347.4L537 379L410.6 410.6L379 537L347.4 410.6L221 379L347.4 347.4L379 221Z" fill="#77D8F9"/>
+  </svg>
+);
+
+const Level2Icon = () => (
+  <svg viewBox="0 0 758 758" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-20 h-20 md:w-24 md:h-24 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
+    <path d="M438.066 297.502C440.75 308.251 449.14 316.646 459.888 319.337L696.23 378.5L459.888 437.663C449.14 440.354 440.75 448.749 438.066 459.498L379 696.076L319.934 459.498C317.25 448.749 308.86 440.354 298.112 437.663L61.7695 378.5L298.112 319.337C308.86 316.646 317.25 308.251 319.934 297.502L379 60.9238L438.066 297.502Z" stroke="#FFD700" strokeWidth="30"/>
+    <path d="M379 221L410.6 347.4L537 379L410.6 410.6L379 537L347.4 410.6L221 379L347.4 347.4L379 221Z" fill="#FFE44D"/>
+  </svg>
+);
+
+const Level3Icon = () => (
+  <svg viewBox="0 0 758 758" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-20 h-20 md:w-24 md:h-24 drop-shadow-[0_0_20px_rgba(255,215,0,0.8)]">
+    <path d="M438.066 297.502C440.75 308.251 449.14 316.646 459.888 319.337L696.23 378.5L459.888 437.663C449.14 440.354 440.75 448.749 438.066 459.498L379 696.076L319.934 459.498C317.25 448.749 308.86 440.354 298.112 437.663L61.7695 378.5L298.112 319.337C308.86 316.646 317.25 308.251 319.934 297.502L379 60.9238L438.066 297.502Z" stroke="#FFD700" strokeWidth="30"/>
+    <path d="M379 221L410.6 347.4L537 379L410.6 410.6L379 537L347.4 410.6L221 379L347.4 347.4L379 221Z" fill="#77D8F9"/>
+  </svg>
+);
+
+const pricing = {
+  1: [
+    { days: '30 дней', price: '249₽', note: null },
+    { days: '60 дней', price: '449₽', note: '~224₽/мес' },
+    { days: '90 дней', price: '599₽', note: '~199₽/мес' },
+  ],
+  2: [
+    { days: '30 дней', price: '499₽', note: null },
+    { days: '60 дней', price: '899₽', note: '~449₽/мес' },
+    { days: '90 дней', price: '1199₽', note: '~399₽/мес' },
+  ],
+  3: [
+    { days: '30 дней', price: '749₽', note: null },
+    { days: '60 дней', price: '1349₽', note: '~674₽/мес' },
+    { days: '90 дней', price: '1799₽', note: '~599₽/мес' },
+  ]
+};
+
+const Sponsorship = () => {
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<number>(0);
+  const [activeCard, setActiveCard] = useState<number>(2); // Default focus to Level 3
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  // Prevent scrolling when modal is open
+  useEffect(() => {
+    if (selectedLevel) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; }
+  }, [selectedLevel]);
+
+  // Center the third card on load for mobile
+  useEffect(() => {
+    if (carouselRef.current && window.innerWidth < 768) {
+      const container = carouselRef.current;
+      setTimeout(() => {
+        container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+      }, 300);
+    }
+  }, []);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (window.innerWidth >= 768) return;
+    const container = e.currentTarget;
+    const scrollLeft = container.scrollLeft;
+    const cardWidth = container.clientWidth * 0.85; 
+    const newIndex = Math.min(2, Math.max(0, Math.round(scrollLeft / cardWidth)));
+    setActiveCard(newIndex);
+  };
+
+  const handleSupportClick = (level: number) => {
+    setSelectedLevel(level);
+    setSelectedPlan(0); // reset to 30 days
+  };
+
+  const getLevelColor = (level: number) => {
+    switch (level) {
+      case 1: return 'from-[#00BFFF]/20 to-blue-600/20 text-[#00BFFF] border-[#00BFFF]/50';
+      case 2: return 'from-[#FFD700]/20 to-yellow-600/20 text-[#FFD700] border-[#FFD700]/50';
+      case 3: return 'from-[#FFD700]/20 to-[#4DD2FF]/20 text-white border-[#4DD2FF]/50';
+      default: return '';
+    }
+  };
+
+  const renderModalText = (level: number) => {
+    switch (level) {
+      case 1:
+        return (
+          <>
+            <p className="text-gray-300 mb-6 leading-relaxed">
+              Став спонсором, вы вносите огромный вклад в развитие <strong>StoryLegends</strong>. 
+              Эти средства идут напрямую на оплату хостинга, плагинов и поддержание работы сервера.
+            </p>
+            <p className="text-white/80 font-medium italic">
+              "Вы не просто игрок, вы — созидатель нашей истории."
+            </p>
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <p className="text-gray-300 mb-6 leading-relaxed">
+              Выбирая второй уровень, вы демонстрируете серьёзную веру в проект. 
+              Ваша поддержка дает нам уверенность в завтрашнем дне и возможность развивать сервер еще быстрее.
+            </p>
+            <p className="text-white/80 font-medium italic">
+              "Ваше имя золотом вписано в летопись StoryLegends."
+            </p>
+          </>
+        );
+      case 3:
+        return (
+          <>
+            <p className="text-gray-300 mb-6 leading-relaxed">
+              <strong>Уровень «Легенда».</strong> Выбирая этот тир, вы становитесь фундаментом нашего проекта. 
+              Ваша поддержка позволяет нам реализовывать самые смелые технические идеи и выводить сервер на новый уровень.
+            </p>
+            <p className="text-white/80 font-medium italic">
+              "Истинные Легенды не просто играют, они создают этот мир."
+            </p>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Layout>
+      <style>{`
+        @keyframes slide-right-gradient {
+          from { background-position: 200% 50%; }
+          to { background-position: 0% 50%; }
+        }
+        .animate-slide-right {
+          animation: slide-right-gradient 3s linear infinite;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none; /* Chrome, Safari and Opera */
+        }
+      `}</style>
+      <SEO 
+        title="Спонсорство" 
+        description="Поддержите сервер StoryLegends и получите уникальные награды! Уровни спонсорства и бонусы." 
+      />
+      
+      <div className="pt-24 pb-12 px-4 max-w-[1440px] mx-auto relative overflow-hidden min-h-screen">
+        
+        {/* Main Content with Transition when Modal is Open */}
+        <div className={`transition-all duration-500 ease-out ${selectedLevel ? 'scale-95 opacity-30 blur-sm pointer-events-none' : 'scale-100 opacity-100 blur-0'}`}>
+          {/* Header Section */}
+          <div className="text-center mb-10 md:mb-16 relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 md:w-64 md:h-64 bg-story-gold/20 blur-[100px] rounded-full -z-10" />
+            <Heart className="w-12 h-12 md:w-16 md:h-16 text-story-gold mx-auto mb-4 md:mb-6 animate-pulse-slow drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]" />
+            <h1 className="text-4xl md:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-story-gold via-white to-legends-blue bg-clip-text text-transparent drop-shadow-lg">
+              Спонсорство
+            </h1>
+            <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed px-4 md:px-0">
+              Поддержите развитие проекта и получите эксклюзивные визуальные и геймплейные бонусы на сервере. Ваша поддержка помогает нам становиться лучше!
+            </p>
+          </div>
+
+          {/* Cards Container (Carousel on mobile, Grid on desktop) */}
+          <div 
+            ref={carouselRef}
+            onScroll={handleScroll}
+            className="flex md:grid md:grid-cols-3 gap-4 md:gap-8 mb-6 md:mb-24 max-w-6xl mx-auto relative z-10 items-stretch overflow-x-auto snap-x snap-mandatory hide-scrollbar -mx-4 px-4 pt-4 -mt-4 md:px-0 md:mx-auto pb-4 md:pb-0"
+          >
+            
+            {/* Level 1 */}
+            <div className="w-[85vw] md:w-auto shrink-0 snap-center glass rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden group hover:border-[#00BFFF]/50 transition-all duration-300 transform hover:-translate-y-2">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-legends-blue/20 to-[#00BFFF]"></div>
+              
+              <div className="mb-6 md:mb-8 flex flex-col items-center justify-center text-center mt-2 md:mt-4">
+                <div className="mb-4 drop-shadow-[0_0_15px_rgba(0,191,255,0.3)]">
+                  <Level1Icon />
+                </div>
+                <h3 className="text-2xl md:text-3xl font-bold text-white font-minecraft tracking-wider">Уровень 1</h3>
+              </div>
+
+              <ul className="space-y-2 mb-8 md:mb-10 flex-grow text-sm md:text-base">
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#00BFFF] hover:text-white transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#00BFFF] flex-shrink-0 mt-0.5" />
+                  <span>Синяя звездочка перед ником в чате и табе</span>
+                </li>
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#00BFFF] hover:text-white transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#00BFFF] flex-shrink-0 mt-0.5" />
+                  <span>Доступ в закрытый дс-канал спонсоров</span>
+                </li>
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#00BFFF] hover:text-white transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#00BFFF] flex-shrink-0 mt-0.5" />
+                  <span>1 уникальное переименование предмета в месяц (градиент, описание). Не потратил - сгорает</span>
+                </li>
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#00BFFF] hover:text-white transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#00BFFF] flex-shrink-0 mt-0.5" />
+                  <span>Твои идеи в канале предложений рассматриваются в первую очередь</span>
+                </li>
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#00BFFF] hover:text-white transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#00BFFF] flex-shrink-0 mt-0.5" />
+                  <span>Кастомные пластинки (AudioPlayer)</span>
+                </li>
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#00BFFF] hover:text-white transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#00BFFF] flex-shrink-0 mt-0.5" />
+                  <span>Харкнуть (/spit)</span>
+                </li>
+              </ul>
+
+              <button 
+                onClick={() => handleSupportClick(1)}
+                className="w-full mt-auto py-3.5 rounded-xl bg-white/5 hover:bg-[#00BFFF]/20 border border-white/10 hover:border-[#00BFFF]/50 text-white font-bold transition-all text-center flex items-center justify-center gap-2"
+              >
+                Поддержать
+              </button>
+            </div>
+
+            {/* Level 2 */}
+            <div className="w-[85vw] md:w-auto shrink-0 snap-center glass rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden group hover:border-[#FFD700]/50 transition-all duration-300 transform hover:-translate-y-2">
+              <div className="absolute inset-0 bg-[#FFD700]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-story-gold/50 to-[#FFD700]"></div>
+              
+              <div className="mb-6 md:mb-8 flex flex-col items-center justify-center text-center mt-2 md:mt-4">
+                <div className="mb-4 drop-shadow-[0_0_15px_rgba(255,215,0,0.3)]">
+                  <Level2Icon />
+                </div>
+                <h3 className="text-2xl md:text-3xl font-bold text-white font-minecraft tracking-wider">Уровень 2</h3>
+              </div>
+              
+              <ul className="space-y-2 mb-8 md:mb-10 flex-grow text-sm md:text-base">
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#FFD700] hover:text-white transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#FFD700] flex-shrink-0 mt-0.5" />
+                  <span>Желтая звездочка перед ником в чате и табе</span>
+                </li>
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#FFD700] hover:text-white transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#FFD700] flex-shrink-0 mt-0.5" />
+                  <span>Доступ к <code className="text-[#FFD700]/90 bg-white/5 px-1.5 py-0.5 rounded ml-1">/lg i</code> (логи)</span>
+                </li>
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#FFD700] hover:text-white transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#FFD700] flex-shrink-0 mt-0.5" />
+                  <span>2 уникальных переименования предмета в месяц</span>
+                </li>
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#FFD700] hover:text-white transition-all duration-300 group/item">
+                  <Check className="w-5 h-5 text-[#FFD700] flex-shrink-0 mt-0.5" />
+                  <div className="flex flex-col">
+                    <span>1 предмет (инструмент/оружие, кроме брони) получает тег нерушимости:</span>
+                    <span className="text-sm text-gray-300/70 mt-2 pl-3 border-l-2 border-white/10 group-hover/item:border-[#FFD700]/50 transition-colors">Если подписка не продлена - тег снимается</span>
+                    <span className="text-sm text-gray-300/70 mt-2 pl-3 border-l-2 border-white/10 group-hover/item:border-[#FFD700]/50 transition-colors">Если предмет был утерян (лава, деспавн) - администрация восстанавливает его <strong className="text-white font-bold">1 раз в месяц</strong></span>
+                  </div>
+                </li>
+                <li className="flex gap-3 text-gray-300 p-3 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#FFD700] hover:text-white transition-all duration-300 font-medium">
+                  <Check className="w-5 h-5 text-[#FFD700] flex-shrink-0 mt-0.5" />
+                  <span>Все награды 1-го уровня</span>
+                </li>
+              </ul>
+
+              <button 
+                onClick={() => handleSupportClick(2)}
+                className="w-full mt-auto py-3.5 rounded-xl bg-white/5 hover:bg-[#FFD700]/20 border border-[#FFD700]/30 hover:border-[#FFD700] text-[#FFD700] hover:text-white font-bold transition-all text-center shadow-[0_0_15px_rgba(255,215,0,0.1)] flex items-center justify-center gap-2"
+              >
+                Поддержать
+              </button>
+            </div>
+
+            {/* Level 3 */}
+            <div className="w-[85vw] md:w-auto shrink-0 snap-center glass rounded-2xl p-6 md:p-8 flex flex-col relative overflow-hidden group hover:border-[#4DD2FF]/50 transition-all duration-300 transform hover:-translate-y-2 border-story-gold/30 shadow-[0_0_30px_rgba(0,191,255,0.05)]">
+              <div className="absolute inset-0 bg-gradient-to-br from-[#FFD700]/5 to-legends-blue/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#FFD700] via-white to-legends-blue"></div>
+              
+              {/* Badge for Level 3 */}
+              <div className="absolute top-4 right-4 z-20">
+                <span 
+                  className="px-3 py-1 md:px-4 md:py-1.5 rounded-full text-xs md:text-sm font-bold bg-gradient-to-r from-[#FFD700] via-[#4DD2FF] to-[#FFD700] bg-[length:200%_auto] animate-slide-right text-black shadow-[0_0_20px_rgba(0,191,255,0.6)] border border-white/20 inline-flex items-center gap-1"
+                >
+                  ✦ рекомендуем
+                </span>
+              </div>
+
+              <div className="mb-6 md:mb-8 flex flex-col items-center justify-center text-center mt-2 md:mt-4">
+                <div className="mb-4 drop-shadow-[0_0_25px_rgba(255,215,0,0.4)]">
+                  <Level3Icon />
+                </div>
+                <h3 className="text-2xl md:text-3xl font-bold text-white font-minecraft tracking-wider">Уровень 3</h3>
+              </div>
+
+              <ul className="space-y-3 mb-8 md:mb-10 flex-grow text-sm md:text-base">
+                {/* Emphasized Level 3 unique perks */}
+                <li className="flex gap-3 text-white font-medium p-3 md:p-4 md:px-5 rounded-xl border-l-2 border-[#4DD2FF]/40 bg-white/5 hover:bg-white/10 hover:border-[#4DD2FF] transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#4DD2FF] drop-shadow-[0_0_8px_rgba(77,210,255,0.8)] flex-shrink-0 mt-0.5" />
+                  <span>Уникальный сине-желтый градиент на весь ник в чате и табе</span>
+                </li>
+                <li className="flex gap-3 text-white font-medium p-3 md:p-4 md:px-5 rounded-xl border-l-2 border-[#4DD2FF]/40 bg-white/5 hover:bg-white/10 hover:border-[#4DD2FF] transition-all duration-300 group/item">
+                  <Check className="w-5 h-5 text-[#4DD2FF] drop-shadow-[0_0_8px_rgba(77,210,255,0.8)] flex-shrink-0 mt-0.5" />
+                  <div className="flex flex-col">
+                    <span>2 предмета (инструмент/оружие) получает тег нерушимости:</span>
+                    <span className="text-xs md:text-sm text-gray-300/70 font-normal mt-2 pl-3 border-l-2 border-white/10 group-hover/item:border-[#4DD2FF]/50 transition-colors">Если подписка не продлена - тег снимается</span>
+                    <span className="text-xs md:text-sm text-gray-300/70 font-normal mt-2 pl-3 border-l-2 border-white/10 group-hover/item:border-[#4DD2FF]/50 transition-colors">Если предмет был утерян - администрация восстанавливает его <strong className="text-white font-bold">2 раза в месяц</strong></span>
+                  </div>
+                </li>
+                <li className="flex gap-3 text-white font-medium p-3 md:p-4 md:px-5 rounded-xl border-l-2 border-[#4DD2FF]/40 bg-white/5 hover:bg-white/10 hover:border-[#4DD2FF] transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#4DD2FF] drop-shadow-[0_0_8px_rgba(77,210,255,0.8)] flex-shrink-0 mt-0.5" />
+                  <span>4 уникальных переименования предмета в месяц</span>
+                </li>
+                <li className="flex gap-3 text-white font-medium p-3 md:p-4 md:px-5 rounded-xl border-l-2 border-[#4DD2FF]/40 bg-white/5 hover:bg-white/10 hover:border-[#4DD2FF] transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#4DD2FF] drop-shadow-[0_0_8px_rgba(77,210,255,0.8)] flex-shrink-0 mt-0.5" />
+                  <span>Право участвовать в закрытых голосованиях</span>
+                </li>
+                <li className="flex gap-3 text-white font-medium p-3 md:p-4 md:px-5 rounded-xl border-l-2 border-[#4DD2FF]/40 bg-white/5 hover:bg-white/10 hover:border-[#4DD2FF] transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#4DD2FF] drop-shadow-[0_0_8px_rgba(77,210,255,0.8)] flex-shrink-0 mt-0.5" />
+                  <span>Кастомное (или заготовки) уведомление о заходе и выходе</span>
+                </li>
+                <li className="flex gap-3 text-white font-medium p-3 md:p-4 md:px-5 rounded-xl border-l-2 border-[#4DD2FF]/40 bg-white/5 hover:bg-white/10 hover:border-[#4DD2FF] transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#4DD2FF] drop-shadow-[0_0_8px_rgba(77,210,255,0.8)] flex-shrink-0 mt-0.5" />
+                  <span>Звук захода (выбор из заготовок)</span>
+                </li>
+                <li className="flex gap-3 text-white font-medium p-3 md:p-4 md:px-5 rounded-xl border-l-2 border-[#4DD2FF]/40 bg-white/5 hover:bg-white/10 hover:border-[#4DD2FF] transition-all duration-300">
+                  <Check className="w-5 h-5 text-[#4DD2FF] drop-shadow-[0_0_8px_rgba(77,210,255,0.8)] flex-shrink-0 mt-0.5" />
+                  <span>Кастомный (или заготовки) суффикс</span>
+                </li>
+                
+                {/* Common perk */}
+                <li className="flex gap-3 text-gray-300 p-3 md:p-4 md:px-5 rounded-xl border-l-2 border-transparent hover:bg-white/5 hover:border-[#4DD2FF] hover:text-white transition-all duration-300 font-medium">
+                  <Check className="w-5 h-5 text-[#4DD2FF] flex-shrink-0 mt-0.5" />
+                  <span>Все награды предыдущих уровней</span>
+                </li>
+              </ul>
+
+              <button 
+                onClick={() => handleSupportClick(3)}
+                className="w-full mt-auto py-4 rounded-xl bg-gradient-to-r from-[#4DD2FF] to-[#FFD700] hover:from-[#3bc1ee] hover:to-[#ecc600] text-black font-bold text-lg transition-all text-center shadow-[0_0_20px_rgba(77,210,255,0.4)] hover:shadow-[0_0_30px_rgba(255,215,0,0.6)] flex items-center justify-center gap-2 transform hover:-translate-y-1"
+              >
+                Поддержать
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile pagination dots */}
+          <div className="flex justify-center gap-2 mb-16 md:hidden">
+            {[0, 1, 2].map((idx) => (
+              <div 
+                key={idx}
+                className={`h-1.5 rounded-full transition-all duration-300 ${activeCard === idx ? 'w-6 bg-story-gold shadow-[0_0_10px_rgba(255,215,0,0.5)]' : 'w-2 bg-white/20'}`}
+              />
+            ))}
+          </div>
+
+          {/* FAQ Section */}
+          <div className="max-w-4xl mx-auto md:mt-24">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-10 text-white font-minecraft">Частые вопросы</h2>
+            <div className="space-y-4 md:space-y-6">
+              
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
+                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 flex items-start gap-3">
+                    <span className="text-story-gold">В:</span>
+                    Навсегда ли выдаются награды?
+                  </h3>
+                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                    Награды действуют ровно 1 месяц с момента подписки. По истечении срока подписку необходимо продлить, иначе бонусы и теги нерушимости будут сняты.
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
+                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 flex items-start gap-3">
+                    <span className="text-story-gold">В:</span>
+                    Куда уходят средства?
+                  </h3>
+                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                    Все средства со спонсорства идут исключительно на оплату мощного хостинга, поддержание работы сервера и заказ платных плагинов/модов для улучшения геймплея.
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
+                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 flex items-start gap-3">
+                    <span className="text-story-gold">В:</span>
+                    Как получить награды после оплаты?
+                  </h3>
+                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                    После оформления подписки на Boosty, свяжитесь с администрацией в Discord (создайте тикет). Нам потребуется некоторое время для выдачи привилегий в игре.
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
+                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 flex items-start gap-3">
+                    <span className="text-story-gold">В:</span>
+                    Сохраняется ли подписка между сезонами?
+                  </h3>
+                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                    Да! Если на сервере происходит вайп или переход на новый сезон, дни вашей подписки замораживаются. Время возобновит свой отсчет только после официального старта нового сезона.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        {/* Support Modal overlay */}
+        <div className={`fixed inset-0 z-[100] transition-all duration-500 ${selectedLevel ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none'}`}>
+          
+          {/* Backdrop */}
+          <div 
+            className={`absolute inset-0 bg-black/90 md:bg-black/60 backdrop-blur-md transition-opacity duration-500 ${selectedLevel ? 'opacity-100' : 'opacity-0'}`}
+            onClick={() => setSelectedLevel(null)}
+          />
+
+          {/* Close button outside transform to guarantee fixed position */}
+          <button 
+            onClick={() => setSelectedLevel(null)}
+            className={`absolute top-4 right-4 z-[110] p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all duration-500 backdrop-blur-md border border-white/20 ${selectedLevel ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}
+          >
+            <X className="w-6 h-6" />
+          </button>
+          
+          {/* Scrollable Container */}
+          <div className="absolute inset-0 overflow-y-auto overflow-x-hidden md:p-10 flex items-start md:items-center justify-center overscroll-contain">
+             <div className={`relative w-full min-h-[100dvh] md:min-h-0 md:h-auto max-w-4xl bg-[#0a0a0a] border-0 md:border border-white/10 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row z-10 transition-all duration-500 transform ${selectedLevel ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-8 opacity-0'}`}>
+               
+               {/* Left Info Panel */}
+               <div className={`w-full md:w-5/12 p-6 pt-20 md:p-8 border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden flex flex-col justify-start md:justify-center bg-gradient-to-br ${selectedLevel ? getLevelColor(selectedLevel) : ''}`}>
+                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
+                 
+                 <div className="relative z-10">
+                   <div className="w-12 h-12 md:w-16 md:h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-4 md:mb-6 border border-white/20 shadow-lg">
+                     {selectedLevel === 1 && <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-[#00BFFF]" />}
+                     {selectedLevel === 2 && <Shield className="w-6 h-6 md:w-8 md:h-8 text-[#FFD700]" />}
+                     {selectedLevel === 3 && <Crown className="w-6 h-6 md:w-8 md:h-8 text-[#FFD700]" />}
+                   </div>
+                   
+                   <h2 className="text-2xl md:text-3xl font-bold text-white mb-4 font-minecraft tracking-wider">
+                     Уровень {selectedLevel}
+                   </h2>
+                   
+                   <div className="text-sm md:text-base">
+                     {selectedLevel && renderModalText(selectedLevel)}
+                   </div>
+                 </div>
+               </div>
+
+               {/* Right Pricing Panel */}
+               <div className="w-full md:w-7/12 p-6 pb-24 md:p-8 bg-[#0d0d0d] flex flex-col">
+                 <h3 className="text-xl md:text-2xl font-bold text-white mb-6">Выберите срок подписки</h3>
+                 
+                 <div className="space-y-3 mb-6 md:mb-8">
+                   {selectedLevel && pricing[selectedLevel as keyof typeof pricing].map((plan, index) => (
+                     <button
+                       key={index}
+                       onClick={() => setSelectedPlan(index)}
+                       className={`w-full flex items-center justify-between p-3 md:p-4 rounded-xl border transition-all duration-300 ${
+                         selectedPlan === index 
+                           ? 'border-story-gold bg-story-gold/10 shadow-[0_0_15px_rgba(255,215,0,0.15)]' 
+                           : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
+                       }`}
+                     >
+                       <div className="flex flex-col items-start">
+                         <span className="text-base md:text-lg font-bold text-white">{plan.days}</span>
+                         {plan.note && (
+                           <span className="text-xs md:text-sm text-gray-400 mt-1">
+                             {plan.note}
+                           </span>
+                         )}
+                       </div>
+                       <div className="flex items-center gap-2 md:gap-3">
+                         {plan.note && (
+                           <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-md bg-green-500/20 text-green-400 text-[10px] md:text-xs font-bold border border-green-500/30">
+                             ВЫГОДА
+                           </span>
+                         )}
+                         <span className="text-lg md:text-xl font-bold text-story-gold">{plan.price}</span>
+                       </div>
+                     </button>
+                   ))}
+                 </div>
+
+                    <div className="mt-auto">
+                   <a
+                     href="https://boosty.to/lendspele/donate"
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     className="w-full py-3.5 md:py-4 rounded-xl bg-gradient-to-r from-story-gold to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold text-base md:text-lg transition-all text-center flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:-translate-y-1"
+                   >
+                     Перейти к оплате на Boosty
+                   </a>
+                   <p className="text-center text-gray-500 text-[10px] md:text-xs mt-4">
+                     Оплата производится через защищенный шлюз сервиса Boosty. После оплаты создайте тикет в Discord.
+                   </p>
+
+                   <div className="mt-4 pt-4 border-t border-white/10 text-center">
+                     <p className="text-gray-400 text-xs md:text-sm">
+                       Из Украины или Европы?{' '}
+                       <a 
+                         href="https://discord.com/channels/1078405146557558824/1475513944448827492" 
+                         target="_blank" 
+                         rel="noopener noreferrer"
+                         className="text-[#4DD2FF] hover:text-white underline decoration-[#4DD2FF]/40 hover:decoration-white transition-colors"
+                       >
+                         Оплатить прямым переводом (без комиссии)
+                       </a>
+                     </p>
+                   </div>
+                 </div>
+               </div>
+               
+             </div>
+          </div>
+        </div>
+        
+      </div>
+    </Layout>
+  );
+};
+
+export default Sponsorship;
