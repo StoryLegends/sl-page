@@ -24,21 +24,21 @@ const Level3Icon = () => (
   </svg>
 );
 
-const pricing = {
+const pricing: Record<number, Array<{days: string, price: string, note: string | null, badge?: string}>> = {
   1: [
-    { days: '30 дней', price: '249₽', note: null },
-    { days: '60 дней', price: '449₽', note: '~224₽/мес' },
-    { days: '90 дней', price: '599₽', note: '~199₽/мес' },
+    { days: '30 дней', price: '199₽', note: null },
+    { days: '60 дней', price: '349₽', note: 'скидка 12%', badge: 'ВЫГОДНО' },
+    { days: '90 дней', price: '499₽', note: 'скидка 16%', badge: 'ЛУЧШАЯ ЦЕНА' },
   ],
   2: [
-    { days: '30 дней', price: '499₽', note: null },
-    { days: '60 дней', price: '899₽', note: '~449₽/мес' },
-    { days: '90 дней', price: '1199₽', note: '~399₽/мес' },
+    { days: '30 дней', price: '349₽', note: null },
+    { days: '60 дней', price: '629₽', note: 'скидка 10%', badge: 'ВЫГОДНО' },
+    { days: '90 дней', price: '899₽', note: 'скидка 14%', badge: 'ЛУЧШАЯ ЦЕНА' },
   ],
   3: [
-    { days: '30 дней', price: '749₽', note: null },
-    { days: '60 дней', price: '1349₽', note: '~674₽/мес' },
-    { days: '90 дней', price: '1799₽', note: '~599₽/мес' },
+    { days: '30 дней', price: '599₽', note: null },
+    { days: '60 дней', price: '1049₽', note: 'скидка 12%', badge: 'ВЫГОДНО' },
+    { days: '90 дней', price: '1499₽', note: 'скидка 17%', badge: 'ЛУЧШАЯ ЦЕНА' },
   ]
 };
 
@@ -360,20 +360,67 @@ const Sponsorship = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-10 text-white font-minecraft">Частые вопросы</h2>
             <div className="space-y-4 md:space-y-6">
               
+              {/* FAQ Item 1 */}
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
                   <h3 className="text-lg md:text-xl font-bold text-white mb-3 flex items-start gap-3">
                     <span className="text-story-gold">В:</span>
-                    Навсегда ли выдаются награды?
+                    Если я получу бан, мне вернут деньги за подписку?
                   </h3>
-                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
-                    <span className="font-bold text-blue-400 mr-2">О:</span>
-                    Награды действуют ровно 1 месяц с момента подписки. По истечении срока подписку необходимо продлить, иначе бонусы и теги нерушимости будут сняты.
+                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300 space-y-2">
+                    <div className="flex">
+                      <span className="font-bold text-blue-400 mr-2">О:</span>
+                      <span>Спонсорство — это в первую очередь поддержка проекта, которая не дает иммунитета перед общими правилами сервера. Все игроки равны, поэтому в случае блокировки за нарушения возврат средств не производится.</span>
+                    </div>
+                    <div className="pl-6 text-gray-400">
+                      Мы настоятельно рекомендуем соблюдать правила StoryLegends. Если вы считаете бан ошибочным, вы всегда можете подать апелляцию через систему тикетов.
+                    </div>
                   </div>
                 </div>
               </div>
 
+              {/* FAQ Item 2 */}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
+                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 flex items-start gap-3">
+                    <span className="text-story-gold">В:</span>
+                    Я потерял свои уникальные предметы (снежок/нерушимое оружие). Что делать?
+                  </h3>
+                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300 space-y-2">
+                    <div className="flex">
+                      <span className="font-bold text-blue-400 mr-2">О:</span>
+                      <span>Не паникуйте! Если ваши уникальные предметы (или те, на которых была «нерушимость») были утеряны в лаве или деспавнились, создайте тикет в Discord. Мы восстановим их согласно вашему лимиту: <strong className="text-white">1 раз в месяц для Уровня 2</strong> и <strong className="text-white">2 раза в месяц для Уровня 3</strong>.</span>
+                    </div>
+                    <div className="pl-6 text-gray-400 text-xs md:text-sm italic">
+                      Примечание: обычные переименованные предметы без тега нерушимости восстановлению не подлежат.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* FAQ Item 3 */}
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
+                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 flex items-start gap-3">
+                    <span className="text-story-gold">В:</span>
+                    Что будет с подпиской, если сезон закончится раньше срока?
+                  </h3>
+                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300 space-y-2">
+                    <div className="flex">
+                      <span className="font-bold text-blue-400 mr-2">О:</span>
+                      <span>Мы ценим вашу поддержку, поэтому ваши средства не сгорят. На время межсезонья подписка «замораживается». Она автоматически активируется в день официального старта нового сезона.</span>
+                    </div>
+                    <div className="pl-6 text-[#4DD2FF]/80 text-xs md:text-sm">
+                      Внимание: подписка размораживается в день старта для всех одновременно, независимо от того, зашли вы на сервер в первый день или позже.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* FAQ Item 4 */}
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
@@ -384,34 +431,6 @@ const Sponsorship = () => {
                   <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
                     <span className="font-bold text-blue-400 mr-2">О:</span>
                     Все средства со спонсорства идут исключительно на оплату мощного хостинга, поддержание работы сервера и заказ платных плагинов/модов для улучшения геймплея.
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 flex items-start gap-3">
-                    <span className="text-story-gold">В:</span>
-                    Как получить награды после оплаты?
-                  </h3>
-                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
-                    <span className="font-bold text-blue-400 mr-2">О:</span>
-                    После оформления подписки на Boosty, свяжитесь с администрацией в Discord (создайте тикет). Нам потребуется некоторое время для выдачи привилегий в игре.
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 backdrop-blur-sm transition-all duration-300 hover:bg-white/10">
-                  <h3 className="text-lg md:text-xl font-bold text-white mb-3 flex items-start gap-3">
-                    <span className="text-story-gold">В:</span>
-                    Сохраняется ли подписка между сезонами?
-                  </h3>
-                  <div className="text-sm md:text-base text-gray-300 pl-7 md:pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
-                    <span className="font-bold text-blue-400 mr-2">О:</span>
-                    Да! Если на сервере происходит вайп или переход на новый сезон, дни вашей подписки замораживаются. Время возобновит свой отсчет только после официального старта нового сезона.
                   </div>
                 </div>
               </div>
@@ -486,9 +505,13 @@ const Sponsorship = () => {
                          )}
                        </div>
                        <div className="flex items-center gap-2 md:gap-3">
-                         {plan.note && (
-                           <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-md bg-green-500/20 text-green-400 text-[10px] md:text-xs font-bold border border-green-500/30">
-                             ВЫГОДА
+                         {plan.badge && (
+                           <span className={`px-2 py-0.5 md:px-2.5 md:py-1 rounded-md text-[10px] md:text-xs font-bold border ${
+                             plan.badge === 'ЛУЧШАЯ ЦЕНА' 
+                               ? 'bg-story-gold/20 text-story-gold border-story-gold/30 shadow-[0_0_10px_rgba(255,215,0,0.2)]' 
+                               : 'bg-green-500/20 text-green-400 border-green-500/30'
+                           }`}>
+                             {plan.badge}
                            </span>
                          )}
                          <span className="text-lg md:text-xl font-bold text-story-gold">{plan.price}</span>
