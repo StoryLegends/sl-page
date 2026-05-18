@@ -101,6 +101,36 @@
             ],
             "Discrod": "fame.akira",
             "details": "Запускает трансляции на Twitch и проводит свои будни стримера в нашей атмосфере."
+        },
+        {
+            "name": "_MrZippy_",
+            "image": "mrzippy.webp",
+            "description": "Контентмейкер.",
+            "links": [
+                {
+                    "name": "Twitch",
+                    "url": "https://www.twitch.tv/0mrzippy"
+                },
+                {
+                    "name": "YouTube",
+                    "url": "https://www.youtube.com/@mrzippy_game"
+                }
+            ],
+            "Discrod": "mrzippy4",
+            "details": "Делает ролики по серверу, а так-же стримит будни на Twitch"
+        },
+        {
+            "name": "eggnuts",
+            "image": "eggnuts.webp",
+            "description": "Рофло тип. Ютубер.",
+            "links": [
+                {
+                    "name": "YouTube",
+                    "url": "https://www.youtube.com/@eggnuts14"
+                }
+            ],
+            "Discrod": "_eggnuts_",
+            "details": "Завоз. Рофл. Делает ролики по серверу на свой YouTube канал."
         }
     ]
 }
