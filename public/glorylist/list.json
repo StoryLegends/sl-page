@@ -77,19 +77,6 @@
             "details": "Стримит будни сервера на своем Twitch канале."
         },
         {
-            "name": "MONNO_SMOKE",
-            "image": "monno_smoke.webp",
-            "description": "Twitch стример.",
-            "links": [
-                {
-                    "name": "Twitch",
-                    "url": "https://www.twitch.tv/mono_smoke"
-                }
-            ],
-            "Discrod": "frokiiling",
-            "details": "Стримит на Twitch свои будни в играх и на сервере."
-        },
-        {
             "name": "bbbsss_UwU",
             "image": "bbbsss_uwu.webp",
             "description": "Twitch стример.",
@@ -131,6 +118,13 @@
             ],
             "Discrod": "_eggnuts_",
             "details": "Завоз. Рофл. Делает ролики по серверу на свой YouTube канал."
+        },
+        {
+            "name": "Ты",
+            "image": "you.webp",
+            "description": "Тут можешь быть и ты.",
+            "Discrod": "Твой discord",
+            "details": "Становись контентмейкером и попади в этот список! Вливайся в наше сообщество и помогай серверу в развитии."
         }
     ]
 }
