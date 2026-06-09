@@ -29,8 +29,7 @@ export interface ServerStatusConfig {
 }
 
 export const serverStatus: ServerStatusConfig = {
-    status: 'active',
+    status: 'closed',
     title: 'StoryLegends Island',
-    description: 'Сезон уже начался и активен с 12 декабря! Присоединяйся к серверу, исследуй новые земли и начни свою легендарную историю прямо сейчас.',
-    date: 'с 12 декабря'
+    description: 'Сезон подошел к концу! Спасибо всем за участие. Следите за новостями в нашем Discord, чтобы не пропускать новости об сервере!.'
 };
