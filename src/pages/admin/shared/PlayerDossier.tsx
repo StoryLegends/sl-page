@@ -780,6 +780,11 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                             <Descriptions.Item label="Предыдущая сессия (IP2)">
                                                 <IPGeoInfo ip={user.lastLoginIp2} colorClasses="text-gray-400" />
                                             </Descriptions.Item>
+                                            <Descriptions.Item label="Дата регистрации">
+                                                <span className="text-gray-300">
+                                                    {user.createdAt ? new Date(user.createdAt).toLocaleString('ru-RU') : '—'}
+                                                </span>
+                                            </Descriptions.Item>
                                         </Descriptions>
 
                                         {/* Related Accounts Section — only shown if detected */}

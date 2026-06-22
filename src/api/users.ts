@@ -40,6 +40,7 @@ export interface User {
     hasCoincidences?: boolean;
     hasBannedCoincidences?: boolean;
     hasSuspiciousMods?: boolean;
+    createdAt?: string;
 }
 
 export interface UpdateProfileData {
