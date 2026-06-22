@@ -40,7 +40,10 @@ export interface DashboardStats {
 }
 
 export const adminApi = {
-    // (Removed getStats because backend changes were reverted)
+    getStats: async (): Promise<DashboardStats> => {
+        const response = await apiClient.get('/api/admin/stats');
+        return response.data;
+    },
 
     // Users
     resetSeason: async (totpCode?: string): Promise<void> => {
@@ -63,6 +66,11 @@ export const adminApi = {
         return response.data;
     },
 
+    getRelatedAccounts: async (id: number): Promise<User[]> => {
+        const response = await apiClient.get(`/api/admin/users/${id}/related-accounts`);
+        return response.data;
+    },
+
     createUser: async (data: any): Promise<User> => {
         const response = await apiClient.post('/api/admin/users', data);
         return response.data;
@@ -77,8 +85,8 @@ export const adminApi = {
         await apiClient.delete(`/api/admin/users/${id}`);
     },
 
-    banUser: async (id: number, reason: string): Promise<User> => {
-        const response = await apiClient.post(`/api/admin/users/${id}/ban`, { reason });
+    banUser: async (id: number, reason: string, silent?: boolean): Promise<User> => {
+        const response = await apiClient.post(`/api/admin/users/${id}/ban`, { reason, silent });
         return response.data;
     },
 
@@ -227,7 +235,11 @@ export interface AnticheatSnapshot {
     resourcePacks: string[];
     processes: ProcessInfo[];
     createdAt: string;
+    anomalyScore?: number;
+    suspicious?: boolean;
+    anomalyDetails?: string;
 }
+
 
 export const anticheatApi = {
     getAllSnapshots: async (query?: string, page = 0, size = 20): Promise<{ content: AnticheatSnapshot[], totalElements: number, totalPages: number }> => {

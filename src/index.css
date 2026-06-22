@@ -314,3 +314,62 @@ body {
   display: block;
   background-color: #000;
 }
+
+/* AntD Select Custom Style Overrides */
+.custom-select .ant-select-selector {
+  background-color: #0b1320 !important;
+  border: 1px solid rgba(0, 191, 255, 0.25) !important;
+}
+
+.custom-select:hover .ant-select-selector {
+  border-color: #00BFFF !important;
+}
+
+.custom-select .ant-select-selection-placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+.custom-select .ant-select-selection-item {
+  color: #ffffff !important;
+}
+
+/* AntD Select dropdown menu overrides */
+.ant-select-dropdown {
+  background-color: #14213d !important;
+  border: 1px solid rgba(0, 191, 255, 0.2) !important;
+}
+
+.ant-select-dropdown .ant-select-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-selected {
+  background-color: rgba(0, 191, 255, 0.15) !important;
+  color: #00BFFF !important;
+}
+
+.ant-select-dropdown .ant-select-item-option-active {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
+/* Scoped overrides for Admin panel to change gold to legends-blue */
+.admin-layout-wrapper {
+  --color-story-gold: #00BFFF !important;
+  --color-story-gold-light: #4DD2FF !important;
+  --color-story-gold-dark: #0086B3 !important;
+}
+
+/* Remove default white border on Ant Design Drawer */
+.ant-drawer .ant-drawer-content {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.ant-drawer .ant-drawer-content-wrapper {
+  box-shadow: -6px 0 16px 0 rgba(0, 0, 0, 0.5) !important;
+}
+
+.ant-drawer .ant-drawer-mask {
+  background: rgba(0, 0, 0, 0.6) !important;
+}

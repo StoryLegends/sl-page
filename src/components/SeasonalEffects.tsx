@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { CURRENT_SEASON, seasonalEffects } from '../config/seasonal';
 
 // Particle Interface
@@ -24,6 +25,13 @@ interface Particle {
 const SeasonalEffects: React.FC = () => {
   const config = seasonalEffects[CURRENT_SEASON];
   const [isMobile, setIsMobile] = useState(false);
+  const location = useLocation();
+
+  // Disable seasonal effects for admin dashboard
+  if (location.pathname.startsWith('/admin')) {
+    return null;
+  }
+
 
   // Use state to hold particles so that the component renders them
   const [renderedParticles, setRenderedParticles] = useState<Particle[]>([]);

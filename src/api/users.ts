@@ -35,6 +35,11 @@ export interface User {
     lastLoginUserAgent1?: string;
     lastLoginIp2?: string;
     lastLoginUserAgent2?: string;
+    // Warnings count
+    warningsCount?: number;
+    hasCoincidences?: boolean;
+    hasBannedCoincidences?: boolean;
+    hasSuspiciousMods?: boolean;
 }
 
 export interface UpdateProfileData {

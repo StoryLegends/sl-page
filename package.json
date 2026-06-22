@@ -12,7 +12,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.2.5",
     "@stomp/stompjs": "^7.3.0",
+    "antd": "^6.4.5",
     "autoprefixer": "^10.4.23",
     "axios": "^1.13.5",
     "clsx": "^2.1.1",

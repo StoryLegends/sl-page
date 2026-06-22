@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import SeasonalEffects from './components/SeasonalEffects';
 import GoogleAnalytics from './components/GoogleAnalytics';
@@ -30,8 +30,18 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import ProfilePage from './pages/ProfilePage';
 import ApplicationPage from './pages/ApplicationPage';
-import AdminDashboardPage from './pages/AdminDashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
+
+// Lazy load new Admin pages
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
+const DashboardTab = lazy(() => import('./pages/admin/DashboardTab/DashboardTab'));
+const UsersTab = lazy(() => import('./pages/admin/UsersTab/UsersTab'));
+const ApplicationsTab = lazy(() => import('./pages/admin/ApplicationsTab/ApplicationsTab'));
+const AnticheatTab = lazy(() => import('./pages/admin/AnticheatTab/AnticheatTab'));
+const LogsTab = lazy(() => import('./pages/admin/LogsTab/LogsTab'));
+const PagesTab = lazy(() => import('./pages/admin/PagesTab/PagesTab'));
+const BadgesTab = lazy(() => import('./pages/admin/BadgesTab/BadgesTab'));
+const SettingsTab = lazy(() => import('./pages/admin/SettingsTab/SettingsTab'));
 import GuestRoute from './components/GuestRoute';
 import DiscordCallbackPage from './pages/DiscordCallbackPage';
 import { AuthProvider } from './context/AuthContext';
@@ -44,62 +54,76 @@ function App() {
       <ScrollToTop />
       <SeasonalEffects />
       <CookieBanner />
-      <Suspense fallback={<Loader />}>
         <NotificationProvider>
           <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Main />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/rules" element={<Rules />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/history/:id" element={<HistoryDetail />} />
-              <Route path="/glorylist" element={<GloryList />} />
-              <Route path="/players" element={<PlayersPage />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/user-agreement" element={<UserAgreement />} />
-              <Route path="/licenses" element={<Licenses />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/brandkit" element={<BrandKit />} />
+            <Suspense fallback={
+              <div className="flex items-center justify-center min-h-screen bg-[#0b1320]">
+                <Loader />
+              </div>
+            }>
+              <Routes>
+                <Route path="/" element={<Main />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/rules" element={<Rules />} />
+                <Route path="/history" element={<History />} />
+                <Route path="/history/:id" element={<HistoryDetail />} />
+                <Route path="/glorylist" element={<GloryList />} />
+                <Route path="/players" element={<PlayersPage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/user-agreement" element={<UserAgreement />} />
+                <Route path="/licenses" element={<Licenses />} />
+                <Route path="/faq" element={<FAQ />} />
+                <Route path="/brandkit" element={<BrandKit />} />
 
-              <Route path="/register" element={
-                <GuestRoute>
-                  <RegisterPage />
-                </GuestRoute>
-              } />
-              <Route path="/login" element={
-                <GuestRoute>
-                  <LoginPage />
-                </GuestRoute>
-              } />
-              <Route path="/verify-email" element={<EmailVerificationPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/auth/discord/callback" element={<DiscordCallbackPage />} />
+                <Route path="/register" element={
+                  <GuestRoute>
+                    <RegisterPage />
+                  </GuestRoute>
+                } />
+                <Route path="/login" element={
+                  <GuestRoute>
+                    <LoginPage />
+                  </GuestRoute>
+                } />
+                <Route path="/verify-email" element={<EmailVerificationPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/auth/discord/callback" element={<DiscordCallbackPage />} />
 
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                } />
 
-              <Route path="/application" element={
-                <ProtectedRoute>
-                  <ApplicationPage />
-                </ProtectedRoute>
-              } />
+                <Route path="/application" element={
+                  <ProtectedRoute>
+                    <ApplicationPage />
+                  </ProtectedRoute>
+                } />
 
-              <Route path="/admin" element={
-                <ProtectedRoute requireAdmin={true}>
-                  <AdminDashboardPage />
-                </ProtectedRoute>
-              } />
+                <Route path="/admin" element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <AdminLayout />
+                  </ProtectedRoute>
+                }>
+                  <Route index element={<Navigate to="dashboard" replace />} />
+                  <Route path="dashboard" element={<DashboardTab />} />
+                  <Route path="users" element={<UsersTab />} />
+                  <Route path="applications" element={<ApplicationsTab />} />
+                  <Route path="anticheat" element={<AnticheatTab />} />
+                  <Route path="logs" element={<LogsTab />} />
+                  <Route path="pages" element={<PagesTab />} />
+                  <Route path="badges" element={<BadgesTab />} />
+                  <Route path="settings" element={<SettingsTab />} />
+                </Route>
 
-              <Route path="/:customPath" element={<CustomDynamicPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+                <Route path="/:customPath" element={<CustomDynamicPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </AuthProvider>
         </NotificationProvider>
-      </Suspense>
     </Router>
   );
 }

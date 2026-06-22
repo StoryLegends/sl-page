@@ -78,6 +78,41 @@ const routes = [
         description: 'Панель управления проектом StoryLegends для администрации.'
     },
     {
+        path: 'admin/users',
+        title: 'Пользователи - Панель управления',
+        description: 'Управление пользователями и правами на StoryLegends.'
+    },
+    {
+        path: 'admin/applications',
+        title: 'Заявки - Панель управления',
+        description: 'Модерация заявок игроков на сервере StoryLegends.'
+    },
+    {
+        path: 'admin/anticheat',
+        title: 'Античит - Панель управления',
+        description: 'Мониторинг античит-снапшотов и доверенных модов.'
+    },
+    {
+        path: 'admin/logs',
+        title: 'Логи аудита - Панель управления',
+        description: 'Журнал действий администрации сервера StoryLegends.'
+    },
+    {
+        path: 'admin/pages',
+        title: 'Страницы - Панель управления',
+        description: 'Редактор кастомных страниц проекта StoryLegends.'
+    },
+    {
+        path: 'admin/badges',
+        title: 'Значки - Панель управления',
+        description: 'Управление значками и ачивками игроков.'
+    },
+    {
+        path: 'admin/settings',
+        title: 'Настройки - Панель управления',
+        description: 'Глобальные настройки проекта и управление сезонами.'
+    },
+    {
         path: 'privacy-policy',
         title: 'Политика конфиденциальности - StoryLegends',
         description: 'Политика обработки персональных данных и конфиденциальности на сайте StoryLegends.'

@@ -12,6 +12,7 @@ export interface Application {
     selfRating: number;
     status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
     adminComment?: string | null;
+    handledBy?: string | null;
     createdAt: string;
     user: User;
 }

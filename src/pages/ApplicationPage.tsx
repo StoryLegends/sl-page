@@ -81,6 +81,29 @@ const ApplicationPage = () => {
         return pattern.test(url.trim());
     };
 
+    const renderTextWithLinks = (text: string | null | undefined) => {
+        if (!text) return '—';
+        const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+        const parts = text.split(urlRegex);
+        return parts.map((part, index) => {
+            if (urlRegex.test(part)) {
+                const href = part.startsWith('www.') ? `https://${part}` : part;
+                return (
+                    <a
+                        key={index}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#00BFFF] hover:underline break-all"
+                    >
+                        {part}
+                    </a>
+                );
+            }
+            return part;
+        });
+    };
+
     const [settings, setSettings] = useState<any>(null);
     const [settingsLoading, setSettingsLoading] = useState(true);
 
@@ -253,12 +276,6 @@ const ApplicationPage = () => {
                                         <p className="mb-2">Вы не можете подавать новые заявки, так как ваш аккаунт заблокирован.</p>
                                         <p className="text-sm opacity-80"><strong className="text-red-100">Причина:</strong> {user.banReason}</p>
                                     </div>
-                                ) : user?.inSeason ? (
-                                    <div className="bg-blue-900/20 border border-blue-500/50 rounded-xl p-8 text-blue-200 text-center">
-                                        <div className="text-4xl mb-4">⌛</div>
-                                        <h3 className="text-xl font-bold text-blue-400 mb-2">Вердикт уже получен</h3>
-                                        <p className="text-blue-300">Вы уже получили вердикт (приняты или отказаны) в этом сезоне. Подайте новую заявку в следующем сезоне!</p>
-                                    </div>
                                 ) : !user?.emailVerified ? (
                                     <div className="bg-story-gold/10 border border-story-gold/30 rounded-xl p-8 text-center animate-fadeIn">
                                         <div className="w-16 h-16 bg-story-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -302,12 +319,105 @@ const ApplicationPage = () => {
                                             Зайти в Discord
                                         </a>
                                     </div>
-                                ) : hasPendingApp ? (
-                                    <div className="bg-story-gold/10 border border-story-gold/30 rounded-xl p-8 text-center">
-                                        <div className="text-4xl mb-4">⌛</div>
-                                        <h3 className="text-xl font-bold text-story-gold mb-2">Заявка в обработке</h3>
-                                        <p className="text-gray-300">У вас уже есть активная заявка. Пожалуйста, дождитесь решения администрации. Статус можно увидеть ниже.</p>
-                                    </div>
+                                ) : (hasPendingApp || user?.inSeason) ? (
+                                    myApplications.length > 0 ? (
+                                        <div className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-6 animate-fadeIn">
+                                            {/* Status Header Alert */}
+                                            {myApplications[0].status === 'ACCEPTED' ? (
+                                                <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-4 text-green-200 flex items-start gap-3">
+                                                    <span className="text-2xl mt-0.5">🎉</span>
+                                                    <div>
+                                                        <h4 className="font-bold text-green-400">
+                                                            Заявка одобрена!
+                                                            {myApplications[0].handledBy && (
+                                                                <span className="ml-2 text-xs text-green-500/80 font-normal">
+                                                                    (Вердикт вынес: {myApplications[0].handledBy})
+                                                                </span>
+                                                            )}
+                                                        </h4>
+                                                        <p className="text-xs text-gray-400 mt-1">Поздравляем! Администрация одобрила вашу заявку. Вы добавлены в белый список сервера.</p>
+                                                    </div>
+                                                </div>
+                                            ) : myApplications[0].status === 'REJECTED' ? (
+                                                <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-200 flex items-start gap-3">
+                                                    <span className="text-2xl mt-0.5">❌</span>
+                                                    <div>
+                                                        <h4 className="font-bold text-red-400">
+                                                            Заявка отклонена
+                                                            {myApplications[0].handledBy && (
+                                                                <span className="ml-2 text-xs text-red-400/80 font-normal">
+                                                                    (Вердикт вынес: {myApplications[0].handledBy})
+                                                                </span>
+                                                            )}
+                                                        </h4>
+                                                        <p className="text-xs text-gray-400 mt-1">К сожалению, ваша заявка была отклонена администрацией проекта.</p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="bg-story-gold/10 border border-story-gold/30 rounded-xl p-4 text-story-gold flex items-start gap-3">
+                                                    <span className="text-2xl mt-0.5">⌛</span>
+                                                    <div>
+                                                        <h4 className="font-bold text-story-gold">Заявка на рассмотрении</h4>
+                                                        <p className="text-xs text-gray-400 mt-1">Ваша заявка успешно отправлена и ожидает проверки администрацией. Обычно это занимает от 24 до 48 часов.</p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Admin Comment */}
+                                            {myApplications[0].adminComment && (
+                                                <div className="p-4 bg-story-gold/5 rounded-xl border border-story-gold/20 text-sm">
+                                                    <span className="text-story-gold text-[10px] font-bold uppercase tracking-wider block mb-1">Ответ администрации:</span>
+                                                    <p className="text-gray-200 italic break-words overflow-hidden">"{myApplications[0].adminComment}"</p>
+                                                </div>
+                                            )}
+
+                                            {/* Table structure like on the admin panel */}
+                                            <div className="border border-white/5 rounded-xl overflow-hidden bg-black/20">
+                                                <div className="grid grid-cols-3 border-b border-white/5 p-3 text-xs">
+                                                    <span className="text-gray-400 font-medium">ФИО</span>
+                                                    <span className="text-white font-semibold col-span-2">{myApplications[0].firstName}</span>
+                                                </div>
+                                                <div className="grid grid-cols-3 border-b border-white/5 p-3 text-xs">
+                                                    <span className="text-gray-400 font-medium">Возраст</span>
+                                                    <span className="text-white font-semibold col-span-2">{myApplications[0].age} лет</span>
+                                                </div>
+                                                <div className="grid grid-cols-3 border-b border-white/5 p-3 text-xs">
+                                                    <span className="text-gray-400 font-medium">Откуда узнали</span>
+                                                    <span className="text-white font-semibold col-span-2">{renderTextWithLinks(myApplications[0].source)}</span>
+                                                </div>
+                                                <div className="grid grid-cols-3 border-b border-white/5 p-3 text-xs">
+                                                    <span className="text-gray-400 font-medium">Контент-мейкер?</span>
+                                                    <span className="col-span-2">
+                                                        {myApplications[0].makeContent ? (
+                                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/20">Да</span>
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-gray-400 border border-white/10">Нет</span>
+                                                        )}
+                                                    </span>
+                                                </div>
+                                                <div className="grid grid-cols-3 border-b border-white/5 p-3 text-xs">
+                                                    <span className="text-gray-400 font-medium">Оценка адекватности</span>
+                                                    <span className="text-white font-semibold col-span-2 font-minecraft">{myApplications[0].selfRating} / 10</span>
+                                                </div>
+                                                <div className="grid grid-cols-3 p-3 text-xs">
+                                                    <span className="text-gray-400 font-medium">Дополнительно</span>
+                                                    <span className="text-white font-semibold col-span-2">{renderTextWithLinks(myApplications[0].additionalInfo)}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Essay */}
+                                            <div className="bg-black/35 p-4 rounded-xl border border-white/5 space-y-2">
+                                                <span className="text-gray-400 text-xs font-bold block">Сочинение: Почему вы хотите играть на нашем сервере?</span>
+                                                <p className="text-white leading-relaxed text-sm whitespace-pre-wrap">{renderTextWithLinks(myApplications[0].whyUs)}</p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-blue-900/20 border border-blue-500/50 rounded-xl p-8 text-blue-200 text-center animate-fadeIn">
+                                            <div className="text-4xl mb-4">⌛</div>
+                                            <h3 className="text-xl font-bold text-blue-400 mb-2">Вердикт уже получен</h3>
+                                            <p className="text-blue-300">Вы уже получили вердикт в этом сезоне. Подайте новую заявку в следующем сезоне!</p>
+                                        </div>
+                                    )
                                 ) : (
                                     <form onSubmit={handleSubmit} className="space-y-4">
                                         <div className="grid grid-cols-2 gap-4">
