@@ -302,5 +302,9 @@ export const knownModsApi = {
     delete: async (id: number): Promise<void> => {
         await apiClient.delete(`/api/admin/anticheat/known-mods/${id}`);
     },
+
+    deleteByName: async (name: string): Promise<void> => {
+        await apiClient.delete(`/api/admin/anticheat/known-mods/name/${encodeURIComponent(name)}`);
+    },
 };
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Input, Select, Space, Tag, Modal, Form, Tabs, Descriptions, List, Spin, message, Typography, Alert } from 'antd';
+import { Table, Button, Input, Select, Space, Tag, Modal, Form, Tabs, Descriptions, List, Spin, message, Typography, Alert, Tooltip } from 'antd';
 import {
     SearchOutlined,
     EyeOutlined,
@@ -11,11 +11,13 @@ import {
     InfoCircleOutlined
 } from '@ant-design/icons';
 import { anticheatApi, knownModsApi, type AnticheatSnapshot, type KnownMod, type ProcessInfo, type ModEntry } from '../../../api/admin';
+import { useAuth } from '../../../context/AuthContext';
 
 const { Option } = Select;
 const { Text } = Typography;
 
 const AnticheatTab: React.FC = () => {
+    const { isAdmin } = useAuth();
     const [activeSubTab, setActiveSubTab] = useState('snapshots');
 
     // Snapshots states
@@ -109,6 +111,25 @@ const AnticheatTab: React.FC = () => {
             message.error('Не удалось загрузить детали снапшота');
         } finally {
             setSnapDetailsLoading(false);
+        }
+    };
+
+    const handleUpdateModStatus = async (modName: string, status: 'TRUSTED' | 'SUSPICIOUS' | 'UNKNOWN') => {
+        try {
+            if (status === 'UNKNOWN') {
+                await knownModsApi.deleteByName(modName);
+                message.success(`Статус мода "${modName}" сброшен`);
+            } else {
+                await knownModsApi.save({ name: modName, status });
+                message.success(`Статус мода "${modName}" обновлен на ${status === 'TRUSTED' ? 'ДОВЕРЕННЫЙ' : 'ПОДОЗРИТЕЛЬНЫЙ'}`);
+            }
+            if (selectedSnapshot) {
+                const updated = await anticheatApi.getSnapshot(selectedSnapshot.id, false);
+                setSelectedSnapshot(updated);
+            }
+        } catch (err) {
+            console.error('Failed to update mod status:', err);
+            message.error('Не удалось обновить статус мода');
         }
     };
 
@@ -405,7 +426,7 @@ const AnticheatTab: React.FC = () => {
                 open={isSnapModalVisible}
                 onCancel={() => setIsSnapModalVisible(false)}
                 footer={null}
-                width={850}
+                width={1150}
                 className="custom-modal anticheat-detail-modal"
             >
                 {snapDetailsLoading ? (
@@ -454,18 +475,55 @@ const AnticheatTab: React.FC = () => {
                                             />
                                             <List
                                                 bordered
-                                                className="border-white/5 bg-black/10 rounded-xl overflow-hidden max-h-[350px] overflow-y-auto"
+                                                className="border-white/5 bg-black/10 rounded-xl overflow-hidden max-h-[500px] overflow-y-auto"
                                                 dataSource={filteredMods}
                                                 renderItem={(mod: ModEntry) => (
                                                     <List.Item className="px-4 py-2 border-b border-white/5 flex items-center justify-between">
                                                         <code className="text-gray-300 text-xs">{mod.name}</code>
-                                                        <Space>
+                                                        <Space size={6} align="center">
                                                             {mod.status === 'TRUSTED' ? (
                                                                 <Tag color="success" className="text-[9px]">ДОВЕРЕННЫЙ</Tag>
                                                             ) : mod.status === 'SUSPICIOUS' ? (
                                                                 <Tag color="red" icon={<WarningOutlined />} className="text-[9px] font-bold">ПОДОЗРИТЕЛЬНЫЙ</Tag>
                                                             ) : (
                                                                 <Tag color="warning" className="text-[9px]">НЕИЗВЕСТНЫЙ</Tag>
+                                                            )}
+                                                            {isAdmin && (
+                                                                <Space size={2} className="ml-4 border-l border-white/10 pl-2">
+                                                                    {mod.status !== 'TRUSTED' && (
+                                                                        <Tooltip title="Пометить как доверенный">
+                                                                            <Button 
+                                                                                size="small" 
+                                                                                type="text" 
+                                                                                style={{ padding: '0 4px', height: 20 }}
+                                                                                icon={<CheckCircleOutlined style={{ color: '#52c41a', fontSize: '11px' }} />} 
+                                                                                onClick={() => handleUpdateModStatus(mod.name, 'TRUSTED')} 
+                                                                            />
+                                                                        </Tooltip>
+                                                                    )}
+                                                                    {mod.status !== 'SUSPICIOUS' && (
+                                                                        <Tooltip title="Пометить как подозрительный">
+                                                                            <Button 
+                                                                                size="small" 
+                                                                                type="text" 
+                                                                                style={{ padding: '0 4px', height: 20 }}
+                                                                                icon={<WarningOutlined style={{ color: '#ff4d4f', fontSize: '11px' }} />} 
+                                                                                onClick={() => handleUpdateModStatus(mod.name, 'SUSPICIOUS')} 
+                                                                            />
+                                                                        </Tooltip>
+                                                                    )}
+                                                                    {mod.status !== 'UNKNOWN' && (
+                                                                        <Tooltip title="Сбросить статус (сделать неизвестным)">
+                                                                            <Button 
+                                                                                size="small" 
+                                                                                type="text" 
+                                                                                style={{ padding: '0 4px', height: 20 }}
+                                                                                icon={<DeleteOutlined style={{ color: '#8c8c8c', fontSize: '11px' }} />} 
+                                                                                onClick={() => handleUpdateModStatus(mod.name, 'UNKNOWN')} 
+                                                                            />
+                                                                        </Tooltip>
+                                                                    )}
+                                                                </Space>
                                                             )}
                                                         </Space>
                                                     </List.Item>
@@ -488,7 +546,7 @@ const AnticheatTab: React.FC = () => {
                                             />
                                             <List
                                                 bordered
-                                                className="border-white/5 bg-black/10 rounded-xl overflow-hidden max-h-[350px] overflow-y-auto"
+                                                className="border-white/5 bg-black/10 rounded-xl overflow-hidden max-h-[500px] overflow-y-auto"
                                                 dataSource={filteredProcesses}
                                                 renderItem={(proc: ProcessInfo) => (
                                                     <List.Item className="px-4 py-2 border-b border-white/5 flex flex-col items-start gap-1">
@@ -517,7 +575,7 @@ const AnticheatTab: React.FC = () => {
                                         <div className="pt-3">
                                             <List
                                                 bordered
-                                                className="border-white/5 bg-black/10 rounded-xl overflow-hidden max-h-[350px] overflow-y-auto"
+                                                className="border-white/5 bg-black/10 rounded-xl overflow-hidden max-h-[500px] overflow-y-auto"
                                                 dataSource={selectedSnapshot.resourcePacks || []}
                                                 renderItem={(pack: string) => (
                                                     <List.Item className="px-4 py-2 border-b border-white/5 text-gray-300 text-xs">
