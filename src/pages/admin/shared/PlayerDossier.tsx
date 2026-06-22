@@ -498,9 +498,14 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
         }
     ];
 
-    const filteredMods = selectedSnapshot?.mods?.filter(mod => 
+    const filteredMods = (selectedSnapshot?.mods?.filter(mod => 
         mod.name.toLowerCase().includes(innerModSearch.toLowerCase())
-    ) || [];
+    ) || []).sort((a, b) => {
+        const wA = a.status === 'SUSPICIOUS' ? 1 : a.status === 'UNKNOWN' ? 2 : 3;
+        const wB = b.status === 'SUSPICIOUS' ? 1 : b.status === 'UNKNOWN' ? 2 : 3;
+        if (wA !== wB) return wA - wB;
+        return a.name.localeCompare(b.name);
+    });
 
     const filteredProcesses = selectedSnapshot?.processes?.filter(proc => 
         proc.imageName.toLowerCase().includes(processSearch.toLowerCase()) ||
