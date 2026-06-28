@@ -17,6 +17,7 @@ export interface WarningResponse {
     issuedByUsername: string;
     createdAt: string;
     active: boolean;
+    expiresAt?: string;
 }
 
 export interface SiteSettings {
@@ -30,6 +31,7 @@ export interface SiteSettings {
     sendEmailOnApplicationRejected: boolean;
     applicationsOpen: boolean;
     registrationOpen: boolean;
+    maintenanceMode: boolean;
 }
 
 export interface DashboardStats {
@@ -37,6 +39,9 @@ export interface DashboardStats {
     pendingApplications: number;
     activePlayers: number;
     bannedUsers: number;
+    playerMessagesCount?: number;
+    unreadMessagesCount?: number;
+    activeWarningsCount?: number;
 }
 
 export const adminApi = {
@@ -85,8 +90,8 @@ export const adminApi = {
         await apiClient.delete(`/api/admin/users/${id}`);
     },
 
-    banUser: async (id: number, reason: string, silent?: boolean): Promise<User> => {
-        const response = await apiClient.post(`/api/admin/users/${id}/ban`, { reason, silent });
+    banUser: async (id: number, reason: string, silent?: boolean, durationDays?: number): Promise<User> => {
+        const response = await apiClient.post(`/api/admin/users/${id}/ban`, { reason, silent, durationDays });
         return response.data;
     },
 
@@ -139,8 +144,8 @@ export const adminApi = {
         return response.data;
     },
 
-    issueWarning: async (userId: number, reason: string): Promise<WarningResponse> => {
-        const response = await apiClient.post(`/api/admin/users/${userId}/warnings`, { reason });
+    issueWarning: async (userId: number, reason: string, durationDays?: number): Promise<WarningResponse> => {
+        const response = await apiClient.post(`/api/admin/users/${userId}/warnings`, { reason, durationDays });
         return response.data;
     },
 
@@ -187,6 +192,13 @@ export const adminApi = {
     getLogs: async (query?: string, page = 0, size = 50): Promise<{ content: AuditLog[], totalElements: number, totalPages: number }> => {
         const response = await apiClient.get('/api/admin/logs', {
             params: { query, page, size }
+        });
+        return response.data;
+    },
+
+    getUserAuditLogs: async (userId: number, page = 0, size = 20): Promise<{ content: AuditLog[], totalElements: number, totalPages: number }> => {
+        const response = await apiClient.get(`/api/admin/users/${userId}/audit-logs`, {
+            params: { page, size }
         });
         return response.data;
     },

@@ -7,6 +7,7 @@ import {
 } from '@ant-design/icons';
 import { adminApi } from '../../../api/admin';
 import type { User } from '../../../api/users';
+import { useAdminWebSocket } from '../../../hooks/useAdminWebSocket';
 import PlayerDossier from '../shared/PlayerDossier';
 
 const { Option } = Select;
@@ -21,7 +22,6 @@ const UsersTab: React.FC = () => {
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState('');
-    const [roleFilter, setRoleFilter] = useState<string>('');
     const [statusFilter, setStatusFilter] = useState<string>('');
 
     // Dossier state
@@ -32,10 +32,10 @@ const UsersTab: React.FC = () => {
     const [isCreateVisible, setIsCreateVisible] = useState(false);
     const [form] = Form.useForm();
 
-    const fetchUsers = async (currentPage = page, query = searchQuery, role = roleFilter, status = statusFilter) => {
+    const fetchUsers = async (currentPage = page, query = searchQuery, status = statusFilter) => {
         setLoading(true);
         try {
-            const data = await adminApi.getAllUsers(currentPage, pageSize, query || undefined, role || undefined, status || undefined);
+            const data = await adminApi.getAllUsers(currentPage, pageSize, query || undefined, undefined, status || undefined);
             setUsers(data.content);
             setTotalElements(data.totalElements);
         } catch (err) {
@@ -47,12 +47,21 @@ const UsersTab: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchUsers(0, searchQuery, roleFilter, statusFilter);
-        setPage(0);
-    }, [roleFilter, statusFilter]);
+        const timer = setTimeout(() => {
+            fetchUsers(0, searchQuery, statusFilter);
+            setPage(0);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery, statusFilter]);
+
+    useAdminWebSocket({
+        '/topic/admin/users': () => {
+            fetchUsers(page, searchQuery, statusFilter);
+        }
+    });
 
     const handleSearch = () => {
-        fetchUsers(0, searchQuery, roleFilter, statusFilter);
+        fetchUsers(0, searchQuery, statusFilter);
         setPage(0);
     };
 
@@ -63,7 +72,7 @@ const UsersTab: React.FC = () => {
         setPageSize(newSize);
         // Refetch with explicit new size
         setLoading(true);
-        adminApi.getAllUsers(newPage, newSize, searchQuery || undefined, roleFilter || undefined, statusFilter || undefined)
+        adminApi.getAllUsers(newPage, newSize, searchQuery || undefined, undefined, statusFilter || undefined)
             .then(data => { setUsers(data.content); setTotalElements(data.totalElements); })
             .catch(() => message.error('Не удалось загрузить список игроков'))
             .finally(() => setLoading(false));
@@ -243,20 +252,8 @@ const UsersTab: React.FC = () => {
                         size="small"
                         style={{ height: 28, width: 200, fontSize: 12 }}
                     />
-                    <Select
-                        placeholder="Роль"
-                        value={roleFilter}
-                        onChange={setRoleFilter}
-                        className="custom-select"
-                        allowClear
-                        size="small"
-                        style={{ height: 28, width: 120, fontSize: 12 }}
-                    >
-                        <Option value="ROLE_USER">USER</Option>
-                        <Option value="ROLE_MODERATOR">MOD</Option>
-                        <Option value="ROLE_ADMIN">ADMIN</Option>
-                    </Select>
                     <Checkbox
+
                         checked={statusFilter === 'BANNED'}
                         onChange={e => setStatusFilter(e.target.checked ? 'BANNED' : '')}
                         className="text-gray-300 hover:text-white text-xs select-none"

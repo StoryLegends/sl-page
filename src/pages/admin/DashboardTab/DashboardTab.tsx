@@ -11,10 +11,12 @@ import {
     HistoryOutlined,
     WarningOutlined,
     UserSwitchOutlined,
-    ClockCircleOutlined
+    ClockCircleOutlined,
+    MessageOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { adminApi, anticheatApi, type DashboardStats } from '../../../api/admin';
+import { useAdminWebSocket } from '../../../hooks/useAdminWebSocket';
 import PlayerDossier from '../shared/PlayerDossier';
 
 const { Title, Paragraph } = Typography;
@@ -87,9 +89,9 @@ const DashboardTab: React.FC = () => {
                 console.error('Failed to fetch anticheat snapshots in dashboard:', err);
             }
 
-            // 2. Fetch latest registered users (limit to 15) and check related accounts
+            // 2. Fetch latest registered users (limit to 5) and check related accounts
             try {
-                const usersData = await adminApi.getAllUsers(0, 15);
+                const usersData = await adminApi.getAllUsers(0, 5);
                 const recentUsers = usersData.content || [];
                 
                 const relatedAccPromises = recentUsers.map(async (u) => {
@@ -104,11 +106,11 @@ const DashboardTab: React.FC = () => {
                                 description: `Найдено совпадение IP с другими аккаунтами (${related.length} шт.)${bannedRelated.length > 0 ? `, включая забаненные: ${bannedRelated.length} шт.` : ''}`,
                                 playerName: u.minecraftNickname || u.username,
                                 userId: u.id,
-                                timestamp: new Date().toISOString() // Or user registration date if we could get it, fallback to current
+                                timestamp: new Date().toISOString()
                             });
                         }
                     } catch (e) {
-                        console.error('Failed to get related accounts in dashboard for user ' + u.id, e);
+                        // Silent catch for related accounts
                     }
                 });
                 await Promise.all(relatedAccPromises);
@@ -160,6 +162,18 @@ const DashboardTab: React.FC = () => {
     useEffect(() => {
         loadDashboardData();
     }, []);
+
+    useAdminWebSocket({
+        '/topic/admin/applications': () => {
+            fetchStats();
+        },
+        '/topic/admin/users': () => {
+            fetchStats();
+        },
+        '/topic/admin/messenger': () => {
+            fetchStats();
+        }
+    });
 
     const handleOpenUserDossier = async (action: SuspiciousAction) => {
         if (action.userId) {
@@ -234,89 +248,147 @@ const DashboardTab: React.FC = () => {
             )}
 
             {/* Stats Cards */}
-            <Row gutter={[20, 20]}>
-                <Col xs={24} sm={12} lg={6}>
-                    <Card 
-                        hoverable
-                        className="bg-[#14213d] border border-white/5 hover:border-white/10 transition-all rounded-2xl overflow-hidden shadow-lg"
-                        styles={{ body: { padding: 24 } }}
-                    >
-                        <div className="flex items-center justify-between">
-                            <Statistic
-                                title={<span className="text-gray-400 font-medium">Всего игроков</span>}
-                                value={stats?.totalUsers}
-                                valueStyle={{ color: '#fff', fontWeight: 'bold', fontSize: 28 }}
-                            />
-                            <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/10">
-                                <UserOutlined style={{ fontSize: 22, color: '#00BFFF' }} />
-                            </div>
-                        </div>
-                    </Card>
-                </Col>
-
-                <Col xs={24} sm={12} lg={6}>
-                    <Card 
-                        hoverable
-                        onClick={() => navigate('/admin/applications')}
-                        className="bg-[#14213d] border border-white/5 hover:border-story-gold/20 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group"
-                        styles={{ body: { padding: 24 } }}
-                    >
-                        <div className="flex items-center justify-between">
-                            <Statistic
-                                title={<span className="text-gray-400 font-medium group-hover:text-story-gold transition-colors">Заявок на проверку</span>}
-                                value={stats?.pendingApplications}
-                                valueStyle={{ color: '#FFD700', fontWeight: 'bold', fontSize: 28 }}
-                            />
-                            <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/10 group-hover:scale-110 transition-transform">
-                                <FileTextOutlined style={{ fontSize: 22, color: '#FFD700' }} />
-                            </div>
-                        </div>
-                        <div className="mt-4 flex items-center gap-1 text-xs text-gray-500 group-hover:text-gray-300 transition-colors">
-                            <span>Перейти к заявкам</span>
-                            <ArrowRightOutlined className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                    </Card>
-                </Col>
-
-                <Col xs={24} sm={12} lg={6}>
+            <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
                         onClick={() => navigate('/admin/users')}
-                        className="bg-[#14213d] border border-white/5 hover:border-green-500/20 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group"
-                        styles={{ body: { padding: 24 } }}
+                        className="bg-[#14213d] border border-white/5 hover:border-blue-500/30 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group h-full flex flex-col justify-between"
+                        styles={{ body: { padding: 20, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
                     >
                         <div className="flex items-center justify-between">
                             <Statistic
-                                title={<span className="text-gray-400 font-medium group-hover:text-green-400 transition-colors">Активные игроки</span>}
-                                value={stats?.activePlayers}
-                                valueStyle={{ color: '#52c41a', fontWeight: 'bold', fontSize: 28 }}
+                                title={<span className="text-gray-400 text-xs font-medium group-hover:text-blue-400 transition-colors">Всего игроков</span>}
+                                value={stats?.totalUsers}
+                                valueStyle={{ color: '#fff', fontWeight: 'bold', fontSize: 24 }}
                             />
-                            <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/10 group-hover:scale-110 transition-transform">
-                                <CheckCircleOutlined style={{ fontSize: 22, color: '#52c41a' }} />
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/10 group-hover:scale-110 transition-transform">
+                                <UserOutlined style={{ fontSize: 18, color: '#00BFFF' }} />
                             </div>
                         </div>
-                        <div className="mt-4 flex items-center gap-1 text-xs text-gray-500 group-hover:text-gray-300 transition-colors">
-                            <span>Список игроков</span>
-                            <ArrowRightOutlined className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                        <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-1 text-[11px] text-gray-500 group-hover:text-blue-400 transition-colors">
+                            <span>Все игроки</span>
+                            <ArrowRightOutlined className="w-2.5 h-2.5 group-hover:translate-x-1 transition-transform" />
                         </div>
                     </Card>
                 </Col>
 
-                <Col xs={24} sm={12} lg={6}>
+                <Col xs={24} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
-                        className="bg-[#14213d] border border-white/5 hover:border-red-500/20 transition-all rounded-2xl overflow-hidden shadow-lg group"
-                        styles={{ body: { padding: 24 } }}
+                        onClick={() => navigate('/admin/applications')}
+                        className="bg-[#14213d] border border-white/5 hover:border-story-gold/30 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group h-full flex flex-col justify-between"
+                        styles={{ body: { padding: 20, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
                     >
                         <div className="flex items-center justify-between">
                             <Statistic
-                                title={<span className="text-gray-400 font-medium">Забанено</span>}
-                                value={stats?.bannedUsers}
-                                valueStyle={{ color: '#ff4d4f', fontWeight: 'bold', fontSize: 28 }}
+                                title={<span className="text-gray-400 text-xs font-medium group-hover:text-story-gold transition-colors">Заявок на проверку</span>}
+                                value={stats?.pendingApplications}
+                                valueStyle={{ color: '#FFD700', fontWeight: 'bold', fontSize: 24 }}
                             />
-                            <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/10">
-                                <StopOutlined style={{ fontSize: 22, color: '#ff4d4f' }} />
+                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/10 group-hover:scale-110 transition-transform">
+                                <FileTextOutlined style={{ fontSize: 18, color: '#FFD700' }} />
                             </div>
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-1 text-[11px] text-gray-500 group-hover:text-story-gold transition-colors">
+                            <span>Перейти к заявкам</span>
+                            <ArrowRightOutlined className="w-2.5 h-2.5 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                    </Card>
+                </Col>
+
+                <Col xs={24} sm={12} md={8} lg={4}>
+                    <Card 
+                        hoverable
+                        onClick={() => navigate('/admin/users')}
+                        className="bg-[#14213d] border border-white/5 hover:border-green-500/30 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group h-full flex flex-col justify-between"
+                        styles={{ body: { padding: 20, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
+                    >
+                        <div className="flex items-center justify-between">
+                            <Statistic
+                                title={<span className="text-gray-400 text-xs font-medium group-hover:text-green-400 transition-colors">Активные игроки</span>}
+                                value={stats?.activePlayers}
+                                valueStyle={{ color: '#52c41a', fontWeight: 'bold', fontSize: 24 }}
+                            />
+                            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/10 group-hover:scale-110 transition-transform">
+                                <CheckCircleOutlined style={{ fontSize: 18, color: '#52c41a' }} />
+                            </div>
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-1 text-[11px] text-gray-500 group-hover:text-green-400 transition-colors">
+                            <span>Список игроков</span>
+                            <ArrowRightOutlined className="w-2.5 h-2.5 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                    </Card>
+                </Col>
+
+                <Col xs={24} sm={12} md={8} lg={4}>
+                    <Card 
+                        hoverable
+                        onClick={() => navigate('/admin/users')}
+                        className="bg-[#14213d] border border-white/5 hover:border-red-500/30 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group h-full flex flex-col justify-between"
+                        styles={{ body: { padding: 20, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
+                    >
+                        <div className="flex items-center justify-between">
+                            <Statistic
+                                title={<span className="text-gray-400 text-xs font-medium group-hover:text-red-400 transition-colors">Забанено</span>}
+                                value={stats?.bannedUsers}
+                                valueStyle={{ color: '#ff4d4f', fontWeight: 'bold', fontSize: 24 }}
+                            />
+                            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/10 group-hover:scale-110 transition-transform">
+                                <StopOutlined style={{ fontSize: 18, color: '#ff4d4f' }} />
+                            </div>
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-1 text-[11px] text-gray-500 group-hover:text-red-400 transition-colors">
+                            <span>Забаненные</span>
+                            <ArrowRightOutlined className="w-2.5 h-2.5 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                    </Card>
+                </Col>
+
+                <Col xs={24} sm={12} md={8} lg={4}>
+                    <Card 
+                        hoverable
+                        onClick={() => navigate('/admin/messenger')}
+                        className="bg-[#14213d] border border-white/5 hover:border-sky-400/30 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group h-full flex flex-col justify-between"
+                        styles={{ body: { padding: 20, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
+                    >
+                        <div className="flex items-center justify-between">
+                            <Statistic
+                                title={<span className="text-gray-400 text-xs font-medium group-hover:text-sky-400 transition-colors">Непрочитанные СМС</span>}
+                                value={stats?.unreadMessagesCount ?? stats?.playerMessagesCount ?? 0}
+                                valueStyle={{ color: (stats?.unreadMessagesCount ?? 0) > 0 ? '#f59e0b' : '#38bdf8', fontWeight: 'bold', fontSize: 24 }}
+                            />
+                            <div className="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center border border-sky-500/10 group-hover:scale-110 transition-transform">
+                                <MessageOutlined style={{ fontSize: 18, color: '#38bdf8' }} />
+                            </div>
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-1 text-[11px] text-gray-500 group-hover:text-sky-400 transition-colors">
+                            <span>Открыть мессенджер</span>
+                            <ArrowRightOutlined className="w-2.5 h-2.5 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                    </Card>
+                </Col>
+
+                <Col xs={24} sm={12} md={8} lg={4}>
+                    <Card 
+                        hoverable
+                        onClick={() => navigate('/admin/users')}
+                        className="bg-[#14213d] border border-white/5 hover:border-amber-400/30 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group h-full flex flex-col justify-between"
+                        styles={{ body: { padding: 20, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
+                    >
+                        <div className="flex items-center justify-between">
+                            <Statistic
+                                title={<span className="text-gray-400 text-xs font-medium group-hover:text-amber-400 transition-colors">Активных варнов</span>}
+                                value={stats?.activeWarningsCount ?? 0}
+                                valueStyle={{ color: '#f59e0b', fontWeight: 'bold', fontSize: 24 }}
+                            />
+                            <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/10 group-hover:scale-110 transition-transform">
+                                <WarningOutlined style={{ fontSize: 18, color: '#f59e0b' }} />
+                            </div>
+                        </div>
+                        <div className="mt-3 pt-2 border-t border-white/5 flex items-center gap-1 text-[11px] text-gray-500 group-hover:text-amber-400 transition-colors">
+                            <span>Все игроки</span>
+                            <ArrowRightOutlined className="w-2.5 h-2.5 group-hover:translate-x-1 transition-transform" />
                         </div>
                     </Card>
                 </Col>

@@ -35,6 +35,8 @@ export interface User {
     lastLoginUserAgent1?: string;
     lastLoginIp2?: string;
     lastLoginUserAgent2?: string;
+    lastLoginTime1?: string;
+    lastLoginTime2?: string;
     // Warnings count
     warningsCount?: number;
     hasCoincidences?: boolean;
@@ -55,6 +57,7 @@ export interface UpdateProfileData {
     oldPassword?: string;
     newPassword?: string;
     unlinkDiscord?: boolean;
+    silent?: boolean;
 }
 
 export const usersApi = {

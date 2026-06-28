@@ -12,25 +12,31 @@ import {
     UnlockOutlined,
     DownOutlined,
     UserSwitchOutlined,
-    SearchOutlined
+    SearchOutlined,
+    FileTextOutlined,
+    CheckOutlined,
+    CloseOutlined,
+    DiscordOutlined,
+    MessageOutlined
 } from '@ant-design/icons';
 import { adminApi, anticheatApi, knownModsApi, type AuditLog, type WarningResponse, type AnticheatSnapshot, type ProcessInfo, type ModEntry } from '../../../api/admin';
 import { applicationsApi, type Application } from '../../../api/applications';
-import type { User } from '../../../api/users';
+import type { User, Badge as ApiBadge } from '../../../api/users';
 import IPGeoInfo from './IPGeoInfo';
 import { useAuth } from '../../../context/AuthContext';
 
-const { Title, Text } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 interface PlayerDossierProps {
     userId: number | null;
     visible: boolean;
     onClose: () => void;
     onUserUpdated?: () => void;
+    onSendMessage?: (userId: number) => void;
     initialTab?: string;
 }
 
-const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose, onUserUpdated, initialTab }) => {
+const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose, onUserUpdated, onSendMessage, initialTab }) => {
     const { isAdmin } = useAuth();
     const [activeUserId, setActiveUserId] = useState<number | null>(null);
     const [user, setUser] = useState<User | null>(null);
@@ -42,6 +48,9 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
     const [relatedAccounts, setRelatedAccounts] = useState<User[]>([]);
     const [applications, setApplications] = useState<Application[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+    const [auditLogsPage, setAuditLogsPage] = useState(0);
+    const [auditLogsHasMore, setAuditLogsHasMore] = useState(true);
+    const [auditLogsLoadingMore, setAuditLogsLoadingMore] = useState(false);
     const [snapshots, setSnapshots] = useState<AnticheatSnapshot[]>([]);
 
     // Loading states for tabs
@@ -60,6 +69,35 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
     const [snapDetailsLoading, setSnapDetailsLoading] = useState(false);
     const [processSearch, setProcessSearch] = useState('');
     const [innerModSearch, setInnerModSearch] = useState('');
+
+    // Application view modal states
+    const [selectedApp, setSelectedApp] = useState<Application | null>(null);
+    const [isAppViewVisible, setIsAppViewVisible] = useState(false);
+    const [appViewLoading, setAppViewLoading] = useState(false);
+    const [appCommentForm] = Form.useForm();
+
+    const renderTextWithLinks = (text: string | null | undefined) => {
+        if (!text) return '—';
+        const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+        const parts = text.split(urlRegex);
+        return parts.map((part, index) => {
+            if (urlRegex.test(part)) {
+                const href = part.startsWith('www.') ? `https://${part}` : part;
+                return (
+                    <a
+                        key={index}
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#00BFFF] hover:underline break-all"
+                    >
+                        {part}
+                    </a>
+                );
+            }
+            return part;
+        });
+    };
 
     const handleOpenSnapModal = async (snapshot: AnticheatSnapshot) => {
         setSelectedSnapshot(snapshot);
@@ -99,6 +137,7 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
 
     // Modal states
     const [isEditVisible, setIsEditVisible] = useState(false);
+    const [availableBadges, setAvailableBadges] = useState<ApiBadge[]>([]);
     const [isBanVisible, setIsBanVisible] = useState(false);
     const [isWarnVisible, setIsWarnVisible] = useState(false);
     const [isPlayerToggling, setIsPlayerToggling] = useState(false);
@@ -107,6 +146,18 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
     const [editForm] = Form.useForm();
     const [banForm] = Form.useForm();
     const [warnForm] = Form.useForm();
+
+    useEffect(() => {
+        const fetchAllBadges = async () => {
+            try {
+                const data = await adminApi.getBadges();
+                setAvailableBadges(data);
+            } catch (err) {
+                console.error('Failed to fetch badges list:', err);
+            }
+        };
+        fetchAllBadges();
+    }, []);
 
     useEffect(() => {
         if (visible && userId) {
@@ -145,8 +196,8 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             // Fetch other details
             fetchWarnings(id);
             fetchApplications(data.username);
-            fetchAuditLogs(data.username, related);
-            fetchAnticheatSnapshots(data.minecraftNickname || data.username);
+            fetchAuditLogs(id, 0);
+            fetchAnticheatSnapshots(data, related);
         } catch (err: any) {
             console.error('Failed to load user profile in dossier:', err);
             setError('Не удалось загрузить досье пользователя');
@@ -180,44 +231,71 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
         }
     };
 
-    const fetchAuditLogs = async (mainUsername: string, relatedList: User[]) => {
-        setLogsLoading(true);
+    const fetchAuditLogs = async (targetId: number, pageToFetch = 0) => {
+        if (pageToFetch === 0) {
+            setLogsLoading(true);
+            setAuditLogsPage(0);
+        } else {
+            setAuditLogsLoadingMore(true);
+        }
         try {
-            const mainLogsRes = await adminApi.getLogs(mainUsername, 0, 20);
-            let mergedLogs = [...(mainLogsRes.content || [])];
-
-            const relatedUsernames = relatedList.map(u => u.username).filter(Boolean);
-            const limitedRelatedUsernames = relatedUsernames.slice(0, 5);
-
-            for (const relUsername of limitedRelatedUsernames) {
-                try {
-                    const relLogsRes = await adminApi.getLogs(relUsername, 0, 10);
-                    if (relLogsRes.content) {
-                        for (const log of relLogsRes.content) {
-                            if (!mergedLogs.some(l => l.id === log.id)) {
-                                mergedLogs.push(log);
-                            }
-                        }
-                    }
-                } catch (err) {
-                    console.error(`Failed to fetch logs for related user ${relUsername}:`, err);
-                }
+            const res = await adminApi.getUserAuditLogs(targetId, pageToFetch, 20);
+            const newLogs = res.content || [];
+            if (pageToFetch === 0) {
+                setAuditLogs(newLogs);
+            } else {
+                setAuditLogs(prev => {
+                    const existingIds = new Set(prev.map(l => l.id));
+                    const uniqueNew = newLogs.filter(l => !existingIds.has(l.id));
+                    return [...prev, ...uniqueNew];
+                });
             }
-
-            mergedLogs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setAuditLogs(mergedLogs.slice(0, 30));
+            setAuditLogsHasMore(pageToFetch < res.totalPages - 1);
+            setAuditLogsPage(pageToFetch);
         } catch (err) {
             console.error('Failed to fetch audit logs in dossier:', err);
         } finally {
             setLogsLoading(false);
+            setAuditLogsLoadingMore(false);
         }
     };
 
-    const fetchAnticheatSnapshots = async (playerName: string) => {
+    const loadMoreAuditLogs = () => {
+        if (activeUserId && auditLogsHasMore && !auditLogsLoadingMore && !logsLoading) {
+            fetchAuditLogs(activeUserId, auditLogsPage + 1);
+        }
+    };
+
+    const fetchAnticheatSnapshots = async (mainUser: User, relatedList: User[]) => {
         setSnapshotsLoading(true);
         try {
-            const data = await anticheatApi.getPlayerSnapshots(playerName, 0, 10);
-            setSnapshots(data.content || []);
+            const namesToSearch = new Set<string>();
+            if (mainUser.username) namesToSearch.add(mainUser.username);
+            if (mainUser.minecraftNickname) namesToSearch.add(mainUser.minecraftNickname);
+
+            relatedList.forEach(rel => {
+                if (rel.username) namesToSearch.add(rel.username);
+                if (rel.minecraftNickname) namesToSearch.add(rel.minecraftNickname);
+            });
+
+            let mergedSnapshots: AnticheatSnapshot[] = [];
+            for (const name of Array.from(namesToSearch)) {
+                try {
+                    const res = await anticheatApi.getPlayerSnapshots(name, 0, 20);
+                    if (res && res.content) {
+                        for (const snap of res.content) {
+                            if (!mergedSnapshots.some(s => s.id === snap.id)) {
+                                mergedSnapshots.push(snap);
+                            }
+                        }
+                    }
+                } catch (err) {
+                    console.error(`Failed to fetch anticheat snapshots for name ${name}:`, err);
+                }
+            }
+
+            mergedSnapshots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setSnapshots(mergedSnapshots);
         } catch (err) {
             console.error('Failed to fetch anticheat snapshots in dossier:', err);
         } finally {
@@ -246,8 +324,21 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
     const handleEditUser = async (values: any) => {
         if (!user) return;
         try {
-            await adminApi.updateUser(user.id, values);
-            message.success('Данные пользователя обновлены');
+            const { badges: selectedBadgeIds, ...updateData } = values;
+            await adminApi.updateUser(user.id, updateData);
+
+            const currentBadgeIds = user.badges ? user.badges.map(b => b.id) : [];
+            const badgesToAdd = (selectedBadgeIds || []).filter((id: number) => !currentBadgeIds.includes(id));
+            const badgesToRemove = currentBadgeIds.filter((id: number) => !(selectedBadgeIds || []).includes(id));
+
+            for (const badgeId of badgesToAdd) {
+                await adminApi.assignBadge(user.id, badgeId);
+            }
+            for (const badgeId of badgesToRemove) {
+                await adminApi.removeBadge(user.id, badgeId);
+            }
+
+            message.success('Данные пользователя и значки обновлены');
             setIsEditVisible(false);
             refreshAll();
         } catch (err: any) {
@@ -259,7 +350,7 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
     const handleBanUser = async (values: any) => {
         if (!user) return;
         try {
-            await adminApi.banUser(user.id, values.reason, values.silent);
+            await adminApi.banUser(user.id, values.reason, values.silent, values.durationDays);
             message.success(`Пользователь ${user.username} забанен`);
             setIsBanVisible(false);
             banForm.resetFields();
@@ -277,6 +368,7 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             content: 'Пользователь снова сможет входить на сайт и играть на сервере.',
             okText: 'Разбанить',
             cancelText: 'Отмена',
+            className: 'custom-modal',
             okButtonProps: { danger: true },
             onOk: async () => {
                 try {
@@ -294,7 +386,7 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
     const handleIssueWarning = async (values: any) => {
         if (!user) return;
         try {
-            await adminApi.issueWarning(user.id, values.reason);
+            await adminApi.issueWarning(user.id, values.reason, values.durationDays);
             message.success(`Предупреждение выдано игроку ${user.username}`);
             setIsWarnVisible(false);
             warnForm.resetFields();
@@ -313,6 +405,7 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             content: 'Временный пароль будет сгенерирован и отправлен на почту пользователя.',
             okText: 'Сбросить',
             cancelText: 'Отмена',
+            className: 'custom-modal',
             onOk: async () => {
                 try {
                     await adminApi.resetUserPassword(user.id);
@@ -332,6 +425,7 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             content: 'Это сбросит пароль авторизации на самом сервере Minecraft.',
             okText: 'Сбросить',
             cancelText: 'Отмена',
+            className: 'custom-modal',
             onOk: async () => {
                 try {
                     await adminApi.resetUserMinecraftPassword(user.id);
@@ -351,6 +445,7 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             content: 'ВНИМАНИЕ: Это действие необратимо. Все заявки, логи и значки пользователя будут удалены.',
             okText: 'Удалить навсегда',
             cancelText: 'Отмена',
+            className: 'custom-modal',
             okButtonProps: { danger: true },
             onOk: async () => {
                 try {
@@ -368,10 +463,45 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
 
     const handleTogglePlayer = async (checked: boolean) => {
         if (!user) return;
+        if (!checked) {
+            let isSilentChoice = false;
+            Modal.confirm({
+                title: `Снять статус игрока для ${user.username}?`,
+                className: 'custom-modal',
+                content: (
+                    <div className="pt-2">
+                        <p className="text-gray-300 text-sm mb-3">Выберите режим отзыва статуса:</p>
+                        <Checkbox
+                            onChange={(e) => { isSilentChoice = e.target.checked; }}
+                            className="text-gray-200 font-medium"
+                        >
+                            Тихо (без уведомления в Discord)
+                        </Checkbox>
+                    </div>
+                ),
+                okText: 'Снять статус',
+                cancelText: 'Отмена',
+                okButtonProps: { danger: true },
+                onOk: async () => {
+                    setIsPlayerToggling(true);
+                    try {
+                        await adminApi.updateUser(user.id, { isPlayer: false, silent: isSilentChoice });
+                        message.success(isSilentChoice ? 'Статус игрока тихо снят' : 'Статус игрока снят с уведомлением');
+                        refreshAll();
+                    } catch (err: any) {
+                        console.error('Failed to toggle isPlayer:', err);
+                        message.error(err.response?.data?.message || 'Не удалось изменить статус');
+                    } finally {
+                        setIsPlayerToggling(false);
+                    }
+                }
+            });
+            return;
+        }
         setIsPlayerToggling(true);
         try {
-            await adminApi.updateUser(user.id, { isPlayer: checked });
-            message.success(checked ? 'Статус игрока выдан' : 'Статус игрока снят');
+            await adminApi.updateUser(user.id, { isPlayer: true });
+            message.success('Статус игрока выдан');
             refreshAll();
         } catch (err: any) {
             console.error('Failed to toggle isPlayer:', err);
@@ -381,15 +511,47 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
         }
     };
 
+    const handleOpenAppModal = async (app: Application) => {
+        setSelectedApp(app);
+        appCommentForm.setFieldsValue({ comment: app.adminComment || '' });
+        setIsAppViewVisible(true);
+        setAppViewLoading(true);
+        try {
+            const fullData = await applicationsApi.getById(app.id);
+            setSelectedApp(fullData);
+            appCommentForm.setFieldsValue({ comment: fullData.adminComment || '' });
+        } catch (err) {
+            console.error('Failed to load application details in dossier:', err);
+        } finally {
+            setAppViewLoading(false);
+        }
+    };
+
+    const handleUpdateAppStatus = async (status: 'ACCEPTED' | 'REJECTED') => {
+        if (!selectedApp) return;
+        try {
+            const comment = appCommentForm.getFieldValue('comment');
+            await applicationsApi.updateStatus(selectedApp.id, status, comment);
+            message.success(`Заявка #${selectedApp.id} ${status === 'ACCEPTED' ? 'одобрена' : 'отклонена'}`);
+            setIsAppViewVisible(false);
+            refreshAll();
+        } catch (err: any) {
+            console.error('Failed to update application status:', err);
+            message.error(err.response?.data?.message || 'Не удалось обновить статус заявки');
+        }
+    };
+
     const openEditModal = () => {
         if (!user) return;
+        const currentBadgeIds = user.badges ? user.badges.map(b => b.id) : [];
         editForm.setFieldsValue({
             email: user.email,
             role: user.role,
             minecraftNickname: user.minecraftNickname,
             discordNickname: user.discordNickname,
             bio: user.bio,
-            isPlayer: user.isPlayer
+            isPlayer: user.isPlayer,
+            badges: currentBadgeIds
         });
         setIsEditVisible(true);
     };
@@ -414,10 +576,19 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             render: (text: string) => <Tag color="blue">{text}</Tag>
         },
         {
-            title: 'Дата',
+            title: 'Выдан',
             dataIndex: 'createdAt',
             key: 'createdAt',
             render: (date: string) => <Text className="text-gray-400 text-xs">{new Date(date).toLocaleString('ru-RU')}</Text>
+        },
+        {
+            title: 'Срок действия',
+            key: 'expiresAt',
+            render: (_: any, record: WarningResponse) => record.expiresAt ? (
+                <Text className="text-amber-400 text-xs font-medium">До {new Date(record.expiresAt).toLocaleString('ru-RU')}</Text>
+            ) : (
+                <Text className="text-gray-500 text-xs">Навсегда</Text>
+            )
         },
         {
             title: 'Статус',
@@ -426,7 +597,7 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             render: (active: boolean) => active ? (
                 <Tag color="red">Активно</Tag>
             ) : (
-                <Tag color="gray">Отозвано</Tag>
+                <Tag color="gray">Неактивно</Tag>
             )
         },
         {
@@ -659,6 +830,21 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                             </Button>
                             <Button
                                 size="small"
+                                icon={<MessageOutlined />}
+                                onClick={() => {
+                                    if (onSendMessage) {
+                                        onSendMessage(user.id);
+                                    } else {
+                                        window.location.href = `/admin/messenger?userId=${user.id}`;
+                                    }
+                                    onClose();
+                                }}
+                                style={{ borderColor: 'rgba(99,102,241,0.4)', color: '#818cf8', background: 'rgba(99,102,241,0.12)' }}
+                            >
+                                Сообщение
+                            </Button>
+                            <Button
+                                size="small"
                                 icon={<WarningOutlined />}
                                 onClick={() => setIsWarnVisible(true)}
                                 style={{ borderColor: 'rgba(250,173,20,0.3)', color: '#faad14', background: 'rgba(250,173,20,0.08)' }}
@@ -775,10 +961,24 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                                 <IPGeoInfo ip={user.registrationIp} colorClasses="text-blue-400" />
                                             </Descriptions.Item>
                                             <Descriptions.Item label="Активная сессия (IP1)">
-                                                <IPGeoInfo ip={user.lastLoginIp1} colorClasses="text-green-500" />
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <IPGeoInfo ip={user.lastLoginIp1} colorClasses="text-green-500" />
+                                                    {user.lastLoginTime1 && (
+                                                        <span className="text-[11px] text-gray-500 font-mono">
+                                                            ({new Date(user.lastLoginTime1).toLocaleString('ru-RU')})
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </Descriptions.Item>
                                             <Descriptions.Item label="Предыдущая сессия (IP2)">
-                                                <IPGeoInfo ip={user.lastLoginIp2} colorClasses="text-gray-400" />
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <IPGeoInfo ip={user.lastLoginIp2} colorClasses="text-gray-400" />
+                                                    {user.lastLoginTime2 && (
+                                                        <span className="text-[11px] text-gray-500 font-mono">
+                                                            ({new Date(user.lastLoginTime2).toLocaleString('ru-RU')})
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </Descriptions.Item>
                                             <Descriptions.Item label="Дата регистрации">
                                                 <span className="text-gray-300">
@@ -839,6 +1039,10 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                             loading={appsLoading}
                                             pagination={{ pageSize: 5 }}
                                             className="custom-table"
+                                            onRow={(record) => ({
+                                                onClick: () => handleOpenAppModal(record),
+                                                style: { cursor: 'pointer' }
+                                            })}
                                         />
                                     </div>
                                 )
@@ -865,29 +1069,44 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                 children: (
                                     <div className="pt-4 space-y-4">
                                         {logsLoading ? (
-                                            <div className="py-12 text-center"><Spin /></div>
+                                            <div className="py-12 text-center"><Spin tip="Загрузка логов..." /></div>
                                         ) : auditLogs.length === 0 ? (
                                             <Alert message="Действий не зафиксировано" type="info" className="border-white/5 bg-black/20" />
                                         ) : (
-                                            <List
-                                                className="border-white/5 bg-black/10 rounded-xl overflow-hidden max-h-[400px] overflow-y-auto"
-                                                dataSource={auditLogs}
-                                                renderItem={log => (
-                                                    <List.Item className="px-4 py-3 border-b border-white/5 flex flex-col items-start gap-1 hover:bg-white/5 transition-colors">
-                                                        <div className="flex justify-between w-full text-xs">
-                                                            <Space>
-                                                                <Tag color="cyan">{log.actionType}</Tag>
-                                                                <Text className="text-gray-400">Инициатор: <Text style={{ color: '#fff' }} className="font-semibold">{log.actorUsername}</Text></Text>
-                                                                {log.targetUsername && (
-                                                                    <Text className="text-gray-400"> • Цель: <Text style={{ color: '#fff' }} className="font-semibold">{log.targetUsername}</Text></Text>
-                                                                )}
-                                                            </Space>
-                                                            <Text className="text-gray-500 font-mono text-[10px]">{new Date(log.createdAt).toLocaleString('ru-RU')}</Text>
-                                                        </div>
-                                                        <Text className="text-gray-300 text-xs mt-1 leading-relaxed pl-1">{log.details}</Text>
-                                                    </List.Item>
+                                            <div 
+                                                className="border-white/5 bg-black/10 rounded-xl overflow-hidden max-h-[450px] overflow-y-auto custom-scrollbar"
+                                                onScroll={(e) => {
+                                                    const target = e.currentTarget;
+                                                    if (target.scrollHeight - target.scrollTop - target.clientHeight < 40) {
+                                                        loadMoreAuditLogs();
+                                                    }
+                                                }}
+                                            >
+                                                <List
+                                                    dataSource={auditLogs}
+                                                    renderItem={log => (
+                                                        <List.Item className="px-4 py-3 border-b border-white/5 flex flex-col items-start gap-1 hover:bg-white/5 transition-colors">
+                                                            <div className="flex justify-between w-full text-xs">
+                                                                <Space>
+                                                                    <Tag color="cyan">{log.actionType}</Tag>
+                                                                    <Text className="text-gray-400">Инициатор: <Text style={{ color: '#fff' }} className="font-semibold">{log.actorUsername}</Text></Text>
+                                                                    {log.targetUsername && (
+                                                                        <Text className="text-gray-400"> • Цель: <Text style={{ color: '#fff' }} className="font-semibold">{log.targetUsername}</Text></Text>
+                                                                    )}
+                                                                </Space>
+                                                                <Text className="text-gray-500 font-mono text-[10px]">{new Date(log.createdAt).toLocaleString('ru-RU')}</Text>
+                                                            </div>
+                                                            <Text className="text-gray-300 text-xs mt-1 leading-relaxed pl-1">{log.details}</Text>
+                                                        </List.Item>
+                                                    )}
+                                                />
+                                                {auditLogsLoadingMore && (
+                                                    <div className="py-3 text-center border-t border-white/5"><Spin size="small" tip="Загрузка архивных логов..." /></div>
                                                 )}
-                                            />
+                                                {!auditLogsHasMore && auditLogs.length > 0 && (
+                                                    <div className="py-2 text-center text-[11px] text-gray-500 border-t border-white/5">Все связанные логи загружены</div>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 )
@@ -970,8 +1189,26 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                         <Select.Option value="ROLE_ADMIN">ADMIN</Select.Option>
                     </Select>
                 </Form.Item>
-                <Form.Item name="isPlayer" valuePropName="checked" className="mb-4">
+                <Form.Item name="isPlayer" valuePropName="checked" className="mb-2">
                     <Checkbox className="text-gray-300">Статус игрока (isPlayer)</Checkbox>
+                </Form.Item>
+                <Form.Item name="badges" label={<span className="text-gray-300">Значки (Badges)</span>} className="mb-4">
+                    <Select mode="multiple" placeholder="Выберите значки" optionFilterProp="label" className="custom-select">
+                        {availableBadges.map(badge => (
+                            <Select.Option key={badge.id} value={badge.id} label={badge.name}>
+                                <Space>
+                                    {badge.svgIcon ? (
+                                        <div 
+                                            className="w-4 h-4 badge-icon flex items-center justify-center rounded-sm" 
+                                            style={{ backgroundColor: badge.color + '20', display: 'inline-flex' }}
+                                            dangerouslySetInnerHTML={{ __html: badge.svgIcon }}
+                                        />
+                                    ) : null}
+                                    <span style={{ color: badge.color }}>{badge.name}</span>
+                                </Space>
+                            </Select.Option>
+                        ))}
+                    </Select>
                 </Form.Item>
                 <Form.Item className="mb-0 flex justify-end">
                     <Space>
@@ -990,9 +1227,20 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             footer={null}
             className="custom-modal"
         >
-            <Form form={banForm} layout="vertical" onFinish={handleBanUser} className="pt-4" initialValues={{ silent: false }}>
+            <Form form={banForm} layout="vertical" onFinish={handleBanUser} className="pt-4" initialValues={{ silent: false, durationDays: undefined }}>
                 <Form.Item name="reason" label="Причина бана" rules={[{ required: true, message: 'Пожалуйста, укажите причину бана' }]}>
                     <Input.TextArea rows={3} placeholder="Нарушение правил сервера..." />
+                </Form.Item>
+                <Form.Item name="durationDays" label="Срок блокировки">
+                    <Select placeholder="Навсегда (бессрочно)" allowClear className="custom-select">
+                        <Select.Option value={undefined}>Навсегда (бессрочно)</Select.Option>
+                        <Select.Option value={1}>1 день</Select.Option>
+                        <Select.Option value={3}>3 дня</Select.Option>
+                        <Select.Option value={7}>7 дней</Select.Option>
+                        <Select.Option value={14}>14 дней</Select.Option>
+                        <Select.Option value={30}>30 дней</Select.Option>
+                        <Select.Option value={90}>90 дней</Select.Option>
+                    </Select>
                 </Form.Item>
                 <Form.Item name="silent" valuePropName="checked" className="mb-4">
                     <Checkbox className="text-gray-300">Без уведомления в Discord</Checkbox>
@@ -1014,9 +1262,19 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             footer={null}
             className="custom-modal"
         >
-            <Form form={warnForm} layout="vertical" onFinish={handleIssueWarning} className="pt-4">
+            <Form form={warnForm} layout="vertical" onFinish={handleIssueWarning} className="pt-4" initialValues={{ durationDays: undefined }}>
                 <Form.Item name="reason" label="Причина варна" rules={[{ required: true, message: 'Пожалуйста, укажите причину предупреждения' }]}>
                     <Input.TextArea rows={3} placeholder="Недопустимое поведение, грифинг..." />
+                </Form.Item>
+                <Form.Item name="durationDays" label="Срок действия варна">
+                    <Select placeholder="Навсегда (бессрочно)" allowClear className="custom-select">
+                        <Select.Option value={undefined}>Навсегда (бессрочно)</Select.Option>
+                        <Select.Option value={1}>1 день</Select.Option>
+                        <Select.Option value={3}>3 дня</Select.Option>
+                        <Select.Option value={7}>7 дней</Select.Option>
+                        <Select.Option value={14}>14 дней</Select.Option>
+                        <Select.Option value={30}>30 дней</Select.Option>
+                    </Select>
                 </Form.Item>
                 <Form.Item className="mb-0 flex justify-end">
                     <Space>
@@ -1200,6 +1458,139 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                     />
                 </div>
             ) : null}
+        </Modal>
+
+        {/* Modal: View & Moderate Application */}
+        <Modal
+            title={
+                <div className="flex items-center gap-3">
+                    <FileTextOutlined style={{ color: '#FFD700' }} />
+                    <span className="text-white font-bold font-minecraft">Проверка заявки #{selectedApp?.id}</span>
+                </div>
+            }
+            open={isAppViewVisible}
+            onCancel={() => setIsAppViewVisible(false)}
+            footer={null}
+            width={850}
+            className="custom-modal"
+        >
+            {selectedApp && (
+                <Spin spinning={appViewLoading}>
+                    <div className="space-y-6 pt-4 text-gray-200">
+                        {/* Connected Data Alerts / Badges */}
+                        <div className="space-y-2">
+                            {selectedApp.status === 'PENDING' ? (
+                                <>
+                                    {/* Discord link status check */}
+                                    {selectedApp.user && !selectedApp.user.discordVerified && (
+                                        <Alert
+                                            message="Discord не верифицирован!"
+                                            description="Пользователь еще не прошел OAuth-верификацию в Discord. Одобряйте осторожно."
+                                            type="warning"
+                                            showIcon
+                                            icon={<DiscordOutlined />}
+                                            className="border-amber-500/20 bg-amber-950/10 text-amber-200"
+                                        />
+                                    )}
+                                    {/* Discord server status check */}
+                                    {selectedApp.user && selectedApp.user.discordVerified && !selectedApp.user.inDiscordServer && (
+                                        <Alert
+                                            message="Игрок покинул Discord-сервер!"
+                                            description="Этот игрок вышел из нашего Discord-сервера. Вы не можете одобрить его заявку, пока он не вернется на сервер."
+                                            type="error"
+                                            showIcon
+                                            icon={<DiscordOutlined />}
+                                            className="border-red-500/20 bg-red-950/10 text-red-200"
+                                        />
+                                    )}
+                                </>
+                            ) : selectedApp.status === 'ACCEPTED' ? (
+                                <div className="flex flex-wrap gap-2 p-3 bg-black/10 border border-white/5 rounded-xl">
+                                    {selectedApp.user?.discordVerified ? (
+                                        <Tag color="success" icon={<CheckOutlined />} className="m-0 border-green-500/20 bg-green-950/20 text-green-400">Дискорд подтвержден</Tag>
+                                    ) : (
+                                        <Tag color="error" icon={<CloseOutlined />} className="m-0 border-red-500/20 bg-red-950/20 text-red-400">Дискорд не привязан</Tag>
+                                    )}
+                                    {selectedApp.user?.inDiscordServer ? (
+                                        <Tag color="success" icon={<CheckOutlined />} className="m-0 border-green-500/20 bg-green-950/20 text-green-400">На сервере Discord</Tag>
+                                    ) : (
+                                        <Tag color="error" icon={<CloseOutlined />} className="m-0 border-red-500/20 bg-red-950/20 text-red-400">Покинул сервер Discord</Tag>
+                                    )}
+                                </div>
+                            ) : null}
+                        </div>
+
+                        {/* Details */}
+                        <Descriptions bordered column={2} size="small" className="border-white/5 rounded-xl overflow-hidden bg-black/10 text-gray-300">
+                            <Descriptions.Item label="ФИО" span={1}>{selectedApp.firstName}</Descriptions.Item>
+                            <Descriptions.Item label="Возраст" span={1}>{selectedApp.age} лет</Descriptions.Item>
+                            <Descriptions.Item label="Откуда узнали" span={2}>{renderTextWithLinks(selectedApp.source)}</Descriptions.Item>
+                            <Descriptions.Item label="Контент-мейкер?" span={1}>{selectedApp.makeContent ? <Tag color="success">Да</Tag> : <Tag color="gray">Нет</Tag>}</Descriptions.Item>
+                            <Descriptions.Item label="Оценка адекватности" span={1}>{selectedApp.selfRating} / 10</Descriptions.Item>
+                            <Descriptions.Item label="Дополнительно" span={2}>{renderTextWithLinks(selectedApp.additionalInfo)}</Descriptions.Item>
+                        </Descriptions>
+
+                        {/* Essay: Why Us */}
+                        <div className="bg-black/30 p-4 rounded-xl border border-white/5 space-y-2">
+                            <Text className="text-gray-400 font-bold block">Сочинение: Почему вы хотите играть на нашем сервере?</Text>
+                            <Paragraph className="text-white leading-relaxed text-sm whitespace-pre-line" style={{ margin: 0 }}>
+                                {renderTextWithLinks(selectedApp.whyUs)}
+                            </Paragraph>
+                        </div>
+
+                        {/* Verdict / Decision Section */}
+                        <Form form={appCommentForm} layout="vertical" className="border-t border-white/5 pt-4">
+                            <Form.Item 
+                                name="comment" 
+                                label="Комментарий администратора" 
+                                extra={selectedApp.status === 'PENDING' ? "Будет показан игроку в случае отказа или одобрения." : null}
+                                style={{ marginBottom: '16px' }}
+                            >
+                                <Input.TextArea 
+                                    rows={selectedApp.status === 'PENDING' ? 3 : 2} 
+                                    disabled={selectedApp.status !== 'PENDING'} 
+                                    placeholder={selectedApp.status === 'PENDING' ? "Добро пожаловать! / Отклонено: слабое сочинение..." : "Комментарий отсутствует"} 
+                                />
+                            </Form.Item>
+                            
+                            {selectedApp.status === 'PENDING' ? (
+                                <div className="flex justify-end gap-3">
+                                    <Button onClick={() => setIsAppViewVisible(false)}>Закрыть</Button>
+                                    <Button
+                                        type="primary"
+                                        danger
+                                        icon={<CloseOutlined />}
+                                        onClick={() => handleUpdateAppStatus('REJECTED')}
+                                    >
+                                        Отклонить
+                                    </Button>
+                                    <Button
+                                        type="primary"
+                                        style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }}
+                                        icon={<CheckOutlined />}
+                                        onClick={() => handleUpdateAppStatus('ACCEPTED')}
+                                        disabled={selectedApp.user && !selectedApp.user.inDiscordServer}
+                                    >
+                                        Одобрить
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="flex justify-between items-center">
+                                    <Text className="text-gray-500">
+                                        Вердикт вынесен: <Tag color={selectedApp.status === 'ACCEPTED' ? 'success' : 'error'}>{selectedApp.status}</Tag>
+                                        {selectedApp.handledBy && (
+                                            <span className="ml-2 text-xs text-gray-400">
+                                                (Вердикт вынес: <strong className="text-gray-300">{selectedApp.handledBy}</strong>)
+                                            </span>
+                                        )}
+                                    </Text>
+                                    <Button onClick={() => setIsAppViewVisible(false)}>Закрыть</Button>
+                                </div>
+                            )}
+                        </Form>
+                    </div>
+                </Spin>
+            )}
         </Modal>
         </>
     );

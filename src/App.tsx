@@ -42,6 +42,7 @@ const LogsTab = lazy(() => import('./pages/admin/LogsTab/LogsTab'));
 const PagesTab = lazy(() => import('./pages/admin/PagesTab/PagesTab'));
 const BadgesTab = lazy(() => import('./pages/admin/BadgesTab/BadgesTab'));
 const SettingsTab = lazy(() => import('./pages/admin/SettingsTab/SettingsTab'));
+const MessengerTab = lazy(() => import('./pages/admin/MessengerTab/MessengerTab'));
 import GuestRoute from './components/GuestRoute';
 import DiscordCallbackPage from './pages/DiscordCallbackPage';
 import { AuthProvider } from './context/AuthContext';
@@ -112,6 +113,7 @@ function App() {
                   <Route path="users" element={<UsersTab />} />
                   <Route path="applications" element={<ApplicationsTab />} />
                   <Route path="anticheat" element={<AnticheatTab />} />
+                  <Route path="messenger" element={<MessengerTab />} />
                   <Route path="logs" element={<LogsTab />} />
                   <Route path="pages" element={<PagesTab />} />
                   <Route path="badges" element={<BadgesTab />} />

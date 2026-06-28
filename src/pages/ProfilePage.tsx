@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import { User as UserIcon, Settings, Edit3, ShieldCheck, Mail, ExternalLink, LogOut, CheckCircle2, Clock, XCircle, AlertCircle } from 'lucide-react';
-import { applicationsApi, usersApi, totpApi, authApi } from '../api';
+import { applicationsApi, usersApi, totpApi, authApi, apiClient } from '../api';
 import { useNotification } from '../context/NotificationContext';
 import UserAvatar from '../components/UserAvatar';
 import BoosterBadge from '../components/BoosterBadge';
@@ -14,6 +14,22 @@ const ProfilePage = () => {
     const { user, isAdmin, refreshUser } = useAuth();
     const navigate = useNavigate();
     const { showNotification } = useNotification();
+
+    const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+    useEffect(() => {
+        const fetchMaintenanceMode = async () => {
+            try {
+                const res = await apiClient.get('/api/auth/public/settings');
+                if (res.data && typeof res.data.maintenanceMode === 'boolean') {
+                    setMaintenanceMode(res.data.maintenanceMode);
+                }
+            } catch (err) {
+                console.error('Failed to fetch public settings:', err);
+            }
+        };
+        fetchMaintenanceMode();
+    }, []);
 
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
@@ -324,6 +340,17 @@ const ProfilePage = () => {
                         {/* Main Content Area */}
                         <div className="w-full md:w-2/3">
                             <div className="bg-black/40 border border-white/10 rounded-2xl p-8 backdrop-blur-md shadow-xl relative min-h-[400px]">
+                                {maintenanceMode && (
+                                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-center gap-4 mb-6 animate-fadeIn">
+                                        <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500">
+                                            <AlertCircle className="w-5 h-5 animate-pulse" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-amber-200 font-bold text-sm uppercase tracking-wider">Ведутся технические работы</h4>
+                                            <p className="text-gray-400 text-xs text-left">На сайте идут технические работы. Доступ для обычных игроков ограничен.</p>
+                                        </div>
+                                    </div>
+                                )}
                                 {activeTab === 'profile' ? (
                                     // PROFILE VIEW
                                     <div className="space-y-8 animate-fadeIn">

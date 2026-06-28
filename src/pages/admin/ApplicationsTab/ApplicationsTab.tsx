@@ -11,6 +11,7 @@ import {
     FileTextOutlined
 } from '@ant-design/icons';
 import { applicationsApi, type Application } from '../../../api/applications';
+import { useAdminWebSocket } from '../../../hooks/useAdminWebSocket';
 import PlayerDossier from '../shared/PlayerDossier';
 
 const { Option } = Select;
@@ -76,9 +77,18 @@ const ApplicationsTab: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchApplications(0, searchQuery, statusFilter);
-        setPage(0);
-    }, [statusFilter]);
+        const timer = setTimeout(() => {
+            fetchApplications(0, searchQuery, statusFilter);
+            setPage(0);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery, statusFilter]);
+
+    useAdminWebSocket({
+        '/topic/admin/applications': () => {
+            fetchApplications(page, searchQuery, statusFilter);
+        }
+    });
 
     const handleSearch = () => {
         fetchApplications(0, searchQuery, statusFilter);

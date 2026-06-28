@@ -26,12 +26,7 @@ const SeasonalEffects: React.FC = () => {
   const config = seasonalEffects[CURRENT_SEASON];
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
-
-  // Disable seasonal effects for admin dashboard
-  if (location.pathname.startsWith('/admin')) {
-    return null;
-  }
-
+  const isAdminPage = location.pathname.startsWith('/admin');
 
   // Use state to hold particles so that the component renders them
   const [renderedParticles, setRenderedParticles] = useState<Particle[]>([]);
@@ -51,7 +46,7 @@ const SeasonalEffects: React.FC = () => {
 
   // Initialize Particles
   useEffect(() => {
-    if (!config.enabled) {
+    if (!config.enabled || isAdminPage) {
       setRenderedParticles([]);
       particlesRef.current = [];
       return;
@@ -93,10 +88,12 @@ const SeasonalEffects: React.FC = () => {
     // Set ref for animation loop
     particlesRef.current = newParticles;
 
-  }, [config, isMobile]);
+  }, [config, isMobile, isAdminPage]);
 
   // Animation Loop
   useEffect(() => {
+    if (!config.enabled || isAdminPage) return;
+
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
     };
@@ -104,7 +101,7 @@ const SeasonalEffects: React.FC = () => {
     window.addEventListener('mousemove', handleMouseMove);
 
     const animate = () => {
-      if (!config.enabled) return;
+      if (!config.enabled || isAdminPage) return;
 
       const particles = particlesRef.current;
       const mouse = mouseRef.current;
@@ -169,9 +166,9 @@ const SeasonalEffects: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(requestRef.current);
     }
-  }, [config]);
+  }, [config, isAdminPage]);
 
-  if (!config.enabled) {
+  if (!config.enabled || isAdminPage) {
     return null;
   }
 

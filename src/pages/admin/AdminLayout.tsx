@@ -13,7 +13,8 @@ import {
     GiftOutlined,
     SettingOutlined,
     LogoutOutlined,
-    HomeOutlined
+    HomeOutlined,
+    MessageOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 
@@ -35,6 +36,7 @@ const AdminLayout: React.FC = () => {
         if (path.includes('/admin/logs')) return 'logs';
         if (path.includes('/admin/pages')) return 'pages';
         if (path.includes('/admin/badges')) return 'badges';
+        if (path.includes('/admin/messenger')) return 'messenger';
         if (path.includes('/admin/settings')) return 'settings';
         return 'dashboard';
     };
@@ -68,6 +70,12 @@ const AdminLayout: React.FC = () => {
             icon: <SafetyOutlined />,
             label: 'Античит',
             onClick: () => navigate('/admin/anticheat')
+        },
+        {
+            key: 'messenger',
+            icon: <MessageOutlined />,
+            label: 'Мессенджер',
+            onClick: () => navigate('/admin/messenger')
         },
         {
             key: 'logs',
@@ -150,76 +158,69 @@ const AdminLayout: React.FC = () => {
                 }
             }}
         >
-            <Layout style={{ height: '100vh', overflow: 'hidden' }} className="h-screen select-none bg-[#0b1320] admin-layout-wrapper">
-                <Sider
-                    trigger={null}
-                    collapsible
-                    collapsed={collapsed}
-                    theme="dark"
-                    className="border-r border-white/5"
-                    width={240}
-                    collapsedWidth={80}
-                    style={{
-                        height: '100vh',
-                        overflowY: 'auto',
-                        background: '#0f1b2d' // Matches sidebar medium navy theme
-                    }}
-                >
-
-                    <div className="flex items-center gap-3 px-6 py-5 border-b border-white/5 h-16 overflow-hidden">
-                        <Avatar
-                            src="/images/icon.png"
-                            size={collapsed ? 32 : 40}
-                            style={{ flexShrink: 0, border: '1px solid rgba(0, 191, 255, 0.3)' }}
-                        >
-                            SL
-                        </Avatar>
-                        {!collapsed && (
-                            <span className="text-white font-bold text-sm tracking-wide truncate font-sans">
-                                StoryLegends <span className="text-[#00BFFF]">Admin</span>
-                            </span>
-                        )}
-                    </div>
-                    <Menu
-                        theme="dark"
-                        mode="inline"
-                        selectedKeys={[getActiveKey()]}
-                        items={menuItems}
-                        className="py-4 font-medium"
-                        style={{ background: '#0f1b2d' }}
-                    />
-                </Sider>
-                <Layout style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <Header style={{ background: '#0f1b2d' }} className="h-16 px-6 border-b border-white/5 flex items-center justify-between z-50 shrink-0">
+            <Layout style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} className="h-screen select-none bg-[#0b1320] admin-layout-wrapper">
+                <Header style={{ background: '#0f1b2d', height: '64px' }} className="px-6 border-b border-white/5 flex items-center justify-between z-50 shrink-0">
+                    <Space size={16} align="center">
+                        <img
+                            src="/images/logo.webp"
+                            alt="StoryLegends Admin"
+                            style={{ height: '36px', width: 'auto', cursor: 'pointer' }}
+                            onClick={() => navigate('/admin/dashboard')}
+                        />
                         <Button
                             type="text"
                             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                             onClick={() => setCollapsed(!collapsed)}
                             className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white"
                         />
-                        <Dropdown menu={{ items: profileMenuItems }} trigger={['click']}>
-                            <Space className="cursor-pointer hover:bg-white/5 px-3 py-1.5 rounded-xl transition-all">
-                                <Avatar
-                                    src={user?.avatarUrl}
-                                    size={36}
-                                    style={{
-                                        backgroundColor: '#0086B3',
-                                        verticalAlign: 'middle',
-                                        border: '1px solid rgba(0, 191, 255, 0.3)'
-                                    }}
-                                >
-                                    {user?.username?.substring(0, 1).toUpperCase()}
-                                </Avatar>
-                                <span className="text-white font-semibold hidden sm:inline text-sm">
-                                    {user?.username}
-                                </span>
-                            </Space>
-                        </Dropdown>
-                    </Header>
+                    </Space>
+                    <Dropdown menu={{ items: profileMenuItems }} trigger={['click']}>
+                        <Space className="cursor-pointer hover:bg-white/5 px-3 py-1.5 rounded-xl transition-all">
+                            <Avatar
+                                src={user?.avatarUrl}
+                                size={36}
+                                style={{
+                                    backgroundColor: '#0086B3',
+                                    verticalAlign: 'middle',
+                                    border: '1px solid rgba(0, 191, 255, 0.3)'
+                                }}
+                            >
+                                {user?.username?.substring(0, 1).toUpperCase()}
+                            </Avatar>
+                            <span className="text-white font-semibold hidden sm:inline text-sm">
+                                {user?.username}
+                            </span>
+                        </Space>
+                    </Dropdown>
+                </Header>
+                <Layout style={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden', minHeight: 0 }}>
+                    <Sider
+                        trigger={null}
+                        collapsible
+                        collapsed={collapsed}
+                        theme="dark"
+                        className="border-r border-white/5"
+                        width={240}
+                        collapsedWidth={80}
+                        style={{
+                            height: '100%',
+                            overflowY: 'auto',
+                            background: '#0f1b2d' // Matches sidebar medium navy theme
+                        }}
+                    >
+                        <Menu
+                            theme="dark"
+                            mode="inline"
+                            selectedKeys={[getActiveKey()]}
+                            items={menuItems}
+                            className="py-4 font-medium"
+                            style={{ background: '#0f1b2d' }}
+                        />
+                    </Sider>
                     <Content className="p-6 md:p-8 max-w-7xl w-full mx-auto" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
                         <Suspense fallback={
                             <div className="flex items-center justify-center min-h-[400px]">
-                                <Spin size="large" tip="Загрузка страницы..." />
+                                <Spin size="large" description="Загрузка страницы..." />
                             </div>
                         }>
                             <Outlet />
