@@ -957,6 +957,19 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                                 </Space>
                                             </Descriptions.Item>
                                             <Descriptions.Item label="Email">{user.email || '—'}</Descriptions.Item>
+                                            <Descriptions.Item label="Дата регистрации">
+                                                <span className="text-gray-300">
+                                                    {user.createdAt ? new Date(user.createdAt).toLocaleString('ru-RU') : '—'}
+                                                </span>
+                                            </Descriptions.Item>
+                                        </Descriptions>
+
+                                        <Divider titlePlacement="left" style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '24px 0 12px 0' }}>
+                                            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                                                Отпечаток устройства и сеть
+                                            </span>
+                                        </Divider>
+                                        <Descriptions bordered size="small" column={{ xxl: 2, xl: 2, lg: 1, md: 1, sm: 1, xs: 1 }} className="bg-black/10 rounded-xl overflow-hidden border-white/5">
                                             <Descriptions.Item label="IP регистрации">
                                                 <IPGeoInfo ip={user.registrationIp} colorClasses="text-blue-400" />
                                             </Descriptions.Item>
@@ -970,7 +983,7 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                                     )}
                                                 </div>
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Предыдущая сессия (IP2)">
+                                            <Descriptions.Item label="Предыдущая сессия (IP2)" span={2}>
                                                 <div className="flex items-center gap-2 flex-wrap">
                                                     <IPGeoInfo ip={user.lastLoginIp2} colorClasses="text-gray-400" />
                                                     {user.lastLoginTime2 && (
@@ -980,19 +993,6 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                                     )}
                                                 </div>
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Дата регистрации">
-                                                <span className="text-gray-300">
-                                                    {user.createdAt ? new Date(user.createdAt).toLocaleString('ru-RU') : '—'}
-                                                </span>
-                                            </Descriptions.Item>
-                                        </Descriptions>
-
-                                        <Divider titlePlacement="left" style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '24px 0 12px 0' }}>
-                                            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                                Характеристики устройства (Fingerprint)
-                                            </span>
-                                        </Divider>
-                                        <Descriptions bordered size="small" column={{ xxl: 2, xl: 2, lg: 1, md: 1, sm: 1, xs: 1 }} className="bg-black/10 rounded-xl overflow-hidden border-white/5">
                                             <Descriptions.Item label="Видеокарта (WebGL)">
                                                 <span className="text-gray-300 text-xs font-mono break-all">{user.lastLoginWebgl1 || user.registrationWebgl || '—'}</span>
                                             </Descriptions.Item>
