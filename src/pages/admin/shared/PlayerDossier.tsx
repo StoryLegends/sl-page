@@ -964,69 +964,124 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                             </Descriptions.Item>
                                         </Descriptions>
 
+                                        {/* ── Блок 1: Регистрация ── */}
                                         <Divider titlePlacement="left" style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '24px 0 12px 0' }}>
-                                            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                                Отпечаток устройства и сеть
+                                            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">
+                                                🔹 При регистрации
                                             </span>
                                         </Divider>
-                                        <Descriptions bordered size="small" column={{ xxl: 2, xl: 2, lg: 1, md: 1, sm: 1, xs: 1 }} className="bg-black/10 rounded-xl overflow-hidden border-white/5">
-                                            <Descriptions.Item label="IP регистрации">
+                                        <Descriptions bordered size="small" column={1} className="bg-black/10 rounded-xl overflow-hidden border-white/5">
+                                            <Descriptions.Item label="IP">
                                                 <IPGeoInfo ip={user.registrationIp} colorClasses="text-blue-400" />
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Активная сессия (IP1)">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <IPGeoInfo ip={user.lastLoginIp1} colorClasses="text-green-500" />
-                                                    {user.lastLoginTime1 && (
-                                                        <span className="text-[11px] text-gray-500 font-mono">
-                                                            ({new Date(user.lastLoginTime1).toLocaleString('ru-RU')})
-                                                        </span>
-                                                    )}
-                                                </div>
+                                            <Descriptions.Item label="Время">
+                                                <span className="text-gray-300 text-xs font-mono">{user.createdAt ? new Date(user.createdAt).toLocaleString('ru-RU') : '—'}</span>
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Предыдущая сессия (IP2)" span={2}>
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <IPGeoInfo ip={user.lastLoginIp2} colorClasses="text-gray-400" />
-                                                    {user.lastLoginTime2 && (
-                                                        <span className="text-[11px] text-gray-500 font-mono">
-                                                            ({new Date(user.lastLoginTime2).toLocaleString('ru-RU')})
-                                                        </span>
-                                                    )}
-                                                </div>
+                                            <Descriptions.Item label="User-Agent">
+                                                <span className="text-gray-400 text-[10px] break-all">{user.registrationUserAgent || '—'}</span>
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Видеокарта (WebGL)">
-                                                <span className="text-gray-300 text-xs font-mono break-all">{user.lastLoginWebgl1 || user.registrationWebgl || '—'}</span>
+                                            <Descriptions.Item label="Canvas">
+                                                <span className="text-[#00BFFF] text-xs font-mono font-bold">{user.registrationCanvas || '—'}</span>
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Оперативная память (RAM)">
-                                                <span className="text-gray-300 text-xs font-semibold">{user.lastLoginMemory1 || user.registrationMemory || '—'}</span>
+                                            <Descriptions.Item label="WebGL">
+                                                <span className="text-gray-300 text-xs font-mono break-all">{user.registrationWebgl || '—'}</span>
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Ядра CPU">
-                                                <span className="text-gray-300 text-xs font-semibold">{(user.lastLoginHardware1 || user.registrationHardware) ? `${user.lastLoginHardware1 || user.registrationHardware} ядер` : '—'}</span>
-                                            </Descriptions.Item>
-                                            <Descriptions.Item label="Разрешение экрана">
-                                                <span className="text-gray-300 text-xs font-mono">{user.lastLoginResolution1 || user.registrationResolution || '—'}</span>
-                                            </Descriptions.Item>
-                                            <Descriptions.Item label="Сенсорный экран">
+                                            <Descriptions.Item label="Разрешение / CPU / RAM">
                                                 <span className="text-gray-300 text-xs">
-                                                    {(() => {
-                                                        const tp = user.lastLoginTouchPoints1 || user.registrationTouchPoints;
-                                                        if (!tp) return '—';
-                                                        return Number(tp) > 0 ? `Да (${tp} точек касания)` : 'Нет';
-                                                    })()}
+                                                    {user.registrationResolution || '—'} / {user.registrationHardware ? `${user.registrationHardware} ядер` : '—'} / {user.registrationMemory || '—'}
                                                 </span>
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Масштаб (Pixel Ratio)">
-                                                <span className="text-gray-300 text-xs">{user.lastLoginPixelRatio1 || user.registrationPixelRatio || '—'}</span>
+                                            <Descriptions.Item label="Таймзона / Язык">
+                                                <span className="text-gray-300 text-xs font-mono">{user.registrationTimezone || '—'} / {user.registrationLanguage || '—'}</span>
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Часовой пояс">
-                                                <span className="text-gray-300 text-xs font-mono">{user.lastLoginTimezone1 || user.registrationTimezone || '—'}</span>
-                                            </Descriptions.Item>
-                                            <Descriptions.Item label="Язык системы">
-                                                <span className="text-gray-300 text-xs font-mono">{user.lastLoginLanguage1 || user.registrationLanguage || '—'}</span>
-                                            </Descriptions.Item>
-                                            <Descriptions.Item label="Отпечаток Canvas" span={2}>
-                                                <span className="text-[#00BFFF] text-xs font-mono font-bold">{user.lastLoginCanvas1 || user.registrationCanvas || '—'}</span>
+                                            <Descriptions.Item label="Масштаб / Тачскрин">
+                                                <span className="text-gray-300 text-xs">
+                                                    {user.registrationPixelRatio || '—'} / {(() => { const tp = user.registrationTouchPoints; if (!tp) return '—'; return Number(tp) > 0 ? `Да (${tp})` : 'Нет'; })()}
+                                                </span>
                                             </Descriptions.Item>
                                         </Descriptions>
+
+                                        {/* ── Блок 2: Текущая сессия ── */}
+                                        <Divider titlePlacement="left" style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '24px 0 12px 0' }}>
+                                            <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">
+                                                🟢 Текущая сессия
+                                            </span>
+                                        </Divider>
+                                        <Descriptions bordered size="small" column={1} className="bg-black/10 rounded-xl overflow-hidden border-white/5">
+                                            <Descriptions.Item label="IP">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <IPGeoInfo ip={user.lastLoginIp1} colorClasses="text-green-500" />
+                                                </div>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Время входа">
+                                                <span className="text-gray-300 text-xs font-mono">{user.lastLoginTime1 ? new Date(user.lastLoginTime1).toLocaleString('ru-RU') : '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="User-Agent">
+                                                <span className="text-gray-400 text-[10px] break-all">{user.lastLoginUserAgent1 || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Canvas">
+                                                <span className="text-[#00BFFF] text-xs font-mono font-bold">{user.lastLoginCanvas1 || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="WebGL">
+                                                <span className="text-gray-300 text-xs font-mono break-all">{user.lastLoginWebgl1 || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Разрешение / CPU / RAM">
+                                                <span className="text-gray-300 text-xs">
+                                                    {user.lastLoginResolution1 || '—'} / {user.lastLoginHardware1 ? `${user.lastLoginHardware1} ядер` : '—'} / {user.lastLoginMemory1 || '—'}
+                                                </span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Таймзона / Язык">
+                                                <span className="text-gray-300 text-xs font-mono">{user.lastLoginTimezone1 || '—'} / {user.lastLoginLanguage1 || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Масштаб / Тачскрин">
+                                                <span className="text-gray-300 text-xs">
+                                                    {user.lastLoginPixelRatio1 || '—'} / {(() => { const tp = user.lastLoginTouchPoints1; if (!tp) return '—'; return Number(tp) > 0 ? `Да (${tp})` : 'Нет'; })()}
+                                                </span>
+                                            </Descriptions.Item>
+                                        </Descriptions>
+
+                                        {/* ── Блок 3: Прошлая сессия ── */}
+                                        {(user.lastLoginIp2 || user.lastLoginCanvas2) && (
+                                            <>
+                                                <Divider titlePlacement="left" style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '24px 0 12px 0' }}>
+                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                                        ⚪ Прошлая сессия
+                                                    </span>
+                                                </Divider>
+                                                <Descriptions bordered size="small" column={1} className="bg-black/10 rounded-xl overflow-hidden border-white/5">
+                                                    <Descriptions.Item label="IP">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <IPGeoInfo ip={user.lastLoginIp2} colorClasses="text-gray-400" />
+                                                        </div>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Время входа">
+                                                        <span className="text-gray-300 text-xs font-mono">{user.lastLoginTime2 ? new Date(user.lastLoginTime2).toLocaleString('ru-RU') : '—'}</span>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="User-Agent">
+                                                        <span className="text-gray-400 text-[10px] break-all">{user.lastLoginUserAgent2 || '—'}</span>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Canvas">
+                                                        <span className="text-[#00BFFF] text-xs font-mono font-bold">{user.lastLoginCanvas2 || '—'}</span>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="WebGL">
+                                                        <span className="text-gray-300 text-xs font-mono break-all">{user.lastLoginWebgl2 || '—'}</span>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Разрешение / CPU / RAM">
+                                                        <span className="text-gray-300 text-xs">
+                                                            {user.lastLoginResolution2 || '—'} / {user.lastLoginHardware2 ? `${user.lastLoginHardware2} ядер` : '—'} / {user.lastLoginMemory2 || '—'}
+                                                        </span>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Таймзона / Язык">
+                                                        <span className="text-gray-300 text-xs font-mono">{user.lastLoginTimezone2 || '—'} / {user.lastLoginLanguage2 || '—'}</span>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Масштаб / Тачскрин">
+                                                        <span className="text-gray-300 text-xs">
+                                                            {user.lastLoginPixelRatio2 || '—'} / {(() => { const tp = user.lastLoginTouchPoints2; if (!tp) return '—'; return Number(tp) > 0 ? `Да (${tp})` : 'Нет'; })()}
+                                                        </span>
+                                                    </Descriptions.Item>
+                                                </Descriptions>
+                                            </>
+                                        )}
 
                                         {/* Related Accounts Section — only shown if detected */}
                                         {relatedLoading ? (
