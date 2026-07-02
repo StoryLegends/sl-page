@@ -987,6 +987,47 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                             </Descriptions.Item>
                                         </Descriptions>
 
+                                        <Divider titlePlacement="left" style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '24px 0 12px 0' }}>
+                                            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                                                Характеристики устройства (Fingerprint)
+                                            </span>
+                                        </Divider>
+                                        <Descriptions bordered size="small" column={{ xxl: 2, xl: 2, lg: 1, md: 1, sm: 1, xs: 1 }} className="bg-black/10 rounded-xl overflow-hidden border-white/5">
+                                            <Descriptions.Item label="Видеокарта (WebGL)">
+                                                <span className="text-gray-300 text-xs font-mono break-all">{user.lastLoginWebgl1 || user.registrationWebgl || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Оперативная память (RAM)">
+                                                <span className="text-gray-300 text-xs font-semibold">{user.lastLoginMemory1 || user.registrationMemory || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Ядра CPU">
+                                                <span className="text-gray-300 text-xs font-semibold">{(user.lastLoginHardware1 || user.registrationHardware) ? `${user.lastLoginHardware1 || user.registrationHardware} ядер` : '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Разрешение экрана">
+                                                <span className="text-gray-300 text-xs font-mono">{user.lastLoginResolution1 || user.registrationResolution || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Сенсорный экран">
+                                                <span className="text-gray-300 text-xs">
+                                                    {(() => {
+                                                        const tp = user.lastLoginTouchPoints1 || user.registrationTouchPoints;
+                                                        if (!tp) return '—';
+                                                        return Number(tp) > 0 ? `Да (${tp} точек касания)` : 'Нет';
+                                                    })()}
+                                                </span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Масштаб (Pixel Ratio)">
+                                                <span className="text-gray-300 text-xs">{user.lastLoginPixelRatio1 || user.registrationPixelRatio || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Часовой пояс">
+                                                <span className="text-gray-300 text-xs font-mono">{user.lastLoginTimezone1 || user.registrationTimezone || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Язык системы">
+                                                <span className="text-gray-300 text-xs font-mono">{user.lastLoginLanguage1 || user.registrationLanguage || '—'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Отпечаток Canvas" span={2}>
+                                                <span className="text-[#00BFFF] text-xs font-mono font-bold">{user.lastLoginCanvas1 || user.registrationCanvas || '—'}</span>
+                                            </Descriptions.Item>
+                                        </Descriptions>
+
                                         {/* Related Accounts Section — only shown if detected */}
                                         {relatedLoading ? (
                                             <div className="py-4 text-center"><Spin size="small" /></div>

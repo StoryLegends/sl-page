@@ -30,6 +30,9 @@ apiClient.interceptors.request.use(
         config.headers['X-Fingerprint-Language'] = fingerprint.language;
         config.headers['X-Fingerprint-Hardware'] = fingerprint.hardware;
         config.headers['X-Fingerprint-Resolution'] = fingerprint.resolution;
+        config.headers['X-Fingerprint-Memory'] = fingerprint.deviceMemory;
+        config.headers['X-Fingerprint-PixelRatio'] = fingerprint.devicePixelRatio;
+        config.headers['X-Fingerprint-TouchPoints'] = fingerprint.touchPoints;
 
         return config;
     },

@@ -5,6 +5,9 @@ export interface BrowserFingerprint {
     language: string;
     hardware: string;
     resolution: string;
+    deviceMemory: string;
+    devicePixelRatio: string;
+    touchPoints: string;
 }
 
 function djb2Hash(str: string): string {
@@ -68,12 +71,29 @@ export function getBrowserFingerprint(): BrowserFingerprint {
     // 6. Resolution
     const resolution = `${window.screen.width}x${window.screen.height}`;
 
+    // 7. Device Memory (RAM)
+    let deviceMemory = 'unknown';
+    try {
+        if ('deviceMemory' in navigator) {
+            deviceMemory = `${(navigator as any).deviceMemory} GB`;
+        }
+    } catch (e) {}
+
+    // 8. Device Pixel Ratio
+    const devicePixelRatio = String(window.devicePixelRatio || 1);
+
+    // 9. Touch Points
+    const touchPoints = String(navigator.maxTouchPoints || 0);
+
     return {
         canvas: canvasHash,
         webgl: webglRenderer,
         timezone,
         language,
         hardware,
-        resolution
+        resolution,
+        deviceMemory,
+        devicePixelRatio,
+        touchPoints
     };
 }
