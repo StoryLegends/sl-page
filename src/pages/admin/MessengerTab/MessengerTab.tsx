@@ -14,7 +14,8 @@ import {
     BoldOutlined,
     ItalicOutlined,
     CodeOutlined,
-    FieldBinaryOutlined
+    FieldBinaryOutlined,
+    ArrowLeftOutlined
 } from '@ant-design/icons';
 import { messengerApi, type BotMessage, type ConversationItem } from '../../../api/messenger';
 import { useAdminWebSocket } from '../../../hooks/useAdminWebSocket';
@@ -53,7 +54,19 @@ const RenderMarkdown: React.FC<{ content: string }> = ({ content }) => {
     );
 };
 
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, []);
+    return isMobile;
+};
+
 const MessengerTab: React.FC = () => {
+    const isMobile = useIsMobile();
+    const [mobileShowChat, setMobileShowChat] = useState(false);
     const [loadingConversations, setLoadingConversations] = useState(true);
     const [activeConversations, setActiveConversations] = useState<ConversationItem[]>([]);
     const [uncontactedPlayers, setUncontactedPlayers] = useState<ConversationItem[]>([]);
@@ -84,6 +97,7 @@ const MessengerTab: React.FC = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const textAreaRef = useRef<any>(null);
     const selectedUserIdRef = useRef<number | null>(null);
+    const isInitialLoadRef = useRef(true);
 
     useEffect(() => {
         selectedUserIdRef.current = selectedUserItem?.user.id || null;
@@ -96,16 +110,19 @@ const MessengerTab: React.FC = () => {
             setActiveConversations(res.activeConversations || []);
             setUncontactedPlayers(res.uncontactedPlayers || []);
 
-            const targetId = autoSelectUserId || selectedUserIdRef.current;
-            if (targetId) {
-                const foundInActive = res.activeConversations.find(c => c.user.id === targetId);
-                const foundInUncontacted = res.uncontactedPlayers.find(c => c.user.id === targetId);
+            // Only change selection if we explicitly need to (initial load or query param redirect)
+            if (autoSelectUserId) {
+                const foundInActive = res.activeConversations.find(c => c.user.id === autoSelectUserId);
+                const foundInUncontacted = res.uncontactedPlayers.find(c => c.user.id === autoSelectUserId);
                 if (foundInActive) setSelectedUserItem(foundInActive);
                 else if (foundInUncontacted) setSelectedUserItem(foundInUncontacted);
-            } else if (res.activeConversations.length > 0) {
-                setSelectedUserItem(res.activeConversations[0]);
-            } else if (res.uncontactedPlayers.length > 0) {
-                setSelectedUserItem(res.uncontactedPlayers[0]);
+            } else if (!selectedUserIdRef.current) {
+                // If nothing was selected yet, default to first active
+                if (res.activeConversations.length > 0) {
+                    setSelectedUserItem(res.activeConversations[0]);
+                } else if (res.uncontactedPlayers.length > 0) {
+                    setSelectedUserItem(res.uncontactedPlayers[0]);
+                }
             }
         } catch (err) {
             console.error('Failed to load messenger conversations:', err);
@@ -140,12 +157,18 @@ const MessengerTab: React.FC = () => {
 
     useEffect(() => {
         if (selectedUserItem) {
+            isInitialLoadRef.current = true;
             loadMessages(selectedUserItem.user.id);
         }
     }, [selectedUserItem?.user.id]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (isInitialLoadRef.current) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+            isInitialLoadRef.current = false;
+        } else {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
     }, [messagesList]);
 
     useAdminWebSocket({
@@ -163,7 +186,7 @@ const MessengerTab: React.FC = () => {
                     });
                 }
             }
-            loadConversations(selectedUserIdRef.current || undefined, true);
+            loadConversations(undefined, true);
         }
     });
 
@@ -233,7 +256,7 @@ const MessengerTab: React.FC = () => {
                 return [...prev, newMsg];
             });
             
-            loadConversations(selectedUserItem.user.id, true);
+            loadConversations(undefined, true);
         } catch (err: any) {
             console.error('Failed to send message:', err);
             message.error(err.response?.data?.message || 'Не удалось отправить сообщение');
@@ -270,7 +293,7 @@ const MessengerTab: React.FC = () => {
             setMessagesList(prev => prev.map(m => m.id === updated.id ? updated : m));
             message.success('Сообщение отредактировано');
             setIsEditModalOpen(false);
-            if (selectedUserItem) loadConversations(selectedUserItem.user.id, true);
+            loadConversations(undefined, true);
         } catch (err: any) {
             console.error('Failed to edit message:', err);
             message.error(err.response?.data?.message || 'Не удалось отредактировать сообщение');
@@ -335,7 +358,7 @@ const MessengerTab: React.FC = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-140px)] flex bg-[#0d1322] rounded-2xl overflow-hidden border border-white/5 shadow-2xl animate-fadeIn">
+        <div className={`h-[calc(100vh-140px)] flex bg-[#0d1322] ${isMobile ? 'rounded-xl' : 'rounded-2xl'} overflow-hidden border border-white/5 shadow-2xl animate-fadeIn`}>
             <input
                 type="file"
                 ref={fileInputRef}
@@ -349,8 +372,8 @@ const MessengerTab: React.FC = () => {
                 }}
             />
 
-            {/* Left Column — Dialogs List */}
-            <div className="w-80 border-r border-white/5 flex flex-col bg-[#111827]">
+            {/* Left Column — Dialogs List (hidden on mobile when chat is open) */}
+            <div className={`${isMobile ? (mobileShowChat ? 'hidden' : 'w-full') : 'w-80'} border-r border-white/5 flex flex-col bg-[#111827]`}>
                 {/* Search Header */}
                 <div className="p-3 border-b border-white/5">
                     <Input
@@ -380,7 +403,7 @@ const MessengerTab: React.FC = () => {
                                         return (
                                             <div
                                                 key={item.user.id}
-                                                onClick={() => setSelectedUserItem(item)}
+                                                onClick={() => { setSelectedUserItem(item); if (isMobile) setMobileShowChat(true); }}
                                                 className={`p-3 flex items-start gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-sky-600/20 border-l-4 border-sky-400' : 'hover:bg-white/5'}`}
                                             >
                                                 <div className="relative shrink-0">
@@ -432,7 +455,7 @@ const MessengerTab: React.FC = () => {
                                         return (
                                             <div
                                                 key={item.user.id}
-                                                onClick={() => setSelectedUserItem(item)}
+                                                onClick={() => { setSelectedUserItem(item); if (isMobile) setMobileShowChat(true); }}
                                                 className={`p-3 flex items-center gap-3 cursor-pointer transition-colors ${isSelected ? 'bg-sky-600/20 border-l-4 border-sky-400' : 'hover:bg-white/5'}`}
                                             >
                                                 <Avatar
@@ -468,13 +491,21 @@ const MessengerTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* Right Column — Chat Window */}
-            <div className="flex-1 flex flex-col bg-[#0f172a]/80">
+            {/* Right Column — Chat Window (hidden on mobile when list is shown) */}
+            <div className={`${isMobile && !mobileShowChat ? 'hidden' : ''} flex-1 flex flex-col bg-[#0f172a]/80`}>
                 {selectedUserItem ? (
                     <>
                         {/* Chat Header */}
-                        <div className="p-3.5 px-6 border-b border-white/5 bg-[#1e293b]/60 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
+                        <div className={`${isMobile ? 'p-2.5 px-3' : 'p-3.5 px-6'} border-b border-white/5 bg-[#1e293b]/60 flex items-center justify-between`}>
+                            <div className="flex items-center gap-2 md:gap-3">
+                                {isMobile && (
+                                    <Button
+                                        type="text"
+                                        icon={<ArrowLeftOutlined />}
+                                        onClick={() => setMobileShowChat(false)}
+                                        className="text-gray-400 hover:text-white w-8 h-8 flex items-center justify-center p-0"
+                                    />
+                                )}
                                 <Avatar
                                     src={selectedUserItem.user.avatarUrl}
                                     size={42}
@@ -652,7 +683,7 @@ const MessengerTab: React.FC = () => {
                         </div>
 
                         {/* Input Footer */}
-                        <div className="p-4 border-t border-white/5 bg-black/10 space-y-2">
+                        <div className={`${isMobile ? 'p-2' : 'p-4'} border-t border-white/5 bg-black/10 space-y-2`}>
                             {/* Formatting Toolbar */}
                             <div className="flex items-center justify-between px-1">
                                 <div className="flex items-center gap-1">
@@ -744,9 +775,9 @@ const MessengerTab: React.FC = () => {
                                 <div className="flex-1 relative">
                                     <Input.TextArea
                                         ref={textAreaRef}
-                                        rows={3}
-                                        autoSize={{ minRows: 3, maxRows: 8 }}
-                                        placeholder={`Написать сообщение пользователю ${selectedUserItem.user.username} в Discord...`}
+                                        rows={isMobile ? 2 : 3}
+                                        autoSize={{ minRows: isMobile ? 2 : 3, maxRows: isMobile ? 4 : 8 }}
+                                        placeholder={isMobile ? 'Сообщение...' : `Написать сообщение пользователю ${selectedUserItem.user.username} в Discord...`}
                                         value={textInput}
                                         onChange={(e) => setTextInput(e.target.value)}
                                         onPaste={handlePaste}
@@ -766,9 +797,9 @@ const MessengerTab: React.FC = () => {
                                     loading={sending}
                                     onClick={handleSendMessage}
                                     style={{ backgroundColor: '#00BFFF', borderColor: '#00BFFF' }}
-                                    className="rounded-xl h-12 px-6 font-bold shadow-lg shadow-sky-500/20 mt-1"
+                                    className={`rounded-xl font-bold shadow-lg shadow-sky-500/20 mt-1 ${isMobile ? 'h-10 w-10 p-0' : 'h-12 px-6'}`}
                                 >
-                                    Отправить
+                                    {!isMobile && 'Отправить'}
                                 </Button>
                             </div>
                         </div>

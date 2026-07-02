@@ -406,3 +406,184 @@ body {
   background-color: rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
 }
+
+/* ====== MOBILE ADMIN PANEL RESPONSIVE (only <768px) ====== */
+/* These styles ONLY activate on mobile. Desktop is untouched. */
+
+/* Admin mobile drawer styling */
+.admin-mobile-drawer .ant-drawer-body {
+  background: #0f1b2d !important;
+  padding: 0 !important;
+}
+
+.admin-mobile-drawer .ant-drawer-content {
+  background: #0f1b2d !important;
+}
+
+@media (max-width: 767px) {
+  /* Admin layout Content area — tighter padding on mobile */
+  .admin-layout-wrapper .ant-layout-content {
+    padding: 12px !important;
+  }
+
+  /* Ant Design Cards — compact on mobile */
+  .admin-layout-wrapper .ant-card {
+    border-radius: 12px !important;
+  }
+
+  .admin-layout-wrapper .ant-card-body {
+    padding: 12px !important;
+  }
+
+  /* Ant Design Tables — make them scroll horizontally */
+  .admin-layout-wrapper .ant-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-layout-wrapper .ant-table {
+    min-width: 600px;
+  }
+
+  /* Compact tables (.custom-table) — no horizontal scroll on mobile, fit perfectly */
+  .admin-layout-wrapper .custom-table .ant-table {
+    min-width: 100% !important;
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+
+  .admin-layout-wrapper .custom-table .ant-table-wrapper {
+    overflow-x: hidden !important;
+  }
+
+  .admin-layout-wrapper .custom-table .ant-table-cell {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+
+  /* Force warnings badge column to right align and fit snugly */
+  .admin-layout-wrapper .custom-table th:last-child,
+  .admin-layout-wrapper .custom-table td:last-child {
+    text-align: right !important;
+    padding-right: 8px !important;
+    width: 70px !important;
+  }
+
+  /* Ant Design Descriptions — stack vertically on mobile */
+  .admin-layout-wrapper .ant-descriptions-item {
+    padding: 6px 8px !important;
+  }
+
+  /* Make Row/Col grid stack vertically on small screens */
+  .admin-layout-wrapper .ant-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .admin-layout-wrapper .ant-col {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Modals — full width on mobile */
+  .admin-layout-wrapper .ant-modal,
+  .custom-modal .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+
+  /* Drawer — full width on mobile */
+  .admin-layout-wrapper .ant-drawer-content-wrapper {
+    max-width: 100vw !important;
+  }
+
+  /* Title sizes smaller on mobile */
+  .admin-layout-wrapper h1.ant-typography {
+    font-size: 20px !important;
+  }
+
+  .admin-layout-wrapper h2.ant-typography {
+    font-size: 18px !important;
+  }
+
+  .admin-layout-wrapper h3.ant-typography {
+    font-size: 16px !important;
+  }
+
+  /* Tabs — scrollable on mobile */
+  .admin-layout-wrapper .ant-tabs-nav {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+  }
+
+  .admin-layout-wrapper .ant-tabs-nav-list {
+    flex-wrap: nowrap !important;
+  }
+
+  .admin-layout-wrapper .ant-tabs-tab {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+
+  /* Button groups — wrap on mobile */
+  .admin-layout-wrapper .ant-space-horizontal {
+    flex-wrap: wrap !important;
+  }
+
+  /* Stat cards in dashboard — smaller values */
+  .admin-layout-wrapper .ant-statistic-content-value {
+    font-size: 20px !important;
+  }
+
+  .admin-layout-wrapper .ant-statistic-title {
+    font-size: 11px !important;
+  }
+
+  /* Messenger - full height fix on mobile */
+  .admin-layout-wrapper .h-\[calc\(100vh-140px\)\] {
+    height: calc(100vh - 130px) !important;
+  }
+
+  /* Player dossier drawer — wider on mobile */
+  .ant-drawer-right .ant-drawer-content-wrapper {
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  /* Fullscreen mobile modal for application verification */
+  .admin-layout-wrapper .custom-modal.fullscreen-mobile-modal,
+  .custom-modal.fullscreen-mobile-modal,
+  .fullscreen-mobile-modal {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+  }
+
+  .admin-layout-wrapper .custom-modal.fullscreen-mobile-modal .ant-modal-content,
+  .custom-modal.fullscreen-mobile-modal .ant-modal-content {
+    border-radius: 0 !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 12px !important;
+    border: none !important;
+    overflow: hidden !important;
+  }
+
+  .admin-layout-wrapper .custom-modal.fullscreen-mobile-modal .ant-modal-header,
+  .custom-modal.fullscreen-mobile-modal .ant-modal-header {
+    border-radius: 0 !important;
+  }
+
+  .admin-layout-wrapper .custom-modal.fullscreen-mobile-modal .ant-modal-body,
+  .custom-modal.fullscreen-mobile-modal .ant-modal-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+}

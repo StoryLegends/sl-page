@@ -1002,27 +1002,173 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                                     dataSource={relatedAccounts}
                                                     renderItem={item => (
                                                         <List.Item 
-                                                            className="px-4 py-3 border-b border-white/5 flex items-center justify-between hover:bg-white/5 transition-colors cursor-pointer"
+                                                            className="px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors cursor-pointer block"
                                                             onClick={() => setActiveUserId(item.id)}
                                                         >
-                                                            <Space>
-                                                                <Avatar src={item.avatarUrl} size="small">{item.username.substring(0, 1).toUpperCase()}</Avatar>
-                                                                <Text style={{ color: '#fff' }} className="font-bold">{item.username}</Text>
-                                                                {item.minecraftNickname && (
-                                                                    <Text className="text-gray-500 text-xs">({item.minecraftNickname})</Text>
-                                                                )}
-                                                            </Space>
-                                                            <Space>
-                                                                 {item.banned ? (
-                                                                     <Tag color="red" icon={<StopOutlined />} className="text-[10px] font-bold">ЗАБАНЕН</Tag>
-                                                                 ) : (
-                                                                     <Tag color="success" className="text-[10px]">Чист</Tag>
-                                                                 )}
-                                                            </Space>
+                                                            <div className="flex flex-col gap-1 w-full">
+                                                                <div className="flex items-center justify-between w-full">
+                                                                    <Space>
+                                                                        <Avatar src={item.avatarUrl} size="small">{item.username.substring(0, 1).toUpperCase()}</Avatar>
+                                                                        <Text style={{ color: '#fff' }} className="font-bold">{item.username}</Text>
+                                                                        {item.minecraftNickname && (
+                                                                            <Text className="text-gray-500 text-xs">({item.minecraftNickname})</Text>
+                                                                        )}
+                                                                    </Space>
+                                                                    <Space size={4}>
+                                                                         {(() => {
+                                                                             const isSameCanvas = (item.registrationCanvas && item.registrationCanvas !== 'unknown' && (item.registrationCanvas === user.registrationCanvas || item.registrationCanvas === user.lastLoginCanvas1 || item.registrationCanvas === user.lastLoginCanvas2)) ||
+                                                                                                  (item.lastLoginCanvas1 && item.lastLoginCanvas1 !== 'unknown' && (item.lastLoginCanvas1 === user.registrationCanvas || item.lastLoginCanvas1 === user.lastLoginCanvas1 || item.lastLoginCanvas1 === user.lastLoginCanvas2));
+                                                                             return isSameCanvas ? (
+                                                                                 <Tag color="warning" className="text-[9px] uppercase font-bold m-0 px-1 py-0.5 border-amber-500/20 bg-amber-950/20 text-amber-300">Совпадение по отпечатку</Tag>
+                                                                             ) : null;
+                                                                         })()}
+                                                                         {item.banned ? (
+                                                                              <Tag color="red" icon={<StopOutlined />} className="text-[10px] font-bold m-0">ЗАБАНЕН</Tag>
+                                                                         ) : (
+                                                                              <Tag color="success" className="text-[10px] m-0">Чист</Tag>
+                                                                         )}
+                                                                    </Space>
+                                                                </div>
+                                                                {/* User Agents */}
+                                                                <div className="pl-7 text-[10px] text-gray-500 flex flex-col gap-0.5 mt-0.5">
+                                                                    {item.lastLoginUserAgent1 && (
+                                                                        <div className="break-all"><span className="text-gray-600 font-semibold font-mono">Session UA:</span> {item.lastLoginUserAgent1}</div>
+                                                                    )}
+                                                                    {item.registrationUserAgent && item.registrationUserAgent !== item.lastLoginUserAgent1 && (
+                                                                        <div className="break-all"><span className="text-gray-600 font-semibold font-mono">Reg UA:</span> {item.registrationUserAgent}</div>
+                                                                    )}
+                                                                    {!item.lastLoginUserAgent1 && !item.registrationUserAgent && (
+                                                                        <div className="text-gray-600 italic">Нет данных о User-Agent</div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
                                                         </List.Item>
                                                     )}
                                                 />
                                             </>    
+                                        )}
+                                    </div>
+                                )
+                            },
+                            {
+                                key: 'fingerprints',
+                                label: <span className="font-semibold text-xs uppercase tracking-wide">Отпечатки</span>,
+                                children: (
+                                    <div className="space-y-6 pt-4">
+                                        {/* Security Alerts for mismatches */}
+                                        {(() => {
+                                            const alerts = [];
+                                            const isVpnTimezone = (tz: string | null | undefined, ipStr: string | null | undefined) => {
+                                                if (!tz || !ipStr) return false;
+                                                const countryMatch = ipStr.match(/\b([A-Z]{2})\b/);
+                                                if (countryMatch) {
+                                                    const country = countryMatch[1];
+                                                    if (country === 'RU' && !(tz.startsWith('Europe/') || tz.startsWith('Asia/'))) {
+                                                        return true;
+                                                    }
+                                                    if (country === 'PL' && !tz.startsWith('Europe/Warsaw') && !tz.startsWith('Europe/Berlin')) {
+                                                        return true;
+                                                    }
+                                                }
+                                                return false;
+                                            };
+
+                                            const regTzVpn = isVpnTimezone(user.registrationTimezone, user.registrationIp);
+                                            const login1TzVpn = isVpnTimezone(user.lastLoginTimezone1, user.lastLoginIp1);
+                                            
+                                            if (regTzVpn || login1TzVpn) {
+                                                alerts.push(
+                                                    <Alert
+                                                        key="tz-warn"
+                                                        message={<span className="font-bold">Подозрение на Proxy/VPN (Таймзона)</span>}
+                                                        description={
+                                                            <div className="text-xs">
+                                                                Обнаружено несовпадение часового пояса устройства с геолокацией IP. 
+                                                                {regTzVpn && <span className="block mt-0.5">• При регистрации: {user.registrationTimezone} vs {user.registrationIp}</span>}
+                                                                {login1TzVpn && <span className="block mt-0.5">• При входе: {user.lastLoginTimezone1} vs {user.lastLoginIp1}</span>}
+                                                            </div>
+                                                        }
+                                                        type="warning"
+                                                        showIcon
+                                                        className="border-amber-500/20 bg-amber-950/20 text-amber-200 rounded-xl"
+                                                    />
+                                                );
+                                            }
+
+                                            return alerts.length > 0 ? <div className="space-y-3">{alerts}</div> : null;
+                                        })()}
+
+                                        <Divider orientation={"left" as any} style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '12px 0 6px 0' }}>
+                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">При регистрации</span>
+                                        </Divider>
+
+                                        <Descriptions bordered column={1} size="small" className="border-white/5 rounded-xl overflow-hidden bg-black/10">
+                                            <Descriptions.Item label="Canvas Hash">
+                                                <span className="font-mono text-gray-300 text-xs">{user.registrationCanvas || 'нет данных'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="WebGL Видеокарта">
+                                                <span className="text-gray-300 text-xs">{user.registrationWebgl || 'нет данных'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Таймзона / Язык">
+                                                <span className="text-gray-300 text-xs">
+                                                    {user.registrationTimezone || '—'} / {user.registrationLanguage || '—'}
+                                                </span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Экран / Ядра CPU">
+                                                <span className="text-gray-300 text-xs">
+                                                    {user.registrationResolution || '—'} / {user.registrationHardware ? `${user.registrationHardware} ядер` : '—'}
+                                                </span>
+                                            </Descriptions.Item>
+                                        </Descriptions>
+
+                                        <Divider orientation={"left" as any} style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '24px 0 6px 0' }}>
+                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Активная сессия (Вход)</span>
+                                        </Divider>
+
+                                        <Descriptions bordered column={1} size="small" className="border-white/5 rounded-xl overflow-hidden bg-black/10">
+                                            <Descriptions.Item label="Canvas Hash">
+                                                <span className="font-mono text-gray-300 text-xs">{user.lastLoginCanvas1 || 'нет данных'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="WebGL Видеокарта">
+                                                <span className="text-gray-300 text-xs">{user.lastLoginWebgl1 || 'нет данных'}</span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Таймзона / Язык">
+                                                <span className="text-gray-300 text-xs">
+                                                    {user.lastLoginTimezone1 || '—'} / {user.lastLoginLanguage1 || '—'}
+                                                </span>
+                                            </Descriptions.Item>
+                                            <Descriptions.Item label="Экран / Ядра CPU">
+                                                <span className="text-gray-300 text-xs">
+                                                    {user.lastLoginResolution1 || '—'} / {user.lastLoginHardware1 ? `${user.lastLoginHardware1} ядер` : '—'}
+                                                </span>
+                                            </Descriptions.Item>
+                                        </Descriptions>
+
+                                        {user.lastLoginCanvas2 && (
+                                            <>
+                                                <Divider orientation={"left" as any} style={{ borderColor: 'rgba(255,255,255,0.05)', margin: '24px 0 6px 0' }}>
+                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Предыдущий вход</span>
+                                                </Divider>
+
+                                                <Descriptions bordered column={1} size="small" className="border-white/5 rounded-xl overflow-hidden bg-black/10">
+                                                    <Descriptions.Item label="Canvas Hash">
+                                                        <span className="font-mono text-gray-300 text-xs">{user.lastLoginCanvas2 || 'нет данных'}</span>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="WebGL Видеокарта">
+                                                        <span className="text-gray-300 text-xs">{user.lastLoginWebgl2 || 'нет данных'}</span>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Таймзона / Язык">
+                                                        <span className="text-gray-300 text-xs">
+                                                            {user.lastLoginTimezone2 || '—'} / {user.lastLoginLanguage2 || '—'}
+                                                        </span>
+                                                    </Descriptions.Item>
+                                                    <Descriptions.Item label="Экран / Ядра CPU">
+                                                        <span className="text-gray-300 text-xs">
+                                                            {user.lastLoginResolution2 || '—'} / {user.lastLoginHardware2 ? `${user.lastLoginHardware2} ядер` : '—'}
+                                                        </span>
+                                                    </Descriptions.Item>
+                                                </Descriptions>
+                                            </>
                                         )}
                                     </div>
                                 )

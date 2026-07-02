@@ -17,7 +17,18 @@ import PlayerDossier from '../shared/PlayerDossier';
 const { Option } = Select;
 const { Text, Paragraph } = Typography;
 
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    return isMobile;
+};
+
 const ApplicationsTab: React.FC = () => {
+    const isMobile = useIsMobile();
     const [applications, setApplications] = useState<Application[]>([]);
     const [loading, setLoading] = useState(false);
     const [totalElements, setTotalElements] = useState(0);
@@ -146,13 +157,23 @@ const ApplicationsTab: React.FC = () => {
             title: 'Игрок',
             key: 'user',
             render: (_: any, record: Application) => (
-                <Space className="cursor-pointer" onClick={() => openDossier(record.user?.id)}>
+                <Space 
+                    className="cursor-pointer" 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (record.user?.id) openDossier(record.user.id);
+                    }}
+                >
                     <Avatar src={record.user?.avatarUrl} size="small">
                         {record.user?.username?.substring(0, 1).toUpperCase()}
                     </Avatar>
                     <div>
-                        <div className="font-bold text-white hover:text-story-gold transition-colors">{record.user?.username}</div>
-                        <div className="text-[10px] text-gray-500">ID: #{record.user?.id}</div>
+                        <div className="font-bold text-white hover:text-story-gold transition-colors text-xs md:text-sm">{record.user?.username}</div>
+                        <div className="text-[10px] text-gray-500 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                            <span>ID: #{record.user?.id}</span>
+                            {record.user?.minecraftNickname && <span className="md:hidden text-gray-400">| Ник: {record.user.minecraftNickname}</span>}
+                            <span className="md:hidden text-amber-400">| {record.age} лет</span>
+                        </div>
                     </div>
                 </Space>
             )
@@ -160,17 +181,20 @@ const ApplicationsTab: React.FC = () => {
         {
             title: 'Имя',
             dataIndex: 'firstName',
-            key: 'firstName'
+            key: 'firstName',
+            responsive: ['md'] as any
         },
         {
             title: 'Возраст',
             dataIndex: 'age',
             key: 'age',
+            responsive: ['md'] as any,
             render: (age: number) => <Text style={{ color: age < 16 ? '#ff4d4f' : '#fff' }} className="font-bold">{age}</Text>
         },
         {
             title: 'Minecraft ник',
             key: 'minecraft',
+            responsive: ['md'] as any,
             render: (_: any, record: Application) => record.user?.minecraftNickname ? (
                 <code className="text-gray-300 font-semibold">{record.user.minecraftNickname}</code>
             ) : <span className="text-gray-600">—</span>
@@ -178,6 +202,7 @@ const ApplicationsTab: React.FC = () => {
         {
             title: 'Discord ник',
             key: 'discord',
+            responsive: ['md'] as any,
             render: (_: any, record: Application) => record.user?.discordNickname ? (
                 <span className="text-gray-400">{record.user.discordNickname}</span>
             ) : <span className="text-gray-600">—</span>
@@ -186,6 +211,7 @@ const ApplicationsTab: React.FC = () => {
             title: 'Дата подачи',
             dataIndex: 'createdAt',
             key: 'createdAt',
+            responsive: ['sm'] as any,
             render: (date: string) => <Text className="text-gray-500 text-xs font-mono">{new Date(date).toLocaleDateString('ru-RU')}</Text>
         },
         {
@@ -193,20 +219,24 @@ const ApplicationsTab: React.FC = () => {
             dataIndex: 'status',
             key: 'status',
             render: (status: string) => {
-                if (status === 'ACCEPTED') return <Tag color="success">ОДОБРЕНА</Tag>;
-                if (status === 'REJECTED') return <Tag color="error">ОТКЛОНЕНА</Tag>;
-                return <Tag color="warning" icon={<ClockCircleOutlined />}>В ОЖИДАНИИ</Tag>;
+                if (status === 'ACCEPTED') return <Tag color="success" style={{ margin: 0 }}>ОДОБРЕНА</Tag>;
+                if (status === 'REJECTED') return <Tag color="error" style={{ margin: 0 }}>ОТКЛОНЕНА</Tag>;
+                return <Tag color="warning" icon={<ClockCircleOutlined />} style={{ margin: 0 }}>ОЖИДАНИЕ</Tag>;
             }
         },
         {
             title: 'Действие',
             key: 'action',
+            responsive: ['md'] as any,
             render: (_: any, record: Application) => (
                 <Button
                     type="primary"
                     ghost
                     icon={<EyeOutlined />}
-                    onClick={() => handleOpenViewModal(record)}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenViewModal(record);
+                    }}
                     className="border-story-gold text-story-gold hover:bg-story-gold/10 rounded-xl"
                 >
                     Проверить
@@ -260,6 +290,10 @@ const ApplicationsTab: React.FC = () => {
                     }}
                     onChange={handleTableChange}
                     className="custom-table"
+                    onRow={(record) => ({
+                        onClick: () => handleOpenViewModal(record),
+                        style: { cursor: 'pointer' }
+                    })}
                 />
             </div>
 
@@ -284,8 +318,16 @@ const ApplicationsTab: React.FC = () => {
                 open={isViewVisible}
                 onCancel={() => setIsViewVisible(false)}
                 footer={null}
-                width={850}
-                className="custom-modal"
+                width={isMobile ? '100%' : 850}
+                style={isMobile ? { maxWidth: '100vw', top: 0, margin: 0, padding: 0 } : {}}
+                className={`custom-modal ${isMobile ? 'fullscreen-mobile-modal' : ''}`}
+                styles={{
+                    body: {
+                        padding: isMobile ? '12px' : '16px',
+                        maxHeight: isMobile ? 'calc(100vh - 100px)' : 'none',
+                        overflowY: 'auto'
+                    }
+                }}
             >
                 {selectedApp && (
                     <Spin spinning={viewLoading}>
@@ -334,14 +376,54 @@ const ApplicationsTab: React.FC = () => {
                             </div>
 
                             {/* Details */}
-                            <Descriptions bordered column={2} size="small" className="border-white/5 rounded-xl overflow-hidden bg-black/10 text-gray-300">
-                                <Descriptions.Item label="ФИО" span={1}>{selectedApp.firstName}</Descriptions.Item>
-                                <Descriptions.Item label="Возраст" span={1}>{selectedApp.age} лет</Descriptions.Item>
-                                <Descriptions.Item label="Откуда узнали" span={2}>{renderTextWithLinks(selectedApp.source)}</Descriptions.Item>
-                                <Descriptions.Item label="Контент-мейкер?" span={1}>{selectedApp.makeContent ? <Tag color="success">Да</Tag> : <Tag color="gray">Нет</Tag>}</Descriptions.Item>
-                                <Descriptions.Item label="Оценка адекватности" span={1}>{selectedApp.selfRating} / 10</Descriptions.Item>
-                                <Descriptions.Item label="Дополнительно" span={2}>{renderTextWithLinks(selectedApp.additionalInfo)}</Descriptions.Item>
-                            </Descriptions>
+                            {isMobile ? (
+                                <div className="space-y-4 text-sm bg-black/10 p-4 rounded-xl border border-white/5 text-gray-200">
+                                    {/* Name and Age */}
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <span className="text-gray-400 font-medium">Имя:</span>
+                                        <span className="text-white font-bold">{selectedApp.firstName}</span>
+                                        <span className="text-gray-600 font-mono">|</span>
+                                        <span className="text-gray-400 font-medium">Возраст:</span>
+                                        <span className={`font-bold ${selectedApp.age < 16 ? 'text-red-400' : 'text-white'}`}>{selectedApp.age} лет</span>
+                                    </div>
+
+                                    {/* Self rating & Content maker */}
+                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <span className="text-gray-400 font-medium">Адекватность:</span>
+                                        <span className="text-white font-bold">{selectedApp.selfRating} / 10</span>
+                                        <span className="text-gray-600 font-mono">|</span>
+                                        <span className="text-gray-400 font-medium">Контент-мейкер:</span>
+                                        {selectedApp.makeContent ? <Tag color="success" style={{ margin: 0 }}>Да</Tag> : <Tag color="default" style={{ margin: 0, color: '#aaa', borderColor: 'rgba(255,255,255,0.15)' }}>Нет</Tag>}
+                                    </div>
+
+                                    {/* Source */}
+                                    <div className="space-y-1 pt-1 border-t border-white/5">
+                                        <span className="text-gray-400 font-medium block">Откуда узнали о сервере:</span>
+                                        <div className="text-white bg-black/20 p-2.5 rounded-lg border border-white/5 leading-relaxed">
+                                            {renderTextWithLinks(selectedApp.source)}
+                                        </div>
+                                    </div>
+
+                                    {/* Additional info */}
+                                    {selectedApp.additionalInfo && (
+                                        <div className="space-y-1 pt-1 border-t border-white/5">
+                                            <span className="text-gray-400 font-medium block">Дополнительно:</span>
+                                            <div className="text-white bg-black/20 p-2.5 rounded-lg border border-white/5 leading-relaxed whitespace-pre-line">
+                                                {renderTextWithLinks(selectedApp.additionalInfo)}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <Descriptions bordered column={2} size="small" className="border-white/5 rounded-xl overflow-hidden bg-black/10 text-gray-300">
+                                    <Descriptions.Item label="ФИО" span={1}>{selectedApp.firstName}</Descriptions.Item>
+                                    <Descriptions.Item label="Возраст" span={1}>{selectedApp.age} лет</Descriptions.Item>
+                                    <Descriptions.Item label="Откуда узнали" span={2}>{renderTextWithLinks(selectedApp.source)}</Descriptions.Item>
+                                    <Descriptions.Item label="Контент-мейкер?" span={1}>{selectedApp.makeContent ? <Tag color="success">Да</Tag> : <Tag color="gray">Нет</Tag>}</Descriptions.Item>
+                                    <Descriptions.Item label="Оценка адекватности" span={1}>{selectedApp.selfRating} / 10</Descriptions.Item>
+                                    <Descriptions.Item label="Дополнительно" span={2}>{renderTextWithLinks(selectedApp.additionalInfo)}</Descriptions.Item>
+                                </Descriptions>
+                            )}
 
                             {/* Essay: Why Us */}
                             <div className="bg-black/30 p-4 rounded-xl border border-white/5 space-y-2">
@@ -352,7 +434,7 @@ const ApplicationsTab: React.FC = () => {
                             </div>
 
                             {/* User Action buttons */}
-                            <div className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5">
+                            <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'} bg-black/20 p-3 rounded-xl border border-white/5`}>
                                 <Text className="text-gray-400 text-xs">Необходимы другие данные игрока?</Text>
                                 <Button
                                     type="link"
@@ -361,6 +443,7 @@ const ApplicationsTab: React.FC = () => {
                                         setIsViewVisible(false);
                                         openDossier(selectedApp.user.id);
                                     }}
+                                    className={isMobile ? 'text-left p-0 h-auto' : ''}
                                 >
                                     Открыть досье игрока (IP / Мультиаккаунты)
                                 </Button>
@@ -382,13 +465,14 @@ const ApplicationsTab: React.FC = () => {
                                 </Form.Item>
                                 
                                 {selectedApp.status === 'PENDING' ? (
-                                    <div className="flex justify-end gap-3">
-                                        <Button onClick={() => setIsViewVisible(false)}>Закрыть</Button>
+                                    <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-end gap-3'}`}>
+                                        <Button onClick={() => setIsViewVisible(false)} className={isMobile ? 'w-full' : ''}>Закрыть</Button>
                                         <Button
                                             type="primary"
                                             danger
                                             icon={<CloseOutlined />}
                                             onClick={() => handleUpdateStatus('REJECTED')}
+                                            className={isMobile ? 'w-full' : ''}
                                         >
                                             Отклонить
                                         </Button>
@@ -398,21 +482,22 @@ const ApplicationsTab: React.FC = () => {
                                             icon={<CheckOutlined />}
                                             onClick={() => handleUpdateStatus('ACCEPTED')}
                                             disabled={selectedApp.user && !selectedApp.user.inDiscordServer}
+                                            className={isMobile ? 'w-full' : ''}
                                         >
                                             Одобрить
                                         </Button>
                                     </div>
                                 ) : (
-                                    <div className="flex justify-between items-center">
+                                    <div className={`flex ${isMobile ? 'flex-col gap-2' : 'justify-between items-center'}`}>
                                         <Text className="text-gray-500">
                                             Вердикт вынесен: <Tag color={selectedApp.status === 'ACCEPTED' ? 'success' : 'error'}>{selectedApp.status}</Tag>
                                             {selectedApp.handledBy && (
-                                                <span className="ml-2 text-xs text-gray-400">
+                                                <span className="ml-2 text-xs text-gray-400 block sm:inline">
                                                     (Вердикт вынес: <strong className="text-gray-300">{selectedApp.handledBy}</strong>)
                                                 </span>
                                             )}
                                         </Text>
-                                        <Button onClick={() => setIsViewVisible(false)}>Закрыть</Button>
+                                        <Button onClick={() => setIsViewVisible(false)} className={isMobile ? 'w-full' : ''}>Закрыть</Button>
                                     </div>
                                 )}
                             </Form>

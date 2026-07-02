@@ -1,6 +1,6 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Button, Dropdown, Avatar, Space, ConfigProvider, theme, Spin } from 'antd';
+import { Layout, Menu, Button, Dropdown, Avatar, Space, ConfigProvider, theme, Spin, Drawer } from 'antd';
 import {
     MenuFoldOutlined,
     MenuUnfoldOutlined,
@@ -14,17 +14,35 @@ import {
     SettingOutlined,
     LogoutOutlined,
     HomeOutlined,
-    MessageOutlined
+    MessageOutlined,
+    CloseOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 
 const { Header, Sider, Content } = Layout;
 
+const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, []);
+    return isMobile;
+};
+
 const AdminLayout: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const isMobile = useIsMobile();
+
+    // Close mobile drawer on navigation
+    useEffect(() => {
+        setMobileMenuOpen(false);
+    }, [location.pathname]);
 
     // Map path to active menu key
     const getActiveKey = () => {
@@ -122,6 +140,17 @@ const AdminLayout: React.FC = () => {
         }
     ];
 
+    const sidebarMenu = (
+        <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={[getActiveKey()]}
+            items={menuItems}
+            className="py-4 font-medium"
+            style={{ background: '#0f1b2d', border: 'none' }}
+        />
+    );
+
     return (
         <ConfigProvider
             theme={{
@@ -159,26 +188,49 @@ const AdminLayout: React.FC = () => {
             }}
         >
             <Layout style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} className="h-screen select-none bg-[#0b1320] admin-layout-wrapper">
-                <Header style={{ background: '#0f1b2d', height: '64px' }} className="px-6 border-b border-white/5 flex items-center justify-between z-50 shrink-0">
-                    <Space size={16} align="center">
-                        <img
-                            src="/images/logo.webp"
-                            alt="StoryLegends Admin"
-                            style={{ height: '36px', width: 'auto', cursor: 'pointer' }}
-                            onClick={() => navigate('/admin/dashboard')}
-                        />
-                        <Button
-                            type="text"
-                            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                            onClick={() => setCollapsed(!collapsed)}
-                            className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white"
-                        />
-                    </Space>
+                <Header style={{ background: '#0f1b2d', height: '64px' }} className="px-4 md:px-6 border-b border-white/5 flex items-center justify-between z-50 shrink-0 relative">
+                    <div className="flex items-center gap-2">
+                        {isMobile ? (
+                            <Button
+                                type="text"
+                                icon={mobileMenuOpen ? <CloseOutlined /> : <MenuUnfoldOutlined />}
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white"
+                            />
+                        ) : (
+                            <Space size={16} align="center">
+                                <img
+                                    src="/images/logo.webp"
+                                    alt="StoryLegends Admin"
+                                    className="h-9 w-auto object-contain cursor-pointer"
+                                    onClick={() => navigate('/admin/dashboard')}
+                                />
+                                <Button
+                                    type="text"
+                                    icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                                    onClick={() => setCollapsed(!collapsed)}
+                                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white"
+                                />
+                            </Space>
+                        )}
+                    </div>
+
+                    {isMobile && (
+                        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-auto">
+                            <img
+                                src="/images/logo.webp"
+                                alt="StoryLegends Admin"
+                                className="h-7 w-auto object-contain cursor-pointer"
+                                onClick={() => navigate('/admin/dashboard')}
+                            />
+                        </div>
+                    )}
+
                     <Dropdown menu={{ items: profileMenuItems }} trigger={['click']}>
                         <Space className="cursor-pointer hover:bg-white/5 px-3 py-1.5 rounded-xl transition-all">
                             <Avatar
                                 src={user?.avatarUrl}
-                                size={36}
+                                size={isMobile ? 30 : 36}
                                 style={{
                                     backgroundColor: '#0086B3',
                                     verticalAlign: 'middle',
@@ -194,30 +246,55 @@ const AdminLayout: React.FC = () => {
                     </Dropdown>
                 </Header>
                 <Layout style={{ flex: 1, display: 'flex', flexDirection: 'row', overflow: 'hidden', minHeight: 0 }}>
-                    <Sider
-                        trigger={null}
-                        collapsible
-                        collapsed={collapsed}
-                        theme="dark"
-                        className="border-r border-white/5"
-                        width={240}
-                        collapsedWidth={80}
-                        style={{
-                            height: '100%',
-                            overflowY: 'auto',
-                            background: '#0f1b2d' // Matches sidebar medium navy theme
-                        }}
-                    >
-                        <Menu
+                    {/* Desktop Sidebar */}
+                    {!isMobile && (
+                        <Sider
+                            trigger={null}
+                            collapsible
+                            collapsed={collapsed}
                             theme="dark"
-                            mode="inline"
-                            selectedKeys={[getActiveKey()]}
-                            items={menuItems}
-                            className="py-4 font-medium"
-                            style={{ background: '#0f1b2d' }}
-                        />
-                    </Sider>
-                    <Content className="p-6 md:p-8 max-w-7xl w-full mx-auto" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                            className="border-r border-white/5"
+                            width={240}
+                            collapsedWidth={80}
+                            style={{
+                                height: '100%',
+                                overflowY: 'auto',
+                                background: '#0f1b2d' // Matches sidebar medium navy theme
+                            }}
+                        >
+                            {sidebarMenu}
+                        </Sider>
+                    )}
+
+                    {/* Mobile Drawer */}
+                    {isMobile && (
+                        <Drawer
+                            placement="left"
+                            open={mobileMenuOpen}
+                            onClose={() => setMobileMenuOpen(false)}
+                            width={260}
+                            closable={false}
+                            styles={{ body: { padding: 0, background: '#0f1b2d' }, header: { display: 'none' } }}
+                            className="admin-mobile-drawer"
+                        >
+                            <div className="p-4 pb-2 border-b border-white/5 flex items-center justify-between">
+                                <img
+                                    src="/images/logo.webp"
+                                    alt="StoryLegends"
+                                    style={{ height: '28px', width: 'auto' }}
+                                />
+                                <Button
+                                    type="text"
+                                    icon={<CloseOutlined />}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="text-gray-400 hover:text-white"
+                                />
+                            </div>
+                            {sidebarMenu}
+                        </Drawer>
+                    )}
+
+                    <Content className="p-3 md:p-6 lg:p-8 max-w-7xl w-full mx-auto" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
                         <Suspense fallback={
                             <div className="flex items-center justify-center min-h-[400px]">
                                 <Spin size="large" description="Загрузка страницы..." />
@@ -233,4 +310,3 @@ const AdminLayout: React.FC = () => {
 };
 
 export default AdminLayout;
-

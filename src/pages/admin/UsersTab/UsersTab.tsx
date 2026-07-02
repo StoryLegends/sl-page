@@ -108,9 +108,9 @@ const UsersTab: React.FC = () => {
                 const getWarningTooltip = () => {
                     const warnings: string[] = [];
                     if (record.hasBannedCoincidences) {
-                        warnings.push("Совпадения по IP с забаненными аккаунтами!");
+                        warnings.push("Совпадения по IP/Отпечатку с забаненными аккаунтами!");
                     } else if (record.hasCoincidences) {
-                        warnings.push("Совпадения по IP (Мультиаккаунт)");
+                        warnings.push("Совпадения по IP/Отпечатку (Мультиаккаунт)");
                     }
                     if (record.hasSuspiciousMods) {
                         warnings.push("Подозрительные моды в античите!");
@@ -126,12 +126,12 @@ const UsersTab: React.FC = () => {
                 };
 
                 return (
-                    <Space>
+                    <Space size={8}>
                         <Avatar src={record.avatarUrl} size="small">
                             {record.username.substring(0, 1).toUpperCase()}
                         </Avatar>
                         <div>
-                            <div className="font-bold text-white hover:text-[#00BFFF] transition-colors flex items-center gap-1.5">
+                            <div className="font-bold text-white hover:text-[#00BFFF] transition-colors flex items-center gap-1.5 text-xs md:text-sm">
                                 <span>{record.username}</span>
                                 {isSuspicious ? (
                                     <Tooltip title={getWarningTooltip()}>
@@ -139,7 +139,11 @@ const UsersTab: React.FC = () => {
                                     </Tooltip>
                                 ) : null}
                             </div>
-                            <div className="text-[10px] text-gray-500">ID: #{record.id}</div>
+                            <div className="text-[10px] text-gray-500 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                                <span>ID: #{record.id}</span>
+                                {record.minecraftNickname && <span className="md:hidden text-gray-400">| {record.minecraftNickname}</span>}
+                                <span className="md:hidden text-[#00BFFF]">({record.role.replace('ROLE_', '')})</span>
+                            </div>
                         </div>
                     </Space>
                 );
@@ -149,11 +153,13 @@ const UsersTab: React.FC = () => {
             title: 'Minecraft Ник',
             dataIndex: 'minecraftNickname',
             key: 'minecraftNickname',
+            responsive: ['md'] as any,
             render: (nick: string) => nick ? <code className="text-gray-300 font-semibold">{nick}</code> : <span className="text-gray-600">—</span>
         },
         {
             title: 'Discord Ник',
             key: 'discordNickname',
+            responsive: ['md'] as any,
             render: (_: any, record: User) => {
                 if (!record.discordNickname) return <span className="text-gray-600">—</span>;
                 return (
@@ -182,6 +188,7 @@ const UsersTab: React.FC = () => {
             title: 'Роль',
             dataIndex: 'role',
             key: 'role',
+            responsive: ['md'] as any,
             render: (role: string) => {
                 const color = role === 'ROLE_ADMIN' ? 'red' : role === 'ROLE_MODERATOR' ? 'purple' : 'blue';
                 return <Tag color={color}>{role.replace('ROLE_', '')}</Tag>;
@@ -190,6 +197,7 @@ const UsersTab: React.FC = () => {
         {
             title: 'Статус',
             key: 'status',
+            responsive: ['sm'] as any,
             render: (_: any, record: User) => (
                 <Space>
                     {record.banned ? (

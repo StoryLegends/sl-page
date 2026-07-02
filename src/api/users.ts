@@ -37,6 +37,25 @@ export interface User {
     lastLoginUserAgent2?: string;
     lastLoginTime1?: string;
     lastLoginTime2?: string;
+    // Browser Fingerprints
+    registrationCanvas?: string;
+    registrationWebgl?: string;
+    registrationTimezone?: string;
+    registrationLanguage?: string;
+    registrationHardware?: number;
+    registrationResolution?: string;
+    lastLoginCanvas1?: string;
+    lastLoginWebgl1?: string;
+    lastLoginTimezone1?: string;
+    lastLoginLanguage1?: string;
+    lastLoginHardware1?: number;
+    lastLoginResolution1?: string;
+    lastLoginCanvas2?: string;
+    lastLoginWebgl2?: string;
+    lastLoginTimezone2?: string;
+    lastLoginLanguage2?: string;
+    lastLoginHardware2?: number;
+    lastLoginResolution2?: string;
     // Warnings count
     warningsCount?: number;
     hasCoincidences?: boolean;

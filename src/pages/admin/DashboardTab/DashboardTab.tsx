@@ -99,11 +99,17 @@ const DashboardTab: React.FC = () => {
                         const related = await adminApi.getRelatedAccounts(u.id);
                         if (related && related.length > 0) {
                             const bannedRelated = related.filter(a => a.banned);
+                            const hasCanvasMatch = related.some(r => 
+                                (r.registrationCanvas && r.registrationCanvas !== 'unknown' && (r.registrationCanvas === u.registrationCanvas || r.registrationCanvas === u.lastLoginCanvas1 || r.registrationCanvas === u.lastLoginCanvas2)) ||
+                                (r.lastLoginCanvas1 && r.lastLoginCanvas1 !== 'unknown' && (r.lastLoginCanvas1 === u.registrationCanvas || r.lastLoginCanvas1 === u.lastLoginCanvas1 || r.lastLoginCanvas1 === u.lastLoginCanvas2))
+                            );
+                            const matchType = hasCanvasMatch ? 'IP/Отпечатку' : 'IP';
+
                             actions.push({
                                 key: `clone-${u.id}`,
                                 type: 'clone',
-                                title: 'Совпадение по IP (Мультиаккаунт)',
-                                description: `Найдено совпадение IP с другими аккаунтами (${related.length} шт.)${bannedRelated.length > 0 ? `, включая забаненные: ${bannedRelated.length} шт.` : ''}`,
+                                title: `Совпадение по ${matchType} (Мультиаккаунт)`,
+                                description: `Найдено совпадение по ${matchType} с другими аккаунтами (${related.length} шт.)${bannedRelated.length > 0 ? `, включая забаненные: ${bannedRelated.length} шт.` : ''}`,
                                 playerName: u.minecraftNickname || u.username,
                                 userId: u.id,
                                 timestamp: new Date().toISOString()
@@ -249,7 +255,7 @@ const DashboardTab: React.FC = () => {
 
             {/* Stats Cards */}
             <Row gutter={[16, 16]}>
-                <Col xs={24} sm={12} md={8} lg={4}>
+                <Col xs={12} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
                         onClick={() => navigate('/admin/users')}
@@ -273,7 +279,7 @@ const DashboardTab: React.FC = () => {
                     </Card>
                 </Col>
 
-                <Col xs={24} sm={12} md={8} lg={4}>
+                <Col xs={12} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
                         onClick={() => navigate('/admin/applications')}
@@ -297,7 +303,7 @@ const DashboardTab: React.FC = () => {
                     </Card>
                 </Col>
 
-                <Col xs={24} sm={12} md={8} lg={4}>
+                <Col xs={12} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
                         onClick={() => navigate('/admin/users')}
@@ -321,7 +327,7 @@ const DashboardTab: React.FC = () => {
                     </Card>
                 </Col>
 
-                <Col xs={24} sm={12} md={8} lg={4}>
+                <Col xs={12} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
                         onClick={() => navigate('/admin/users')}
@@ -345,7 +351,7 @@ const DashboardTab: React.FC = () => {
                     </Card>
                 </Col>
 
-                <Col xs={24} sm={12} md={8} lg={4}>
+                <Col xs={12} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
                         onClick={() => navigate('/admin/messenger')}
@@ -369,7 +375,7 @@ const DashboardTab: React.FC = () => {
                     </Card>
                 </Col>
 
-                <Col xs={24} sm={12} md={8} lg={4}>
+                <Col xs={12} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
                         onClick={() => navigate('/admin/users')}

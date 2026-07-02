@@ -10,13 +10,27 @@ const apiClient: AxiosInstance = axios.create({
     },
 });
 
-// Interceptor to add JWT token
+import { getBrowserFingerprint } from '../utils/fingerprint';
+
+// Get fingerprint once on client initialization to avoid any CPU load
+const fingerprint = getBrowserFingerprint();
+
+// Interceptor to add JWT token and browser fingerprints
 apiClient.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Add browser fingerprint headers to help detect multi-accounts
+        config.headers['X-Fingerprint-Canvas'] = fingerprint.canvas;
+        config.headers['X-Fingerprint-WebGL'] = fingerprint.webgl;
+        config.headers['X-Fingerprint-Timezone'] = fingerprint.timezone;
+        config.headers['X-Fingerprint-Language'] = fingerprint.language;
+        config.headers['X-Fingerprint-Hardware'] = fingerprint.hardware;
+        config.headers['X-Fingerprint-Resolution'] = fingerprint.resolution;
+
         return config;
     },
     (error) => Promise.reject(error)
