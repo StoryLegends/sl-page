@@ -128,6 +128,16 @@ const routes = [
         description: 'Информация о лицензиях и правах на использование контента StoryLegends.'
     },
     {
+        path: 'sponsorship',
+        title: 'Спонсорство - StoryLegends',
+        description: 'Поддержите сервер StoryLegends и получите уникальные привилегии!'
+    },
+    {
+        path: 'sponsorship/status',
+        title: 'Статус оплаты - StoryLegends',
+        description: 'Проверка статуса оплаты спонсорства на сервере StoryLegends.'
+    },
+    {
         path: '404',
         title: 'Загрузка... - StoryLegends',
         description: 'StoryLegends - Бесплатный ванильный сервер Minecraft'

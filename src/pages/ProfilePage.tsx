@@ -379,7 +379,7 @@ const ProfilePage = () => {
                                         </div>
 
                                         {/* Sponsorship Active Status Banner */}
-                                        {user.sponsorshipLevel && user.sponsorshipLevel > 0 && user.sponsorshipExpiresAt && (
+                                        {user.sponsorshipLevel !== undefined && user.sponsorshipLevel > 0 && user.sponsorshipExpiresAt && (
                                             <div className={`relative group p-4 rounded-xl border backdrop-blur-md animate-fadeIn ${
                                                 getDaysRemaining(user.sponsorshipExpiresAt) <= 7 
                                                     ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' 

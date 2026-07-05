@@ -241,7 +241,7 @@ const Sponsorship = () => {
         {/* Main Content with Transition when Modal is Open */}
         <div className={`transition-all duration-500 ease-out ${selectedLevel ? 'scale-95 opacity-30 blur-sm pointer-events-none' : 'scale-100 opacity-100 blur-0'}`}>
           
-          {user && user.sponsorshipLevel && user.sponsorshipLevel > 0 && user.sponsorshipExpiresAt && (
+          {user && user.sponsorshipLevel !== undefined && user.sponsorshipLevel > 0 && user.sponsorshipExpiresAt && (
             <div className="max-w-6xl mx-auto mb-8 md:mb-12">
               <div className={`relative group p-4 md:p-6 rounded-2xl border backdrop-blur-md transition-all duration-300 ${
                 getDaysRemaining(user.sponsorshipExpiresAt) <= 7 

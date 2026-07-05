@@ -17,40 +17,58 @@ const SponsorshipStatus: React.FC = () => {
     const sessionId = searchParams.get('session_id');
 
     useEffect(() => {
+        let isMounted = true;
+        let pollCount = 0;
+        let timeoutId: any = null;
+
         const verifySession = async () => {
             if (!sessionId) {
-                setStatus('failed');
-                setError('Неверная сессия оплаты');
-                setLoading(false);
+                if (isMounted) {
+                    setStatus('failed');
+                    setError('Неверная сессия оплаты');
+                    setLoading(false);
+                }
                 return;
             }
 
             try {
-                // Poll/check the status of checkout session from backend
                 const response = await apiClient.get(`/api/sponsorship/session/${sessionId}`);
                 const data = response.data;
 
+                if (!isMounted) return;
+
                 if (data.paymentStatus === 'paid') {
                     setStatus('success');
-                    // Refresh user globally to update sponsorshipLevel state immediately
                     await refreshUser();
+                    setLoading(false);
+                } else if (data.status === 'open' && pollCount < 5) {
+                    pollCount++;
+                    timeoutId = setTimeout(verifySession, 2000);
                 } else if (data.status === 'open') {
                     setStatus('processing');
+                    setLoading(false);
                 } else {
                     setStatus('failed');
-                    setError('Оплата не была завершена');
+                    setError('Оплата не была завершена. Если средства были списаны, пожалуйста, обратитесь в поддержку.');
+                    setLoading(false);
                 }
             } catch (err: any) {
                 console.error('Failed to verify payment session:', err);
-                setStatus('failed');
-                setError(err.response?.data?.error || 'Ошибка проверки платежа');
-            } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setStatus('failed');
+                    setError(err.response?.data?.error || 'Ошибка проверки платежа. Попробуйте обновить страницу.');
+                    setLoading(false);
+                }
             }
         };
 
         verifySession();
-    }, [sessionId]);
+
+        return () => {
+            isMounted = false;
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [sessionId, refreshUser]);
 
     return (
         <Layout>
@@ -82,6 +100,32 @@ const SponsorshipStatus: React.FC = () => {
                             В личный кабинет
                             <ArrowRight className="w-4 h-4" />
                         </button>
+                    </div>
+                )}
+
+                {!loading && status === 'processing' && (
+                    <div className="space-y-6 animate-fadeIn">
+                        <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto">
+                            <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+                        </div>
+                        <h1 className="text-3xl font-bold text-white font-minecraft tracking-wide">Платеж обрабатывается</h1>
+                        <p className="text-gray-300 leading-relaxed">
+                            Мы ожидаем подтверждения от платежной системы. Обычно это занимает не больше минуты.
+                        </p>
+                        <div className="flex gap-4 justify-center">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="px-6 py-3 bg-story-gold text-black font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]"
+                            >
+                                Обновить статус
+                            </button>
+                            <button
+                                onClick={() => navigate('/sponsorship')}
+                                className="px-6 py-3 bg-white/5 border border-white/10 hover:border-white/20 rounded-xl text-white font-semibold transition-all"
+                            >
+                                Назад к выбору тарифа
+                            </button>
+                        </div>
                     </div>
                 )}
 
