@@ -78,7 +78,7 @@ const Sponsorship = () => {
           try {
             const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_dummy');
             if (stripe && document.getElementById('checkout-container')) {
-              checkoutInstance = await (stripe as any).initEmbeddedCheckout({
+              checkoutInstance = await (stripe as any).createEmbeddedCheckoutPage({
                 clientSecret
               });
               checkoutInstance.mount('#checkout-container');
