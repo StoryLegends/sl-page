@@ -110,10 +110,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const hasFeature = (name: string) => {
-        // Admins and Mods override all feature flags for development/testing convenience
-        if (user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_MODERATOR') {
-            return true;
-        }
         return features.includes(name);
     };
 
