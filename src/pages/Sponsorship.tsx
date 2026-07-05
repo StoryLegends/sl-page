@@ -714,7 +714,7 @@ const Sponsorship = () => {
                 {clientSecret ? (
                   <div className="flex flex-col h-full">
                     <h3 className="text-xl md:text-2xl font-bold text-white mb-6 text-center font-minecraft">Оплата спонсорства</h3>
-                    <div id="checkout-container" className="bg-white/5 p-2 rounded-2xl border border-white/10 min-h-[400px]">
+                    <div id="checkout-container" className="bg-white/5 p-2 rounded-2xl border border-white/10 min-h-[350px] max-h-[50vh] md:max-h-[460px] overflow-y-auto pr-1">
                       {/* Stripe iframe will mount here */}
                     </div>
                     <button
