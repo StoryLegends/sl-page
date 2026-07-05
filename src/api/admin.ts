@@ -187,7 +187,7 @@ export const adminApi = {
         seasonDescription: string;
         seasonDate: string;
     }> => {
-        const response = await apiClient.get('/api/admin/settings/public');
+        const response = await apiClient.get('/api/settings/public');
         return response.data;
     },
 
