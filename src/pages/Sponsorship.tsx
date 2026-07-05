@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import apiClient from '../api/client';
 import { message } from 'antd';
+import { Navigate } from 'react-router-dom';
 
 const Level1Icon = () => (
   <svg viewBox="0 0 758 758" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-20 h-20 md:w-24 md:h-24 drop-shadow-[0_0_15px_rgba(0,191,255,0.5)]">
@@ -118,22 +119,7 @@ const Sponsorship = () => {
   };
 
   if (!hasFeature('sponsorship')) {
-      return (
-          <Layout>
-              <SEO title="Спонсорство" description="Поддержка проекта StoryLegends" />
-              <div className="pt-32 pb-24 text-center px-4 max-w-lg mx-auto flex flex-col items-center justify-center min-h-[70vh]">
-                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-story-gold/10 blur-[120px] rounded-full -z-10" />
-                  <Heart className="w-16 h-16 text-gray-500 mb-6 animate-pulse" />
-                  <h1 className="text-3xl font-bold text-white mb-4 font-minecraft tracking-wide">Раздел в разработке</h1>
-                  <p className="text-gray-400 mb-8 leading-relaxed">
-                      Эта страница готовится к открытию. Скоро вы сможете оформить спонсорство и поддержать любимый сервер StoryLegends напрямую!
-                  </p>
-                  <a href="/" className="px-6 py-3 bg-white/5 border border-white/10 hover:border-story-gold/50 rounded-xl text-white font-semibold transition-all">
-                      Вернуться на главную
-                  </a>
-              </div>
-          </Layout>
-      );
+    return <Navigate to="/404" replace />;
   }
 
   // Center the third card on load for mobile
