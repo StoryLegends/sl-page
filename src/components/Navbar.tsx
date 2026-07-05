@@ -23,7 +23,7 @@ const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, isAdmin, isModerator, logout } = useAuth();
+  const { user, isAdmin, isModerator, logout, hasFeature } = useAuth();
 
   useEffect(() => {
     const sentinel = document.getElementById('nav-sentinel');
@@ -61,7 +61,7 @@ const Navbar: React.FC = () => {
 
   const navLinks = [
     { name: 'Главная', href: '/' },
-    { name: 'Донат', href: 'https://boosty.to/lendspele/donate' },
+    { name: 'Донат', href: hasFeature('sponsorship') ? '/sponsorship' : 'https://boosty.to/lendspele/donate' },
     { name: 'О сервере', href: '/about' },
     { name: 'Правила', href: '/rules' },
     { name: 'FAQ', href: '/faq' },
@@ -70,8 +70,6 @@ const Navbar: React.FC = () => {
   ];
 
   navLinks.push({ name: 'Игроки', href: '/players' });
-
-
 
   const socialLinks = [
     { name: 'YouTube', url: 'https://www.youtube.com/@storylegends77', icon: Youtube, color: 'hover:text-[#FF0000]' },
@@ -100,9 +98,25 @@ const Navbar: React.FC = () => {
             <div className="hidden md:flex items-center gap-4">
               <div className="flex items-center gap-8">
                 {navLinks.map((link) => {
-                  const isActive = link.href === '/'
+                  const isExternal = link.href.startsWith('http');
+                  const isActive = !isExternal && (link.href === '/'
                     ? location.pathname === '/'
-                    : location.pathname.startsWith(link.href);
+                    : location.pathname.startsWith(link.href));
+
+                  if (isExternal) {
+                    return (
+                      <a
+                        key={link.name}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-bold uppercase tracking-wider transition-colors relative group text-gray-400 hover:text-white"
+                      >
+                        {link.name}
+                        <span className="absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-story-gold to-legends-blue transition-all duration-300 w-0 group-hover:w-full" />
+                      </a>
+                    );
+                  }
 
                   return (
                     <Link
@@ -218,16 +232,32 @@ const Navbar: React.FC = () => {
           </button>
         </div>
         <div className="flex flex-col px-8 gap-6 mt-4">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.href}
-              className="text-xl font-bold text-gray-400 hover:text-white transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {link.name}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isExternal = link.href.startsWith('http');
+            if (isExternal) {
+              return (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xl font-bold text-gray-400 hover:text-white transition-colors"
+                >
+                  {link.name}
+                </a>
+              );
+            }
+            return (
+              <Link
+                key={link.name}
+                to={link.href}
+                className="text-xl font-bold text-gray-400 hover:text-white transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
         </div>
         <div className="mt-auto p-8 border-t border-white/5 flex flex-col gap-6">
           <div className="flex justify-center gap-6">
