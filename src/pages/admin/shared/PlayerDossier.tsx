@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Drawer, Tabs, Descriptions, Table, Tag, Typography, Spin, Alert, Button, Space, Avatar, Badge, Divider, Tooltip, List, Modal, Form, Input, Checkbox, Switch, Dropdown, Select, message } from 'antd';
+import { Drawer, Tabs, Descriptions, Table, Tag, Typography, Spin, Alert, Button, Space, Avatar, Badge, Divider, Tooltip, List, Modal, Form, Input, Checkbox, Switch, Dropdown, Select, message, DatePicker } from 'antd';
 import {
     SafetyOutlined,
     CopyOutlined,
@@ -17,13 +17,16 @@ import {
     CheckOutlined,
     CloseOutlined,
     DiscordOutlined,
-    MessageOutlined
+    MessageOutlined,
+    CrownOutlined
 } from '@ant-design/icons';
 import { adminApi, anticheatApi, knownModsApi, type AuditLog, type WarningResponse, type AnticheatSnapshot, type ProcessInfo, type ModEntry } from '../../../api/admin';
 import { applicationsApi, type Application } from '../../../api/applications';
 import type { User, Badge as ApiBadge } from '../../../api/users';
 import IPGeoInfo from './IPGeoInfo';
 import { useAuth } from '../../../context/AuthContext';
+import dayjs from 'dayjs';
+import apiClient from '../../../api/client';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -141,11 +144,13 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
     const [isBanVisible, setIsBanVisible] = useState(false);
     const [isWarnVisible, setIsWarnVisible] = useState(false);
     const [isPlayerToggling, setIsPlayerToggling] = useState(false);
+    const [isSponsorshipVisible, setIsSponsorshipVisible] = useState(false);
 
     // Forms
     const [editForm] = Form.useForm();
     const [banForm] = Form.useForm();
     const [warnForm] = Form.useForm();
+    const [sponsorshipForm] = Form.useForm();
 
     useEffect(() => {
         const fetchAllBadges = async () => {
@@ -358,6 +363,25 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
         } catch (err) {
             console.error('Failed to ban user:', err);
             message.error('Не удалось забанить пользователя');
+        }
+    };
+
+    const handleUpdateSponsorship = async (values: any) => {
+        if (!user) return;
+        try {
+            const level = values.level;
+            const expiresAt = values.expiresAt ? values.expiresAt.toISOString() : null;
+
+            await apiClient.post(`/api/admin/users/${user.id}/sponsorship`, {
+                level,
+                expiresAt
+            });
+            message.success('Спонсорство игрока обновлено');
+            setIsSponsorshipVisible(false);
+            refreshAll();
+        } catch (err) {
+            console.error('Failed to update sponsorship:', err);
+            message.error('Не удалось обновить спонсорство');
         }
     };
 
@@ -845,6 +869,20 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                             </Button>
                             <Button
                                 size="small"
+                                icon={<CrownOutlined />}
+                                onClick={() => {
+                                    sponsorshipForm.setFieldsValue({
+                                        level: user.sponsorshipLevel || 0,
+                                        expiresAt: user.sponsorshipExpiresAt ? dayjs(user.sponsorshipExpiresAt) : null
+                                    });
+                                    setIsSponsorshipVisible(true);
+                                }}
+                                style={{ borderColor: 'rgba(255,215,0,0.3)', color: '#FFD700', background: 'rgba(255,215,0,0.08)' }}
+                            >
+                                Спонсорство
+                            </Button>
+                            <Button
+                                size="small"
                                 icon={<WarningOutlined />}
                                 onClick={() => setIsWarnVisible(true)}
                                 style={{ borderColor: 'rgba(250,173,20,0.3)', color: '#faad14', background: 'rgba(250,173,20,0.08)' }}
@@ -957,6 +995,16 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                                 </Space>
                                             </Descriptions.Item>
                                             <Descriptions.Item label="Email">{user.email || '—'}</Descriptions.Item>
+                                            <Descriptions.Item label="Спонсорство">
+                                                {user.sponsorshipLevel && user.sponsorshipLevel > 0 ? (
+                                                    <Tag color="gold" className="font-bold border-yellow-600/30 m-0">
+                                                        👑 Уровень {user.sponsorshipLevel} 
+                                                        {user.sponsorshipExpiresAt ? ` (до ${new Date(user.sponsorshipExpiresAt).toLocaleDateString('ru-RU')})` : ' (бессрочно)'}
+                                                    </Tag>
+                                                ) : (
+                                                    <span className="text-gray-500">Нет</span>
+                                                )}
+                                            </Descriptions.Item>
                                             <Descriptions.Item label="Дата регистрации">
                                                 <span className="text-gray-300">
                                                     {user.createdAt ? new Date(user.createdAt).toLocaleString('ru-RU') : '—'}
@@ -1368,6 +1416,35 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                     <Space>
                         <Button onClick={() => setIsBanVisible(false)}>Отмена</Button>
                         <Button type="primary" danger htmlType="submit">Заблокировать</Button>
+                    </Space>
+                </Form.Item>
+            </Form>
+        </Modal>
+
+        {/* Modal: Manage Sponsorship */}
+        <Modal
+            title={<span className="text-white font-bold font-minecraft">Спонсорство игрока: {user?.username}</span>}
+            open={isSponsorshipVisible}
+            onCancel={() => setIsSponsorshipVisible(false)}
+            footer={null}
+            className="custom-modal"
+        >
+            <Form form={sponsorshipForm} layout="vertical" onFinish={handleUpdateSponsorship} className="pt-4">
+                <Form.Item name="level" label="Уровень спонсорства" rules={[{ required: true }]}>
+                    <Select className="custom-select">
+                        <Select.Option value={0}>Нет спонсорства</Select.Option>
+                        <Select.Option value={1}>Уровень 1</Select.Option>
+                        <Select.Option value={2}>Уровень 2</Select.Option>
+                        <Select.Option value={3}>Уровень 3</Select.Option>
+                    </Select>
+                </Form.Item>
+                <Form.Item name="expiresAt" label="Дата окончания спонсорства (оставьте пустым для бессрочного)">
+                    <DatePicker showTime style={{ width: '100%' }} className="bg-white/5 border-white/10 text-white" placeholder="Выберите дату и время" />
+                </Form.Item>
+                <Form.Item className="mb-0 flex justify-end">
+                    <Space>
+                        <Button onClick={() => setIsSponsorshipVisible(false)}>Отмена</Button>
+                        <Button type="primary" htmlType="submit" style={{ background: '#FFD700', borderColor: '#FFD700', color: '#000', fontWeight: 600 }}>Сохранить</Button>
                     </Space>
                 </Form.Item>
             </Form>

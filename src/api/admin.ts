@@ -38,6 +38,16 @@ export interface SiteSettings {
     seasonDate: string;
 }
 
+export interface FeatureFlag {
+    id?: number;
+    name: string;
+    description: string;
+    enabled: boolean;
+    allowAdmins: boolean;
+    allowedUserIds: number[];
+    allowedRoles: string[];
+}
+
 export interface DashboardStats {
     totalUsers: number;
     pendingApplications: number;
@@ -217,6 +227,21 @@ export const adminApi = {
 
     logDossierView: async (userId: number): Promise<void> => {
         await apiClient.post(`/api/admin/users/${userId}/log-dossier-view`);
+    },
+
+    // Feature Flags
+    getFeatureFlags: async (): Promise<FeatureFlag[]> => {
+        const response = await apiClient.get('/api/admin/feature-flags');
+        return response.data;
+    },
+
+    saveFeatureFlag: async (flag: FeatureFlag): Promise<FeatureFlag> => {
+        const response = await apiClient.post('/api/admin/feature-flags', flag);
+        return response.data;
+    },
+
+    deleteFeatureFlag: async (id: number): Promise<void> => {
+        await apiClient.delete(`/api/admin/feature-flags/${id}`);
     }
 };
 

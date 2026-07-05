@@ -71,6 +71,8 @@ export interface User {
     hasBannedCoincidences?: boolean;
     hasSuspiciousMods?: boolean;
     createdAt?: string;
+    sponsorshipLevel?: number;
+    sponsorshipExpiresAt?: string | null;
 }
 
 export interface UpdateProfileData {
@@ -110,6 +112,12 @@ export const usersApi = {
     // Get user by ID (public)
     getById: async (id: number): Promise<User> => {
         const response = await apiClient.get(`/api/users/${id}`);
+        return response.data;
+    },
+
+    // Get active feature flags for current user
+    getActiveFeatureFlags: async (): Promise<string[]> => {
+        const response = await apiClient.get('/api/feature-flags/active');
         return response.data;
     },
 };

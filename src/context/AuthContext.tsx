@@ -12,13 +12,26 @@ interface AuthContextType {
     isAuthenticated: boolean;
     isAdmin: boolean;
     isModerator: boolean;
+    features: string[];
+    hasFeature: (name: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
+    const [features, setFeatures] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const loadFeatureFlags = async () => {
+        try {
+            const active = await usersApi.getActiveFeatureFlags();
+            setFeatures(active);
+        } catch (e) {
+            console.error('Failed to load active feature flags:', e);
+            setFeatures([]);
+        }
+    };
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -27,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 try {
                     const user = await usersApi.getMe();
                     setUser(user);
+                    await loadFeatureFlags();
                 } catch (error) {
                     console.error('Failed to fetch user', error);
                     localStorage.removeItem('token');
@@ -47,19 +61,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             if (response.token) {
                 localStorage.setItem('token', response.token);
-                // Also store verified status if crucial for redirection logic before getMe completes
-                // localStorage.setItem('emailVerified', String(response.emailVerified));
-
                 const user = await usersApi.getMe();
                 setUser(user);
+                await loadFeatureFlags();
                 return user;
             }
 
             throw new Error('Login failed: No token received');
         } catch (error: any) {
-            // Check if the error response indicates TOTP is required
-            // Note: If success response had totpRequired, we threw above.
-            // If API returned 401 with totpRequired in body, axios throws.
             if (error.response?.data?.totpRequired || error.totpRequired) {
                 throw { totpRequired: true };
             }
@@ -69,7 +78,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const register = async (data: any) => {
         await authApi.register(data);
-        // Registration now requires email verification, so we don't auto-login
     };
 
     const verifyEmail = async (token: string) => {
@@ -78,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.setItem('token', response.token);
             const user = await usersApi.getMe();
             setUser(user);
+            await loadFeatureFlags();
         }
     };
 
@@ -87,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             try {
                 const refreshed = await usersApi.getMe();
                 setUser(refreshed);
+                await loadFeatureFlags();
             } catch (error) {
                 console.error('Failed to refresh user', error);
             }
@@ -96,6 +106,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const logout = () => {
         localStorage.removeItem('token');
         setUser(null);
+        setFeatures([]);
+    };
+
+    const hasFeature = (name: string) => {
+        // Admins and Mods override all feature flags for development/testing convenience
+        if (user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_MODERATOR') {
+            return true;
+        }
+        return features.includes(name);
     };
 
     return (
@@ -111,6 +130,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 isAuthenticated: !!user,
                 isAdmin: user?.role === 'ROLE_ADMIN',
                 isModerator: user?.role === 'ROLE_MODERATOR',
+                features,
+                hasFeature,
             }}
         >
             {children}

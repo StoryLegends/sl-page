@@ -43,6 +43,12 @@ const PagesTab = lazy(() => import('./pages/admin/PagesTab/PagesTab'));
 const BadgesTab = lazy(() => import('./pages/admin/BadgesTab/BadgesTab'));
 const SettingsTab = lazy(() => import('./pages/admin/SettingsTab/SettingsTab'));
 const MessengerTab = lazy(() => import('./pages/admin/MessengerTab/MessengerTab'));
+const FeatureFlagsTab = lazy(() => import('./pages/admin/FeatureFlagsTab/FeatureFlagsTab'));
+
+// Lazy load new Public pages
+const Sponsorship = lazy(() => import('./pages/Sponsorship'));
+const SponsorshipStatus = lazy(() => import('./pages/SponsorshipStatus'));
+
 import GuestRoute from './components/GuestRoute';
 import DiscordCallbackPage from './pages/DiscordCallbackPage';
 import { AuthProvider } from './context/AuthContext';
@@ -75,6 +81,8 @@ function App() {
                 <Route path="/licenses" element={<Licenses />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="/brandkit" element={<BrandKit />} />
+                <Route path="/sponsorship" element={<Sponsorship />} />
+                <Route path="/sponsorship/status" element={<SponsorshipStatus />} />
 
                 <Route path="/register" element={
                   <GuestRoute>
@@ -117,6 +125,7 @@ function App() {
                   <Route path="logs" element={<LogsTab />} />
                   <Route path="pages" element={<PagesTab />} />
                   <Route path="badges" element={<BadgesTab />} />
+                  <Route path="feature-flags" element={<FeatureFlagsTab />} />
                   <Route path="settings" element={<SettingsTab />} />
                 </Route>
 
