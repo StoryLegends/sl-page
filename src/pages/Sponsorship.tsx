@@ -48,12 +48,13 @@ const pricing: Record<number, Array<{ days: string, price: string, note: string 
 };
 
 const Sponsorship = () => {
-  const { hasFeature } = useAuth();
+  const { hasFeature, user } = useAuth();
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<number>(0);
   const [activeCard, setActiveCard] = useState<number>(2); // Default focus to Level 3
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [isRecurring, setIsRecurring] = useState<boolean>(true);
   const carouselRef = useRef<HTMLDivElement>(null);
 
   // Prevent scrolling when modal is open
@@ -107,7 +108,8 @@ const Sponsorship = () => {
       const response = await apiClient.post('/api/sponsorship/checkout', {
         level: selectedLevel,
         days: daysVal,
-        price: priceVal
+        price: priceVal,
+        isRecurring: isRecurring
       });
       setClientSecret(response.data.clientSecret);
     } catch (err) {
@@ -197,6 +199,19 @@ const Sponsorship = () => {
         return null;
     }
   };
+  const getDaysRemaining = (expiryStr: string | null | undefined) => {
+    if (!expiryStr) return 0;
+    const expiry = new Date(expiryStr);
+    const now = new Date();
+    const diffTime = expiry.getTime() - now.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
 
   return (
     <Layout>
@@ -225,6 +240,73 @@ const Sponsorship = () => {
 
         {/* Main Content with Transition when Modal is Open */}
         <div className={`transition-all duration-500 ease-out ${selectedLevel ? 'scale-95 opacity-30 blur-sm pointer-events-none' : 'scale-100 opacity-100 blur-0'}`}>
+          
+          {user && user.sponsorshipLevel && user.sponsorshipLevel > 0 && user.sponsorshipExpiresAt && (
+            <div className="max-w-6xl mx-auto mb-8 md:mb-12">
+              <div className={`relative group p-4 md:p-6 rounded-2xl border backdrop-blur-md transition-all duration-300 ${
+                getDaysRemaining(user.sponsorshipExpiresAt) <= 7 
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' 
+                  : 'bg-green-500/10 border-green-500/30 text-green-200'
+              }`}>
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border shadow-lg ${
+                      getDaysRemaining(user.sponsorshipExpiresAt) <= 7 
+                        ? 'bg-amber-500/20 border-amber-500/30' 
+                        : 'bg-green-500/20 border-green-500/30'
+                    }`}>
+                      {getDaysRemaining(user.sponsorshipExpiresAt) <= 7 ? (
+                        <ShieldAlert className="w-6 h-6 text-amber-400 animate-pulse" />
+                      ) : (
+                        <Sparkles className="w-6 h-6 text-green-400" />
+                      )}
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-bold text-base md:text-lg font-minecraft tracking-wider text-white">
+                        Активное спонсорство: Уровень {user.sponsorshipLevel}
+                      </h4>
+                      <p className="text-sm opacity-80 mt-1">
+                        {user.subscriptionRecurring ? (
+                          getDaysRemaining(user.sponsorshipExpiresAt) <= 7 ? (
+                            `Внимание! Ваша подписка будет автоматически продлена через ${getDaysRemaining(user.sponsorshipExpiresAt)} дн. (${formatDate(user.sponsorshipExpiresAt)}).`
+                          ) : (
+                            `Подписка активна (автопродление включено). Следующее списание: ${formatDate(user.sponsorshipExpiresAt)}.`
+                          )
+                        ) : (
+                          getDaysRemaining(user.sponsorshipExpiresAt) <= 7 ? (
+                            `Внимание! Ваше спонсорство закончится через ${getDaysRemaining(user.sponsorshipExpiresAt)} дн. (${formatDate(user.sponsorshipExpiresAt)}).`
+                          ) : (
+                            `Разовый платёж. Действует до: ${formatDate(user.sponsorshipExpiresAt)}.`
+                          )
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                  {user.subscriptionRecurring && (
+                    <button
+                      onClick={async () => {
+                        if (confirm('Вы уверены, что хотите отменить автопродление спонсорства? Привилегии останутся активными до конца оплаченного срока.')) {
+                          try {
+                            const { usersApi } = await import('../api/users');
+                            await usersApi.cancelSubscription();
+                            message.success('Автопродление подписки успешно отменено.');
+                            window.location.reload();
+                          } catch (err) {
+                            console.error(err);
+                            message.error('Не удалось отменить автопродление. Попробуйте позже.');
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-white/5 hover:bg-red-500/20 hover:text-red-200 text-gray-300 font-bold text-xs md:text-sm rounded-xl border border-white/10 hover:border-red-500/30 transition-all uppercase tracking-wider whitespace-nowrap"
+                    >
+                      Отменить автопродление
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header Section */}
           <div className="text-center mb-10 md:mb-16 relative">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 md:w-64 md:h-64 bg-story-gold/20 blur-[100px] rounded-full -z-10" />
@@ -677,6 +759,43 @@ const Sponsorship = () => {
                           </div>
                         </button>
                       ))}
+                    </div>
+
+                    {/* Payment Mode Selector */}
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 md:mb-8 flex flex-col gap-3">
+                      <div className="text-xs font-bold text-gray-400 uppercase tracking-wider text-left">Тип оплаты</div>
+                      <div className="grid grid-cols-2 gap-2 bg-black/40 p-1.5 rounded-xl border border-white/5">
+                        <button
+                          type="button"
+                          onClick={() => setIsRecurring(false)}
+                          className={`py-2 text-xs md:text-sm font-bold uppercase tracking-wider rounded-lg transition-all duration-300 ${
+                            !isRecurring 
+                              ? 'bg-white/10 text-white shadow-lg border border-white/10' 
+                              : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          Разово
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsRecurring(true)}
+                          className={`py-2 text-xs md:text-sm font-bold uppercase tracking-wider rounded-lg transition-all duration-300 ${
+                            isRecurring 
+                              ? 'bg-story-gold text-black shadow-lg shadow-story-gold/25' 
+                              : 'text-gray-400 hover:text-white'
+                          }`}
+                        >
+                          Подписка
+                        </button>
+                      </div>
+                      <div className="text-[10px] md:text-xs text-gray-400 flex items-start gap-2 mt-1 leading-relaxed text-left">
+                        <Info className="w-3.5 h-3.5 text-story-gold shrink-0 mt-0.5" />
+                        <span>
+                          {isRecurring 
+                            ? 'Списание будет происходить автоматически по истечении периода. Вы сможете отменить автопродление в любой момент в настройках.' 
+                            : 'Списание произойдет один раз. Для продления по истечении срока нужно будет совершить повторную оплату вручную.'}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="mt-auto">

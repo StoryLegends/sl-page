@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
-import { User as UserIcon, Settings, Edit3, ShieldCheck, Mail, ExternalLink, LogOut, CheckCircle2, Clock, XCircle, AlertCircle } from 'lucide-react';
+import { User as UserIcon, Settings, Edit3, ShieldCheck, Mail, ExternalLink, LogOut, CheckCircle2, Clock, XCircle, AlertCircle, Sparkles, ShieldAlert } from 'lucide-react';
 import { applicationsApi, usersApi, totpApi, authApi, apiClient } from '../api';
 import { useNotification } from '../context/NotificationContext';
 import UserAvatar from '../components/UserAvatar';
@@ -225,8 +225,19 @@ const ProfilePage = () => {
             alert('Ошибка отключения 2FA');
         }
     };
+    const getDaysRemaining = (expiryStr: string | null | undefined) => {
+        if (!expiryStr) return 0;
+        const expiry = new Date(expiryStr);
+        const now = new Date();
+        const diffTime = expiry.getTime() - now.getTime();
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
 
-
+    const formatDate = (dateStr: string | null | undefined) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    };
 
     if (!user) return (
         <Layout>
@@ -366,6 +377,51 @@ const ProfilePage = () => {
                                                 </button>
                                             )}
                                         </div>
+
+                                        {/* Sponsorship Active Status Banner */}
+                                        {user.sponsorshipLevel && user.sponsorshipLevel > 0 && user.sponsorshipExpiresAt && (
+                                            <div className={`relative group p-4 rounded-xl border backdrop-blur-md animate-fadeIn ${
+                                                getDaysRemaining(user.sponsorshipExpiresAt) <= 7 
+                                                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-200' 
+                                                    : 'bg-green-500/10 border-green-500/30 text-green-200'
+                                            }`}>
+                                                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center border shadow-lg ${
+                                                            getDaysRemaining(user.sponsorshipExpiresAt) <= 7 
+                                                                ? 'bg-amber-500/20 border-amber-500/30' 
+                                                                : 'bg-green-500/20 border-green-500/30'
+                                                        }`}>
+                                                            {getDaysRemaining(user.sponsorshipExpiresAt) <= 7 ? (
+                                                                <ShieldAlert className="w-5 h-5 text-amber-400 animate-pulse" />
+                                                            ) : (
+                                                                <Sparkles className="w-5 h-5 text-green-400" />
+                                                            )}
+                                                        </div>
+                                                        <div className="text-left">
+                                                            <h4 className="font-bold text-sm uppercase tracking-wider text-white">
+                                                                Активный статус: Уровень {user.sponsorshipLevel}
+                                                            </h4>
+                                                            <p className="text-xs opacity-80 mt-1">
+                                                                {user.subscriptionRecurring ? (
+                                                                    getDaysRemaining(user.sponsorshipExpiresAt) <= 7 ? (
+                                                                        `Внимание! Ваша подписка на сервер будет автоматически продлена через ${getDaysRemaining(user.sponsorshipExpiresAt)} дн. (${formatDate(user.sponsorshipExpiresAt)}).`
+                                                                    ) : (
+                                                                        `Подписка активна (автопродление включено). Следующее списание: ${formatDate(user.sponsorshipExpiresAt)}.`
+                                                                    )
+                                                                ) : (
+                                                                    getDaysRemaining(user.sponsorshipExpiresAt) <= 7 ? (
+                                                                        `Внимание! Ваше спонсорство закончится через ${getDaysRemaining(user.sponsorshipExpiresAt)} дн. (${formatDate(user.sponsorshipExpiresAt)}).`
+                                                                    ) : (
+                                                                        `Разовый платёж. Действует до: ${formatDate(user.sponsorshipExpiresAt)}.`
+                                                                    )
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {/* Discord Verification Warning - Only show if NOT verified */}
                                         {!user.discordVerified && (
@@ -664,6 +720,69 @@ const ProfilePage = () => {
                                                     >
                                                         Настроить
                                                     </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Security: Sponsorship */}
+                                        <div className="border-t border-white/10 pt-6">
+                                            <h4 className="text-lg font-bold text-white mb-4">Управление спонсорством</h4>
+                                            <div className="bg-white/5 border border-white/5 rounded-xl p-6">
+                                                {user.sponsorshipLevel && user.sponsorshipLevel > 0 ? (
+                                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                                        <div className="text-left w-full">
+                                                            <p className="text-white font-medium mb-1">
+                                                                Активный статус: <span className="text-story-gold font-bold">Уровень {user.sponsorshipLevel}</span>
+                                                            </p>
+                                                            <p className="text-gray-400 text-sm">
+                                                                {user.subscriptionRecurring ? (
+                                                                    <>
+                                                                        Тип: <span className="text-green-400 font-semibold">Подписка (автопродление включено)</span>.
+                                                                        <br />
+                                                                        Следующее списание: {formatDate(user.sponsorshipExpiresAt)}
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        Тип: <span className="text-blue-400 font-semibold">Единоразовый платёж (автопродление выключено)</span>.
+                                                                        <br />
+                                                                        Действует до: {formatDate(user.sponsorshipExpiresAt)}
+                                                                    </>
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        {user.subscriptionRecurring && (
+                                                            <button
+                                                                onClick={async () => {
+                                                                    if (confirm('Вы уверены, что хотите отменить автопродление спонсорства? Привилегии останутся активными до конца оплаченного срока.')) {
+                                                                        try {
+                                                                            await usersApi.cancelSubscription();
+                                                                            showNotification('Автопродление подписки успешно отменено.', 'success');
+                                                                            refreshUser();
+                                                                        } catch (err) {
+                                                                            console.error(err);
+                                                                            showNotification('Не удалось отменить автопродление. Попробуйте позже.', 'error');
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg border border-red-500/20 hover:bg-red-500/30 transition-colors font-medium text-sm whitespace-nowrap"
+                                                            >
+                                                                Отменить автопродление
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                                        <div className="text-left">
+                                                            <p className="text-white font-medium mb-1">Спонсорство не активно</p>
+                                                            <p className="text-gray-400 text-sm">Поддержите сервер и получите уникальные косметические бонусы и префиксы в игре!</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => navigate('/sponsorship')}
+                                                            className="px-4 py-2 bg-story-gold text-black rounded-lg hover:bg-story-gold-light transition-colors font-bold text-sm whitespace-nowrap"
+                                                        >
+                                                            Стать спонсором
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>

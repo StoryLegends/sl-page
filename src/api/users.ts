@@ -73,6 +73,8 @@ export interface User {
     createdAt?: string;
     sponsorshipLevel?: number;
     sponsorshipExpiresAt?: string | null;
+    stripeSubscriptionId?: string | null;
+    subscriptionRecurring?: boolean;
 }
 
 export interface UpdateProfileData {
@@ -118,6 +120,12 @@ export const usersApi = {
     // Get active feature flags for current user
     getActiveFeatureFlags: async (): Promise<string[]> => {
         const response = await apiClient.get('/api/feature-flags/active');
+        return response.data;
+    },
+
+    // Cancel Stripe subscription auto-renewal
+    cancelSubscription: async (): Promise<any> => {
+        const response = await apiClient.post('/api/sponsorship/cancel');
         return response.data;
     },
 };
