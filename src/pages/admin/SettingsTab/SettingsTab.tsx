@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Input, Button, Switch, InputNumber, Space, Modal, Alert, message } from 'antd';
+import { Form, Input, Button, Switch, InputNumber, Space, Modal, Alert, message, Select } from 'antd';
 import { Sliders, Shield, Bell, Database, AlertTriangle, RefreshCw, Download, AlertCircle, Settings } from 'lucide-react';
 import { adminApi, type SiteSettings } from '../../../api/admin';
 import { useAuth } from '../../../context/AuthContext';
@@ -254,6 +254,52 @@ const SettingsTab: React.FC = () => {
                                 <Form.Item name="sendEmailOnApplicationRejected" valuePropName="checked" className="mb-0">
                                     <Switch size="small" />
                                 </Form.Item>
+                            </div>
+                        </div>
+
+                        {/* SECTION: SEASON SETTINGS */}
+                        <div>
+                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <RefreshCw className="w-3 h-3 text-legends-blue" />
+                                Настройки игрового сезона
+                            </div>
+
+                            <div className="flex flex-col gap-4 py-2">
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="space-y-0.5">
+                                        <div className="text-sm font-semibold text-white">Статус сервера/сезона</div>
+                                        <div className="text-xs text-gray-400">Определяет отображение плашки сезона на главной странице.</div>
+                                    </div>
+                                    <Form.Item name="seasonStatus" className="mb-0">
+                                        <Select className="w-48" style={{ background: 'transparent' }}>
+                                            <Select.Option value="active"><span className="text-gray-300">🟢 Сезон активен</span></Select.Option>
+                                            <Select.Option value="closed"><span className="text-gray-300">🔴 Сервер закрыт</span></Select.Option>
+                                            <Select.Option value="announced"><span className="text-gray-300">🔵 Сезон анонсирован</span></Select.Option>
+                                            <Select.Option value="soon"><span className="text-gray-300">🟡 Скоро открытие</span></Select.Option>
+                                        </Select>
+                                    </Form.Item>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5 py-2 border-b border-white/5">
+                                    <span className="text-xs text-gray-300 font-semibold">Название сезона (Title)</span>
+                                    <Form.Item name="seasonTitle" className="mb-0">
+                                        <Input className="bg-white/5 border-white/10 text-white rounded-lg" placeholder="Например, StoryLegends Island" />
+                                    </Form.Item>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5 py-2 border-b border-white/5">
+                                    <span className="text-xs text-gray-300 font-semibold">Описание сезона (Description)</span>
+                                    <Form.Item name="seasonDescription" className="mb-0">
+                                        <Input.TextArea rows={3} className="bg-white/5 border-white/10 text-white rounded-lg resize-none" placeholder="Описание сезона или заглушка при закрытии..." />
+                                    </Form.Item>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5 py-2">
+                                    <span className="text-xs text-gray-300 font-semibold">Дата / Время события (опционально)</span>
+                                    <Form.Item name="seasonDate" className="mb-0">
+                                        <Input className="bg-white/5 border-white/10 text-white rounded-lg" placeholder="Например, 12 декабря или Запущено!" />
+                                    </Form.Item>
+                                </div>
                             </div>
                         </div>
 

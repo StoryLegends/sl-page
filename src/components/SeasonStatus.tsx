@@ -1,5 +1,5 @@
-
-import { serverStatus } from '../config/serverStatus';
+import { useEffect, useState } from 'react';
+import { adminApi } from '../api/admin';
 import { PlayCircle, Lock, Megaphone, Clock } from 'lucide-react';
 
 const StatusConfig = {
@@ -46,8 +46,50 @@ const StatusConfig = {
 };
 
 const SeasonStatus = () => {
-    const { status, title, description, date } = serverStatus;
-    const config = StatusConfig[status];
+    const [seasonInfo, setSeasonInfo] = useState<{
+        status: 'active' | 'closed' | 'announced' | 'soon';
+        title: string;
+        description: string;
+        date: string;
+    } | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const res = await adminApi.getPublicSettings();
+                setSeasonInfo({
+                    status: (res.seasonStatus as any) || 'closed',
+                    title: res.seasonTitle || 'StoryLegends Island',
+                    description: res.seasonDescription || '',
+                    date: res.seasonDate || ''
+                });
+            } catch (err) {
+                console.error('Failed to fetch season status:', err);
+                // Fallback to static defaults
+                setSeasonInfo({
+                    status: 'closed',
+                    title: 'StoryLegends Island',
+                    description: 'Сезон подошел к концу! Спасибо всем за участие. Следите за новостями в нашем Discord, чтобы не пропускать новости об сервере!.',
+                    date: ''
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStatus();
+    }, []);
+
+    if (loading || !seasonInfo) {
+        return (
+            <div className="max-w-5xl mx-auto px-4 md:px-6 mb-24 flex items-center justify-center min-h-[150px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#00BFFF]"></div>
+            </div>
+        );
+    }
+
+    const { status, title, description, date } = seasonInfo;
+    const config = StatusConfig[status] || StatusConfig.closed;
     const Icon = config.icon;
 
     return (

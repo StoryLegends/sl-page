@@ -32,6 +32,10 @@ export interface SiteSettings {
     applicationsOpen: boolean;
     registrationOpen: boolean;
     maintenanceMode: boolean;
+    seasonStatus: string;
+    seasonTitle: string;
+    seasonDescription: string;
+    seasonDate: string;
 }
 
 export interface DashboardStats {
@@ -164,7 +168,15 @@ export const adminApi = {
         return response.data;
     },
 
-    getPublicSettings: async (): Promise<{ applicationsOpen: boolean; registrationOpen: boolean }> => {
+    getPublicSettings: async (): Promise<{ 
+        applicationsOpen: boolean; 
+        registrationOpen: boolean; 
+        maintenanceMode: boolean;
+        seasonStatus: string;
+        seasonTitle: string;
+        seasonDescription: string;
+        seasonDate: string;
+    }> => {
         const response = await apiClient.get('/api/admin/settings/public');
         return response.data;
     },
