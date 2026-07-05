@@ -33,6 +33,7 @@ jobs:
       - name: Build
         env:
           VITE_BASE_URL: /
+          VITE_STRIPE_PUBLIC_KEY: ${{ secrets.VITE_STRIPE_PUBLIC_KEY }}
         run: npm run build
 
       - name: Upload artifact
