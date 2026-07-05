@@ -242,6 +242,26 @@ export const adminApi = {
 
     deleteFeatureFlag: async (id: number): Promise<void> => {
         await apiClient.delete(`/api/admin/feature-flags/${id}`);
+    },
+
+    // Sponsorship Plans
+    getSponsorshipPlans: async (): Promise<SponsorshipPlan[]> => {
+        const response = await apiClient.get('/api/admin/sponsorship-plans');
+        return response.data;
+    },
+
+    createSponsorshipPlan: async (plan: SponsorshipPlan): Promise<SponsorshipPlan> => {
+        const response = await apiClient.post('/api/admin/sponsorship-plans', plan);
+        return response.data;
+    },
+
+    updateSponsorshipPlan: async (id: number, plan: SponsorshipPlan): Promise<SponsorshipPlan> => {
+        const response = await apiClient.put(`/api/admin/sponsorship-plans/${id}`, plan);
+        return response.data;
+    },
+
+    deleteSponsorshipPlan: async (id: number): Promise<void> => {
+        await apiClient.delete(`/api/admin/sponsorship-plans/${id}`);
     }
 };
 
@@ -317,6 +337,16 @@ export const anticheatApi = {
         return response.data;
     }
 };
+
+export interface SponsorshipPlan {
+    id?: number;
+    level: number;
+    days: number;
+    price: number;
+    isSubscription: boolean;
+    note?: string;
+    active: boolean;
+}
 
 // ==================== Known Mods ====================
 

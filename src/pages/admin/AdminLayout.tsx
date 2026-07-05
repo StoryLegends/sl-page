@@ -16,7 +16,8 @@ import {
     HomeOutlined,
     MessageOutlined,
     CloseOutlined,
-    KeyOutlined
+    KeyOutlined,
+    DollarOutlined
 } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 
@@ -56,6 +57,7 @@ const AdminLayout: React.FC = () => {
         if (path.includes('/admin/pages')) return 'pages';
         if (path.includes('/admin/badges')) return 'badges';
         if (path.includes('/admin/messenger')) return 'messenger';
+        if (path.includes('/admin/sponsorship')) return 'sponsorship';
         if (path.includes('/admin/feature-flags')) return 'feature-flags';
         if (path.includes('/admin/settings')) return 'settings';
         return 'dashboard';
@@ -120,6 +122,12 @@ const AdminLayout: React.FC = () => {
             icon: <KeyOutlined />,
             label: 'Серверные флаги',
             onClick: () => navigate('/admin/feature-flags')
+        },
+        {
+            key: 'sponsorship',
+            icon: <DollarOutlined />,
+            label: 'Тарифы спонсорства',
+            onClick: () => navigate('/admin/sponsorship')
         },
         {
             key: 'settings',

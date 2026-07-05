@@ -44,6 +44,7 @@ const BadgesTab = lazy(() => import('./pages/admin/BadgesTab/BadgesTab'));
 const SettingsTab = lazy(() => import('./pages/admin/SettingsTab/SettingsTab'));
 const MessengerTab = lazy(() => import('./pages/admin/MessengerTab/MessengerTab'));
 const FeatureFlagsTab = lazy(() => import('./pages/admin/FeatureFlagsTab/FeatureFlagsTab'));
+const SponsorshipPlansTab = lazy(() => import('./pages/admin/SponsorshipPlansTab/SponsorshipPlansTab'));
 
 // Lazy load new Public pages
 const Sponsorship = lazy(() => import('./pages/Sponsorship'));
@@ -126,9 +127,11 @@ function App() {
                   <Route path="pages" element={<PagesTab />} />
                   <Route path="badges" element={<BadgesTab />} />
                   <Route path="feature-flags" element={<FeatureFlagsTab />} />
+                  <Route path="sponsorship" element={<SponsorshipPlansTab />} />
                   <Route path="settings" element={<SettingsTab />} />
                 </Route>
 
+                <Route path="/404" element={<NotFound />} />
                 <Route path="/:customPath" element={<CustomDynamicPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

@@ -29,21 +29,21 @@ const Level3Icon = () => (
   </svg>
 );
 
-const pricing: Record<number, Array<{ days: string, price: string, note: string | null, badge?: string }>> = {
+const defaultPricing: Record<number, Array<{ days: string, price: string, note: string | null, badge?: string, isSubscription?: boolean }>> = {
   1: [
-    { days: '30 дней', price: '199₽', note: null },
-    { days: '60 дней', price: '349₽', note: 'скидка 12%', badge: 'ВЫГОДНО' },
-    { days: '90 дней', price: '499₽', note: 'скидка 16%', badge: 'ЛУЧШАЯ ЦЕНА' },
+    { days: '30 дней', price: '199₽', note: '199 ₽ / месяц (Автопродление)', isSubscription: true },
+    { days: '60 дней', price: '349₽', note: 'скидка 12%', badge: 'ВЫГОДНО', isSubscription: false },
+    { days: '90 дней', price: '499₽', note: 'скидка 16%', badge: 'ЛУЧШАЯ ЦЕНА', isSubscription: false },
   ],
   2: [
-    { days: '30 дней', price: '349₽', note: null },
-    { days: '60 дней', price: '629₽', note: 'скидка 10%', badge: 'ВЫГОДНО' },
-    { days: '90 дней', price: '899₽', note: 'скидка 14%', badge: 'ЛУЧШАЯ ЦЕНА' },
+    { days: '30 дней', price: '349₽', note: '349 ₽ / месяц (Автопродление)', isSubscription: true },
+    { days: '60 дней', price: '629₽', note: 'скидка 10%', badge: 'ВЫГОДНО', isSubscription: false },
+    { days: '90 дней', price: '899₽', note: 'скидка 14%', badge: 'ЛУЧШАЯ ЦЕНА', isSubscription: false },
   ],
   3: [
-    { days: '30 дней', price: '599₽', note: null },
-    { days: '60 дней', price: '1049₽', note: 'скидка 12%', badge: 'ВЫГОДНО' },
-    { days: '90 дней', price: '1499₽', note: 'скидка 17%', badge: 'ЛУЧШАЯ ЦЕНА' },
+    { days: '30 дней', price: '599₽', note: '599 ₽ / месяц (Автопродление)', isSubscription: true },
+    { days: '60 дней', price: '1049₽', note: 'скидка 12%', badge: 'ВЫГОДНО', isSubscription: false },
+    { days: '90 дней', price: '1499₽', note: 'скидка 17%', badge: 'ЛУЧШАЯ ЦЕНА', isSubscription: false },
   ]
 };
 
@@ -56,6 +56,69 @@ const Sponsorship = () => {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [isRecurring, setIsRecurring] = useState<boolean>(true);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const [pricingData, setPricingData] = useState(defaultPricing);
+
+  // Filtered plans for the selected level and recurrence type
+  const activePlans = selectedLevel && pricingData[selectedLevel]
+    ? pricingData[selectedLevel].filter(p => !!p.isSubscription === isRecurring)
+    : [];
+
+  // Reset selected plan when active plans change
+  useEffect(() => {
+    setSelectedPlan(0);
+  }, [isRecurring, selectedLevel]);
+
+  // Load plans from database on mount
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const response = await apiClient.get('/api/sponsorship/plans');
+        const dbPlans = response.data;
+        if (Array.isArray(dbPlans) && dbPlans.length > 0) {
+          const grouped: Record<number, any[]> = { 1: [], 2: [], 3: [] };
+          dbPlans.forEach((plan: any) => {
+            if (plan.active) {
+              if (!grouped[plan.level]) grouped[plan.level] = [];
+              
+              let badge = undefined;
+              if (plan.days === 60) badge = 'ВЫГОДНО';
+              if (plan.days === 90) badge = 'ЛУЧШАЯ ЦЕНА';
+
+              let note = plan.note;
+              if (!note) {
+                note = plan.isSubscription ? `${plan.price} ₽ / месяц (Автопродление)` : '(Разовый платёж)';
+              }
+
+              grouped[plan.level].push({
+                days: `${plan.days} дней`,
+                price: `${plan.price}₽`,
+                note: note,
+                badge: badge,
+                isSubscription: plan.isSubscription
+              });
+            }
+          });
+
+          // Sort plans within each level by days duration
+          Object.keys(grouped).forEach((lvlStr) => {
+            const lvl = parseInt(lvlStr, 10);
+            grouped[lvl].sort((a, b) => {
+              const aDays = parseInt(a.days.split(' ')[0], 10);
+              const bDays = parseInt(b.days.split(' ')[0], 10);
+              return aDays - bDays;
+            });
+          });
+
+          if (grouped[1].length > 0 || grouped[2].length > 0 || grouped[3].length > 0) {
+            setPricingData(grouped);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load dynamic pricing plans:', err);
+      }
+    };
+    fetchPlans();
+  }, []);
 
   // Prevent scrolling when modal is open
   useEffect(() => {
@@ -98,10 +161,10 @@ const Sponsorship = () => {
   }, [clientSecret]);
 
   const handleStripeCheckout = async () => {
-    if (!selectedLevel) return;
+    if (!selectedLevel || activePlans.length === 0) return;
     setCheckoutLoading(true);
     try {
-      const plan = pricing[selectedLevel][selectedPlan];
+      const plan = activePlans[selectedPlan];
       const priceVal = parseInt(plan.price.replace('₽', ''), 10);
       const daysVal = parseInt(plan.days.split(' ')[0], 10);
 
@@ -686,7 +749,7 @@ const Sponsorship = () => {
 
           {/* Scrollable Container */}
           <div className="absolute inset-0 overflow-y-auto overflow-x-hidden md:p-10 flex items-start md:items-center justify-center overscroll-contain">
-            <div className={`relative w-full min-h-[100dvh] md:min-h-0 md:h-auto max-w-4xl bg-[#0a0a0a] border-0 md:border border-white/10 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row z-10 transition-all duration-500 transform ${selectedLevel ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-8 opacity-0'}`}>
+            <div className={`relative w-full min-h-[100dvh] md:min-h-0 md:h-auto max-w-5xl bg-[#0a0a0a] border-0 md:border border-white/10 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row z-10 transition-all duration-500 transform ${selectedLevel ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-8 opacity-0'}`}>
 
               {/* Left Info Panel */}
               <div className={`w-full md:w-5/12 p-6 pt-20 md:p-8 border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden flex flex-col justify-start md:justify-center bg-gradient-to-br ${selectedLevel ? getLevelColor(selectedLevel) : ''}`}>
@@ -729,7 +792,7 @@ const Sponsorship = () => {
                     <h3 className="text-xl md:text-2xl font-bold text-white mb-6">Выберите срок подписки</h3>
 
                     <div className="space-y-3 mb-6 md:mb-8">
-                      {selectedLevel && pricing[selectedLevel as keyof typeof pricing].map((plan, index) => (
+                      {activePlans.map((plan, index) => (
                         <button
                           key={index}
                           onClick={() => setSelectedPlan(index)}
