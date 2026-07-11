@@ -26,7 +26,7 @@ const SeasonalEffects: React.FC = () => {
   const config = seasonalEffects[CURRENT_SEASON];
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
-  const isAdminPage = location.pathname.startsWith('/admin');
+  const isExcludedPage = location.pathname.startsWith('/admin') || location.pathname.startsWith('/sponsorship/checkout');
 
   // Use state to hold particles so that the component renders them
   const [renderedParticles, setRenderedParticles] = useState<Particle[]>([]);
@@ -46,7 +46,7 @@ const SeasonalEffects: React.FC = () => {
 
   // Initialize Particles
   useEffect(() => {
-    if (!config.enabled || isAdminPage) {
+    if (!config.enabled || isExcludedPage) {
       setRenderedParticles([]);
       particlesRef.current = [];
       return;
@@ -88,11 +88,11 @@ const SeasonalEffects: React.FC = () => {
     // Set ref for animation loop
     particlesRef.current = newParticles;
 
-  }, [config, isMobile, isAdminPage]);
+  }, [config, isMobile, isExcludedPage]);
 
   // Animation Loop
   useEffect(() => {
-    if (!config.enabled || isAdminPage) return;
+    if (!config.enabled || isExcludedPage) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       mouseRef.current = { x: e.clientX, y: e.clientY };
@@ -101,51 +101,46 @@ const SeasonalEffects: React.FC = () => {
     window.addEventListener('mousemove', handleMouseMove);
 
     const animate = () => {
-      if (!config.enabled || isAdminPage) return;
+      if (!config.enabled || isExcludedPage) return;
 
-      const particles = particlesRef.current;
-      const mouse = mouseRef.current;
       const width = window.innerWidth;
       const height = window.innerHeight;
-      const repulsionRadius = 150;
-      const repulsionStrength = 0.5;
+      const mouse = mouseRef.current;
 
-      particles.forEach(p => {
+      // Update positions
+      particlesRef.current.forEach((p) => {
         if (!p.element) return;
 
-        // 1. Base Movement
-        p.vx *= 0.95; // Friction
-        p.vy *= 0.95;
-
-        // Normal movement factor (decreases if pushed by physics)
-        const speedFactor = Math.max(0, 1 - Math.sqrt(p.vx * p.vx + p.vy * p.vy) * 0.1);
-        p.y += p.baseSpeedY * speedFactor;
-
-        // Sway
+        // 1. Apply Sway (Horizontal wave)
         p.swayOffset += p.swaySpeed;
-        p.x += Math.sin(p.swayOffset) * 0.5 * speedFactor;
+        const sway = Math.sin(p.swayOffset) * 0.5;
 
-        // Velocity (Repulsion + Inertia)
-        p.x += p.vx;
-        p.y += p.vy;
-        p.rotation += p.rotationSpeed;
-
-        // 2. Repulsion Logic
+        // 2. Apply Wind / Mouse repulsion
         const dx = p.x - mouse.x;
         const dy = p.y - mouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
+        let forceX = 0;
+        let forceY = 0;
 
-        if (dist < repulsionRadius) {
-          const force = (repulsionRadius - dist) / repulsionRadius;
+        if (dist < 120) {
+          const force = (120 - dist) / 120;
           const angle = Math.atan2(dy, dx);
-
-          p.vx += Math.cos(angle) * force * repulsionStrength;
-          p.vy += Math.sin(angle) * force * repulsionStrength;
+          forceX = Math.cos(angle) * force * 3;
+          forceY = Math.sin(angle) * force * 3;
         }
 
-        // 3. Screen Wrapping
+        // Apply velocities with friction
+        p.vx = p.vx * 0.95 + forceX;
+        p.vy = p.vy * 0.95 + forceY;
+
+        // 3. Move Particle
+        p.x += p.vx + sway;
+        p.y += p.vy + p.baseSpeedY;
+        p.rotation += p.rotationSpeed;
+
+        // Screen wrap
         if (p.x < -50) p.x = width + 50;
-        if (p.x > width + 50) p.x = -50;
+        else if (p.x > width + 50) p.x = -50;
 
         if (config.animation === 'float-up') {
           if (p.y < -50) p.y = height + 50;
@@ -166,15 +161,15 @@ const SeasonalEffects: React.FC = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       cancelAnimationFrame(requestRef.current);
     }
-  }, [config, isAdminPage]);
+  }, [config, isExcludedPage]);
 
-  if (!config.enabled || isAdminPage) {
+  if (!config.enabled || isExcludedPage) {
     return null;
   }
 
   // Render from state
   return (
-    <div className="fixed inset-0 pointer-events-none z-[-5] overflow-hidden h-full w-full">
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden h-full w-full">
       {renderedParticles.map((particle) => (
         <div
           key={particle.id}
