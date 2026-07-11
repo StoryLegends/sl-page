@@ -10,19 +10,6 @@ const SponsorshipStatus: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const { refreshUser, hasFeature, loading: authLoading } = useAuth();
-
-    if (authLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-[#0b1320]">
-                <Loader2 className="w-8 h-8 animate-spin text-[#FFD700]" />
-            </div>
-        );
-    }
-
-    if (!hasFeature('sponsorship')) {
-        return <Navigate to="/404" replace />;
-    }
-
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<'success' | 'failed' | 'processing'>('processing');
     const [error, setError] = useState<string | null>(null);
@@ -30,6 +17,8 @@ const SponsorshipStatus: React.FC = () => {
     const sessionId = searchParams.get('session_id');
 
     useEffect(() => {
+        if (authLoading || !hasFeature('sponsorship')) return;
+
         let isMounted = true;
         let pollCount = 0;
         let timeoutId: any = null;
@@ -81,7 +70,19 @@ const SponsorshipStatus: React.FC = () => {
             isMounted = false;
             if (timeoutId) clearTimeout(timeoutId);
         };
-    }, [sessionId, refreshUser]);
+    }, [sessionId, refreshUser, authLoading, hasFeature]);
+
+    if (authLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-[#0b1320]">
+                <Loader2 className="w-8 h-8 animate-spin text-[#FFD700]" />
+            </div>
+        );
+    }
+
+    if (!hasFeature('sponsorship')) {
+        return <Navigate to="/404" replace />;
+    }
 
     return (
         <Layout>

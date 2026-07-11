@@ -174,7 +174,7 @@ const SeasonalEffects: React.FC = () => {
 
   // Render from state
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden h-full w-full">
+    <div className="fixed inset-0 pointer-events-none z-[-5] overflow-hidden h-full w-full">
       {renderedParticles.map((particle) => (
         <div
           key={particle.id}
