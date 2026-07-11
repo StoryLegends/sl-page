@@ -160,6 +160,16 @@ const Sponsorship = () => {
     };
   }, [clientSecret]);
 
+  // Center the third card on load for mobile
+  useEffect(() => {
+    if (carouselRef.current && window.innerWidth < 768) {
+      const container = carouselRef.current;
+      setTimeout(() => {
+        container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
+      }, 300);
+    }
+  }, []);
+
   const handleStripeCheckout = async () => {
     if (!selectedLevel || activePlans.length === 0) return;
     setCheckoutLoading(true);
@@ -195,15 +205,7 @@ const Sponsorship = () => {
     return <Navigate to="/404" replace />;
   }
 
-  // Center the third card on load for mobile
-  useEffect(() => {
-    if (carouselRef.current && window.innerWidth < 768) {
-      const container = carouselRef.current;
-      setTimeout(() => {
-        container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
-      }, 300);
-    }
-  }, []);
+
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (window.innerWidth >= 768) return;
