@@ -3,10 +3,9 @@ import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import { Check, Heart, X, Sparkles, Shield, Crown, FileText, Info, ShieldAlert, CreditCard, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { loadStripe } from '@stripe/stripe-js';
 import apiClient from '../api/client';
 import { message } from 'antd';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 
 const Level1Icon = () => (
   <svg viewBox="0 0 758 758" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-20 h-20 md:w-24 md:h-24 drop-shadow-[0_0_15px_rgba(0,191,255,0.5)]">
@@ -49,10 +48,10 @@ const defaultPricing: Record<number, Array<{ days: string, price: string, note: 
 
 const Sponsorship = () => {
   const { hasFeature, loading: authLoading, user } = useAuth();
+  const navigate = useNavigate();
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<number>(0);
   const [activeCard, setActiveCard] = useState<number>(2); // Default focus to Level 3
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [isRecurring, setIsRecurring] = useState<boolean>(true);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -126,39 +125,11 @@ const Sponsorship = () => {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
-      setClientSecret(null); // Reset Stripe when modal is closed
     }
     return () => { document.body.style.overflow = 'unset'; }
   }, [selectedLevel]);
 
-  // Stripe Embedded Checkout Initialization
-  useEffect(() => {
-    let checkoutInstance: any = null;
-    const initStripe = async () => {
-      if (clientSecret) {
-        // Wait a tiny moment to ensure container element is mounted
-        setTimeout(async () => {
-          try {
-            const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_dummy');
-            if (stripe && document.getElementById('checkout-container')) {
-              checkoutInstance = await (stripe as any).createEmbeddedCheckoutPage({
-                clientSecret
-              });
-              checkoutInstance.mount('#checkout-container');
-            }
-          } catch (e) {
-            console.error('Failed to mount Stripe checkout:', e);
-          }
-        }, 100);
-      }
-    };
-    initStripe();
-    return () => {
-      if (checkoutInstance) {
-        checkoutInstance.destroy();
-      }
-    };
-  }, [clientSecret]);
+
 
   // Center the third card on load for mobile
   useEffect(() => {
@@ -184,7 +155,15 @@ const Sponsorship = () => {
         price: priceVal,
         isRecurring: isRecurring
       });
-      setClientSecret(response.data.clientSecret);
+
+      // Navigate to full-page checkout
+      navigate('/sponsorship/checkout', {
+        state: {
+          clientSecret: response.data.clientSecret,
+          levelName: `Уровень ${selectedLevel}`,
+          planInfo: `${plan.days} — ${plan.price} (${isRecurring ? 'Подписка' : 'Разовый платёж'})`
+        }
+      });
     } catch (err) {
       console.error('Failed to create checkout session:', err);
       message.error('Не удалось запустить оплату. Пожалуйста, попробуйте позже.');
@@ -784,7 +763,7 @@ const Sponsorship = () => {
             <div className={`relative w-full min-h-[100dvh] md:min-h-0 md:h-auto max-w-7xl bg-[#0a0a0a] border-0 md:border border-white/10 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row z-10 transition-all duration-500 transform ${selectedLevel ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-8 opacity-0'}`}>
 
               {/* Left Info Panel */}
-              <div className={`w-full md:w-5/12 p-6 pt-20 md:p-8 border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden flex flex-col justify-start md:justify-center bg-gradient-to-br ${selectedLevel ? getLevelColor(selectedLevel) : ''} ${clientSecret ? 'hidden md:hidden' : ''}`}>
+              <div className={`w-full md:w-5/12 p-6 pt-20 md:p-8 border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden flex flex-col justify-start md:justify-center bg-gradient-to-br ${selectedLevel ? getLevelColor(selectedLevel) : ''}`}>
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
 
                 <div className="relative z-10">
@@ -805,123 +784,106 @@ const Sponsorship = () => {
               </div>
 
               {/* Right Pricing Panel */}
-              <div className={`w-full ${clientSecret ? 'md:w-full max-w-4xl mx-auto' : 'md:w-7/12'} p-6 pb-24 md:p-8 bg-[#0d0d0d] flex flex-col min-h-[500px]`}>
-                {clientSecret ? (
-                  <div className="flex flex-col h-full">
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-6 text-center font-minecraft">Оплата спонсорства</h3>
-                    <div id="checkout-container" className="bg-white/5 p-2 md:p-4 rounded-2xl border border-white/10 min-h-[600px] h-auto pr-1">
-                      {/* Stripe iframe will mount here */}
-                    </div>
+              <div className="w-full md:w-7/12 p-6 pb-24 md:p-8 bg-[#0d0d0d] flex flex-col min-h-[500px]">
+                <h3 className="text-xl md:text-2xl font-bold text-white mb-6">Выберите срок подписки</h3>
+
+                <div className="space-y-3 mb-6 md:mb-8">
+                  {activePlans.map((plan, index) => (
                     <button
-                      onClick={() => setClientSecret(null)}
-                      className="w-full mt-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white text-sm font-semibold transition-all"
+                      key={index}
+                      onClick={() => setSelectedPlan(index)}
+                      className={`w-full flex items-center justify-between p-3 md:p-4 rounded-xl border transition-all duration-300 ${selectedPlan === index
+                          ? 'border-story-gold bg-story-gold/10 shadow-[0_0_15px_rgba(255,215,0,0.15)]'
+                          : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
+                        }`}
                     >
-                      Назад к выбору тарифа
+                      <div className="flex flex-col items-start">
+                        <span className="text-base md:text-lg font-bold text-white">{plan.days}</span>
+                        {plan.note && (
+                          <span className="text-xs md:text-sm text-gray-400 mt-1">
+                            {plan.note}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 md:gap-3">
+                        {plan.badge && (
+                          <span className={`px-2 py-0.5 md:px-2.5 md:py-1 rounded-md text-[10px] md:text-xs font-bold border ${plan.badge === 'ЛУЧШАЯ ЦЕНА'
+                              ? 'bg-story-gold/20 text-story-gold border-story-gold/30 shadow-[0_0_10px_rgba(255,215,0,0.2)]'
+                              : 'bg-green-500/20 text-green-400 border-green-500/30'
+                            }`}>
+                            {plan.badge}
+                          </span>
+                        )}
+                        <span className="text-lg md:text-xl font-bold text-story-gold">{plan.price}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Payment Mode Selector */}
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 md:mb-8 flex flex-col gap-3">
+                  <div className="text-xs font-bold text-gray-400 uppercase tracking-wider text-left">Тип оплаты</div>
+                  <div className="grid grid-cols-2 gap-2 bg-black/40 p-1.5 rounded-xl border border-white/5">
+                    <button
+                      type="button"
+                      onClick={() => setIsRecurring(false)}
+                      className={`py-2 text-xs md:text-sm font-bold uppercase tracking-wider rounded-lg transition-all duration-300 ${
+                        !isRecurring 
+                          ? 'bg-white/10 text-white shadow-lg border border-white/10' 
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Разово
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsRecurring(true)}
+                      className={`py-2 text-xs md:text-sm font-bold uppercase tracking-wider rounded-lg transition-all duration-300 ${
+                        isRecurring 
+                          ? 'bg-story-gold text-black shadow-lg shadow-story-gold/25' 
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Подписка
                     </button>
                   </div>
-                ) : (
-                  <>
-                    <h3 className="text-xl md:text-2xl font-bold text-white mb-6">Выберите срок подписки</h3>
+                  <div className="text-[10px] md:text-xs text-gray-400 flex items-start gap-2 mt-1 leading-relaxed text-left">
+                    <Info className="w-3.5 h-3.5 text-story-gold shrink-0 mt-0.5" />
+                    <span>
+                      {isRecurring 
+                        ? 'Списание будет происходить автоматически по истечении периода. Вы сможете отменить автопродление в любой момент в настройках.' 
+                        : 'Списание произойдет один раз. Для продления по истечении срока нужно будет совершить повторную оплату вручную.'}
+                    </span>
+                  </div>
+                </div>
 
-                    <div className="space-y-3 mb-6 md:mb-8">
-                      {activePlans.map((plan, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setSelectedPlan(index)}
-                          className={`w-full flex items-center justify-between p-3 md:p-4 rounded-xl border transition-all duration-300 ${selectedPlan === index
-                              ? 'border-story-gold bg-story-gold/10 shadow-[0_0_15px_rgba(255,215,0,0.15)]'
-                              : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'
-                            }`}
-                        >
-                          <div className="flex flex-col items-start">
-                            <span className="text-base md:text-lg font-bold text-white">{plan.days}</span>
-                            {plan.note && (
-                              <span className="text-xs md:text-sm text-gray-400 mt-1">
-                                {plan.note}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 md:gap-3">
-                            {plan.badge && (
-                              <span className={`px-2 py-0.5 md:px-2.5 md:py-1 rounded-md text-[10px] md:text-xs font-bold border ${plan.badge === 'ЛУЧШАЯ ЦЕНА'
-                                  ? 'bg-story-gold/20 text-story-gold border-story-gold/30 shadow-[0_0_10px_rgba(255,215,0,0.2)]'
-                                  : 'bg-green-500/20 text-green-400 border-green-500/30'
-                                }`}>
-                                {plan.badge}
-                              </span>
-                            )}
-                            <span className="text-lg md:text-xl font-bold text-story-gold">{plan.price}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                <div className="mt-auto">
+                  <button
+                    onClick={handleStripeCheckout}
+                    disabled={checkoutLoading}
+                    className="w-full py-3.5 md:py-4 rounded-xl bg-gradient-to-r from-story-gold to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold text-base md:text-lg transition-all text-center flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:-translate-y-1 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
+                    Оплатить картой
+                  </button>
+                  <p className="text-center text-gray-500 text-[10px] md:text-xs mt-4">
+                    Оплата производится через защищенный встроенный шлюз Stripe.
+                  </p>
 
-                    {/* Payment Mode Selector */}
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-6 md:mb-8 flex flex-col gap-3">
-                      <div className="text-xs font-bold text-gray-400 uppercase tracking-wider text-left">Тип оплаты</div>
-                      <div className="grid grid-cols-2 gap-2 bg-black/40 p-1.5 rounded-xl border border-white/5">
-                        <button
-                          type="button"
-                          onClick={() => setIsRecurring(false)}
-                          className={`py-2 text-xs md:text-sm font-bold uppercase tracking-wider rounded-lg transition-all duration-300 ${
-                            !isRecurring 
-                              ? 'bg-white/10 text-white shadow-lg border border-white/10' 
-                              : 'text-gray-400 hover:text-white'
-                          }`}
-                        >
-                          Разово
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsRecurring(true)}
-                          className={`py-2 text-xs md:text-sm font-bold uppercase tracking-wider rounded-lg transition-all duration-300 ${
-                            isRecurring 
-                              ? 'bg-story-gold text-black shadow-lg shadow-story-gold/25' 
-                              : 'text-gray-400 hover:text-white'
-                          }`}
-                        >
-                          Подписка
-                        </button>
-                      </div>
-                      <div className="text-[10px] md:text-xs text-gray-400 flex items-start gap-2 mt-1 leading-relaxed text-left">
-                        <Info className="w-3.5 h-3.5 text-story-gold shrink-0 mt-0.5" />
-                        <span>
-                          {isRecurring 
-                            ? 'Списание будет происходить автоматически по истечении периода. Вы сможете отменить автопродление в любой момент в настройках.' 
-                            : 'Списание произойдет один раз. Для продления по истечении срока нужно будет совершить повторную оплату вручную.'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-auto">
-                      <button
-                        onClick={handleStripeCheckout}
-                        disabled={checkoutLoading}
-                        className="w-full py-3.5 md:py-4 rounded-xl bg-gradient-to-r from-story-gold to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold text-base md:text-lg transition-all text-center flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:-translate-y-1 disabled:opacity-50 disabled:pointer-events-none"
+                  <div className="mt-4 pt-4 border-t border-white/10 text-center">
+                    <p className="text-gray-400 text-xs md:text-sm">
+                      Из Украины или Европы?{' '}
+                      <a
+                        href="https://discord.com/channels/1078405146557558824/1475513944448827492"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#4DD2FF] hover:text-white underline decoration-[#4DD2FF]/40 hover:decoration-white transition-colors"
                       >
-                        {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}
-                        Оплатить картой
-                      </button>
-                      <p className="text-center text-gray-500 text-[10px] md:text-xs mt-4">
-                        Оплата производится через защищенный встроенный шлюз Stripe.
-                      </p>
-
-                      <div className="mt-4 pt-4 border-t border-white/10 text-center">
-                        <p className="text-gray-400 text-xs md:text-sm">
-                          Из Украины или Европы?{' '}
-                          <a
-                            href="https://discord.com/channels/1078405146557558824/1475513944448827492"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#4DD2FF] hover:text-white underline decoration-[#4DD2FF]/40 hover:decoration-white transition-colors"
-                          >
-                            Оплатить прямым переводом (без комиссии)
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                )}
+                        Оплатить прямым переводом (без комиссии)
+                      </a>
+                    </p>
+                  </div>
+                </div>
               </div>
 
             </div>

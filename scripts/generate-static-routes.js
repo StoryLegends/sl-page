@@ -143,6 +143,11 @@ const routes = [
         description: 'Проверка статуса оплаты спонсорства на сервере StoryLegends.'
     },
     {
+        path: 'sponsorship/checkout',
+        title: 'Оплата спонсорства - StoryLegends',
+        description: 'Безопасная оплата спонсорства через Stripe на сервере StoryLegends.'
+    },
+    {
         path: '404',
         title: 'Загрузка... - StoryLegends',
         description: 'StoryLegends - Бесплатный ванильный сервер Minecraft'

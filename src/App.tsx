@@ -49,6 +49,7 @@ const SponsorshipPlansTab = lazy(() => import('./pages/admin/SponsorshipPlansTab
 // Lazy load new Public pages
 const Sponsorship = lazy(() => import('./pages/Sponsorship'));
 const SponsorshipStatus = lazy(() => import('./pages/SponsorshipStatus'));
+const SponsorshipCheckout = lazy(() => import('./pages/SponsorshipCheckout'));
 
 import GuestRoute from './components/GuestRoute';
 import DiscordCallbackPage from './pages/DiscordCallbackPage';
@@ -84,6 +85,7 @@ function App() {
                 <Route path="/brandkit" element={<BrandKit />} />
                 <Route path="/sponsorship" element={<Sponsorship />} />
                 <Route path="/sponsorship/status" element={<SponsorshipStatus />} />
+                <Route path="/sponsorship/checkout" element={<SponsorshipCheckout />} />
 
                 <Route path="/register" element={
                   <GuestRoute>
