@@ -170,7 +170,6 @@ const FAQ = () => {
                                 Как поставить скин на сервере?
                             </h3>
                             <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
-                                <span className="font-bold text-blue-400 mr-2">О:</span>
                                 <div className="space-y-4">
                                     <p>Если у вас лицензия, то мод на сервере сам считает ваш скин и поставит.</p>
 
@@ -194,6 +193,81 @@ const FAQ = () => {
                                         </ul>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 10 (Sponsorship FAQ 1) */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Если я получу бан, мне вернут деньги за подписку?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300 space-y-2">
+                                <div className="flex">
+                                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                                    <span>Спонсорство — это в первую очередь поддержка проекта, которая не дает иммунитета перед общими правилами сервера. Все игроки равны, поэтому в случае блокировки за нарушения возврат средств не производится.</span>
+                                </div>
+                                <p className="text-gray-400 pl-6">
+                                    Мы настоятельно рекомендуем соблюдать правила StoryLegends. Если вы считаете бан ошибочным, вы всегда можете подать апелляцию через систему тикетов в Discord.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 11 (Sponsorship FAQ 2) */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Я потерял свои уникальные предметы (снежок/нерушимое оружие). Что делать?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300 space-y-2">
+                                <div className="flex">
+                                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                                    <span>Не паникуйте! Если ваши уникальные предметы (или те, на которых была «нерушимость») были утеряны в лаве или деспавнились, создайте тикет в Discord. Мы восстановим их согласно вашему лимиту: <strong className="text-white">1 раз в месяц для Уровня 2</strong> и <strong className="text-white">2 раза в месяц для Уровня 3</strong> в течение 7 дней с момента обращения. Восстановление невозможно, если предмет утерян вследствие нарушения правил самим игроком.</span>
+                                </div>
+                                <p className="text-gray-450 pl-6 text-xs italic">
+                                    Примечание: обычные переименованные предметы без тега нерушимости восстановлению не подлежат.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 12 (Sponsorship FAQ 3) */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Что будет с подпиской, если сезон закончится раньше срока?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300 space-y-2">
+                                <div className="flex">
+                                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                                    <span>Мы ценим вашу поддержку, поэтому ваши средства не сгорят. На время межсезонья подписка «замораживается». Она автоматически активируется в день официального старта нового сезона.</span>
+                                </div>
+                                <p className="text-[#4DD2FF]/80 pl-6 text-xs">
+                                    Внимание: подписка размораживается в день старта для всех одновременно, независимо от того, зашли вы на сервер в первый день или позже.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 13 (Sponsorship FAQ 4) */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Куда уходят средства?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Все средства со спонсорства идут исключительно на оплату мощного хостинга, поддержание работы сервера и заказ платных плагинов/модов для улучшения геймплея.
                             </div>
                         </div>
                     </div>
