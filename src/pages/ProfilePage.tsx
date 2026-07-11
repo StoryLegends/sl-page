@@ -741,9 +741,15 @@ const ProfilePage = () => {
                                                                         <br />
                                                                         Следующее списание: {formatDate(user.sponsorshipExpiresAt)}
                                                                     </>
+                                                                ) : user.stripeSubscriptionId ? (
+                                                                    <>
+                                                                        Тип: <span className="text-amber-400 font-semibold">Автопродление отключено</span>.
+                                                                        <br />
+                                                                        Действует до: {formatDate(user.sponsorshipExpiresAt)}
+                                                                    </>
                                                                 ) : (
                                                                     <>
-                                                                        Тип: <span className="text-blue-400 font-semibold">Единоразовый платёж (автопродление выключено)</span>.
+                                                                        Тип: <span className="text-blue-400 font-semibold">Единоразовый платёж</span>.
                                                                         <br />
                                                                         Действует до: {formatDate(user.sponsorshipExpiresAt)}
                                                                     </>
@@ -769,6 +775,25 @@ const ProfilePage = () => {
                                                                 Отменить автопродление
                                                             </button>
                                                         )}
+                                                         {!user.subscriptionRecurring && user.stripeSubscriptionId && (
+                                                             <button
+                                                                 onClick={async () => {
+                                                                     if (confirm('Вы хотите возобновить автопродление спонсорства? Списания продолжатся автоматически.')) {
+                                                                         try {
+                                                                             await usersApi.resumeSubscription();
+                                                                             showNotification('Автопродление подписки успешно возобновлено.', 'success');
+                                                                             refreshUser();
+                                                                         } catch (err) {
+                                                                             console.error(err);
+                                                                             showNotification('Не удалось возобновить автопродление. Попробуйте позже.', 'error');
+                                                                         }
+                                                                     }
+                                                                 }}
+                                                                 className="px-4 py-2 bg-story-gold/10 text-story-gold rounded-lg border border-story-gold/30 hover:bg-story-gold/20 transition-colors font-medium text-sm whitespace-nowrap"
+                                                             >
+                                                                 Включить автопродление
+                                                             </button>
+                                                         )}
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col md:flex-row items-center justify-between gap-4">

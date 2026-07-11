@@ -40,12 +40,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 try {
                     const user = await usersApi.getMe();
                     setUser(user);
-                    await loadFeatureFlags();
                 } catch (error) {
                     console.error('Failed to fetch user', error);
                     localStorage.removeItem('token');
                 }
             }
+            await loadFeatureFlags();
             setLoading(false);
         };
         checkAuth();

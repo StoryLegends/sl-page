@@ -128,4 +128,10 @@ export const usersApi = {
         const response = await apiClient.post('/api/sponsorship/cancel');
         return response.data;
     },
+
+    // Resume Stripe subscription auto-renewal
+    resumeSubscription: async (): Promise<any> => {
+        const response = await apiClient.post('/api/sponsorship/resume');
+        return response.data;
+    },
 };

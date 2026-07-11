@@ -48,7 +48,7 @@ const defaultPricing: Record<number, Array<{ days: string, price: string, note: 
 };
 
 const Sponsorship = () => {
-  const { hasFeature, user } = useAuth();
+  const { hasFeature, loading: authLoading, user } = useAuth();
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<number>(0);
   const [activeCard, setActiveCard] = useState<number>(2); // Default focus to Level 3
@@ -182,6 +182,14 @@ const Sponsorship = () => {
       setCheckoutLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0b1320]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#FFD700]" />
+      </div>
+    );
+  }
 
   if (!hasFeature('sponsorship')) {
     return <Navigate to="/404" replace />;
@@ -335,6 +343,8 @@ const Sponsorship = () => {
                           ) : (
                             `Подписка активна (автопродление включено). Следующее списание: ${formatDate(user.sponsorshipExpiresAt)}.`
                           )
+                        ) : user.stripeSubscriptionId ? (
+                          `Автопродление отключено. Спонсорство действует до: ${formatDate(user.sponsorshipExpiresAt)}.`
                         ) : (
                           getDaysRemaining(user.sponsorshipExpiresAt) <= 7 ? (
                             `Внимание! Ваше спонсорство закончится через ${getDaysRemaining(user.sponsorshipExpiresAt)} дн. (${formatDate(user.sponsorshipExpiresAt)}).`
@@ -363,6 +373,26 @@ const Sponsorship = () => {
                       className="px-4 py-2 bg-white/5 hover:bg-red-500/20 hover:text-red-200 text-gray-300 font-bold text-xs md:text-sm rounded-xl border border-white/10 hover:border-red-500/30 transition-all uppercase tracking-wider whitespace-nowrap"
                     >
                       Отменить автопродление
+                    </button>
+                  )}
+                  {!user.subscriptionRecurring && user.stripeSubscriptionId && (
+                    <button
+                      onClick={async () => {
+                        if (confirm('Вы хотите возобновить автопродление спонсорства? Списания продолжатся автоматически.')) {
+                          try {
+                            const { usersApi } = await import('../api/users');
+                            await usersApi.resumeSubscription();
+                            message.success('Автопродление подписки успешно возобновлено.');
+                            window.location.reload();
+                          } catch (err) {
+                            console.error(err);
+                            message.error('Не удалось возобновить автопродление. Попробуйте позже.');
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-story-gold/10 hover:bg-story-gold/20 text-story-gold font-bold text-xs md:text-sm rounded-xl border border-story-gold/30 hover:border-story-gold/50 transition-all uppercase tracking-wider whitespace-nowrap"
+                    >
+                      Включить автопродление
                     </button>
                   )}
                 </div>
@@ -752,7 +782,7 @@ const Sponsorship = () => {
             <div className={`relative w-full min-h-[100dvh] md:min-h-0 md:h-auto max-w-7xl bg-[#0a0a0a] border-0 md:border border-white/10 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row z-10 transition-all duration-500 transform ${selectedLevel ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-8 opacity-0'}`}>
 
               {/* Left Info Panel */}
-              <div className={`w-full md:w-5/12 p-6 pt-20 md:p-8 border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden flex flex-col justify-start md:justify-center bg-gradient-to-br ${selectedLevel ? getLevelColor(selectedLevel) : ''}`}>
+              <div className={`w-full md:w-5/12 p-6 pt-20 md:p-8 border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden flex flex-col justify-start md:justify-center bg-gradient-to-br ${selectedLevel ? getLevelColor(selectedLevel) : ''} ${clientSecret ? 'hidden md:hidden' : ''}`}>
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"></div>
 
                 <div className="relative z-10">
@@ -773,7 +803,7 @@ const Sponsorship = () => {
               </div>
 
               {/* Right Pricing Panel */}
-              <div className="w-full md:w-7/12 p-6 pb-24 md:p-8 bg-[#0d0d0d] flex flex-col min-h-[500px]">
+              <div className={`w-full ${clientSecret ? 'md:w-full max-w-4xl mx-auto' : 'md:w-7/12'} p-6 pb-24 md:p-8 bg-[#0d0d0d] flex flex-col min-h-[500px]`}>
                 {clientSecret ? (
                   <div className="flex flex-col h-full">
                     <h3 className="text-xl md:text-2xl font-bold text-white mb-6 text-center font-minecraft">Оплата спонсорства</h3>

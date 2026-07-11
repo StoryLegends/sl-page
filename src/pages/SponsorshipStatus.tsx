@@ -9,7 +9,15 @@ import apiClient from '../api/client';
 const SponsorshipStatus: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { refreshUser, hasFeature } = useAuth();
+    const { refreshUser, hasFeature, loading: authLoading } = useAuth();
+
+    if (authLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-[#0b1320]">
+                <Loader2 className="w-8 h-8 animate-spin text-[#FFD700]" />
+            </div>
+        );
+    }
 
     if (!hasFeature('sponsorship')) {
         return <Navigate to="/404" replace />;
