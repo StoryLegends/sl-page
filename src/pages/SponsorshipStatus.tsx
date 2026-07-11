@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, Navigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import { Sparkles, XCircle, Loader2, ArrowRight } from 'lucide-react';
@@ -9,7 +9,12 @@ import apiClient from '../api/client';
 const SponsorshipStatus: React.FC = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const { refreshUser } = useAuth();
+    const { refreshUser, hasFeature } = useAuth();
+
+    if (!hasFeature('sponsorship')) {
+        return <Navigate to="/404" replace />;
+    }
+
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<'success' | 'failed' | 'processing'>('processing');
     const [error, setError] = useState<string | null>(null);
