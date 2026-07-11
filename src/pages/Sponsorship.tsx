@@ -749,7 +749,7 @@ const Sponsorship = () => {
 
           {/* Scrollable Container */}
           <div className="absolute inset-0 overflow-y-auto overflow-x-hidden md:p-10 flex items-start md:items-center justify-center overscroll-contain">
-            <div className={`relative w-full min-h-[100dvh] md:min-h-0 md:h-auto max-w-5xl bg-[#0a0a0a] border-0 md:border border-white/10 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row z-10 transition-all duration-500 transform ${selectedLevel ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-8 opacity-0'}`}>
+            <div className={`relative w-full min-h-[100dvh] md:min-h-0 md:h-auto max-w-7xl bg-[#0a0a0a] border-0 md:border border-white/10 md:rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row z-10 transition-all duration-500 transform ${selectedLevel ? 'scale-100 translate-y-0 opacity-100' : 'scale-95 translate-y-8 opacity-0'}`}>
 
               {/* Left Info Panel */}
               <div className={`w-full md:w-5/12 p-6 pt-20 md:p-8 border-b md:border-b-0 md:border-r border-white/10 relative overflow-hidden flex flex-col justify-start md:justify-center bg-gradient-to-br ${selectedLevel ? getLevelColor(selectedLevel) : ''}`}>
@@ -777,7 +777,7 @@ const Sponsorship = () => {
                 {clientSecret ? (
                   <div className="flex flex-col h-full">
                     <h3 className="text-xl md:text-2xl font-bold text-white mb-6 text-center font-minecraft">Оплата спонсорства</h3>
-                    <div id="checkout-container" className="bg-white/5 p-2 rounded-2xl border border-white/10 min-h-[350px] max-h-[50vh] md:max-h-[460px] overflow-y-auto pr-1">
+                    <div id="checkout-container" className="bg-white/5 p-2 md:p-4 rounded-2xl border border-white/10 min-h-[600px] h-auto pr-1">
                       {/* Stripe iframe will mount here */}
                     </div>
                     <button
