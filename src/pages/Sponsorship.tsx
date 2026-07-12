@@ -420,7 +420,7 @@ const Sponsorship = () => {
 
           {/* Sponsorship Goal and Top Donators Section */}
           {publicSettings && (publicSettings.sponsorshipGoalEnabled || (publicSettings.topDonatorAmount1 > 0)) && (
-            <div className="max-w-6xl mx-auto mb-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch relative z-10 text-left">
+            <div className={`max-w-6xl mx-auto mb-16 grid grid-cols-1 ${publicSettings.sponsorshipGoalEnabled ? 'md:grid-cols-2' : 'md:grid-cols-1 max-w-2xl'} gap-8 items-stretch relative z-10 text-left`}>
               
               {/* Progress Goal */}
               {publicSettings.sponsorshipGoalEnabled && (

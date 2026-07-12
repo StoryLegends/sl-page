@@ -108,6 +108,28 @@ const SponsorshipPlansTab: React.FC = () => {
         }
     };
 
+    const handleFinishGoal = async () => {
+        setSettingsSaving(true);
+        try {
+            await adminApi.updateSettings({
+                sponsorshipGoalEnabled: false,
+                sponsorshipGoalCurrent: 0
+            });
+            message.success('Сбор успешно завершен. Прогресс-бар скрыт.');
+            goalForm.setFieldsValue({
+                sponsorshipGoalEnabled: false,
+                sponsorshipGoalCurrent: 0
+            });
+            fetchSettings();
+            fetchAnalytics();
+        } catch (err) {
+            console.error('Failed to finish goal:', err);
+            message.error('Не удалось завершить сбор');
+        } finally {
+            setSettingsSaving(false);
+        }
+    };
+
     const handleOpenCreate = () => {
         setEditingPlan(null);
         form.resetFields();
@@ -587,7 +609,25 @@ const SponsorshipPlansTab: React.FC = () => {
                             </Form.Item>
                         </div>
 
-                        <div className="pt-2 flex justify-end">
+                        <div className="pt-2 flex justify-end gap-3">
+                            <Popconfirm
+                                title="Завершить сбор средств?"
+                                description="Это скроет прогресс-бар цели со страницы спонсорства, но сохранит стенд топ-донатеров."
+                                onConfirm={handleFinishGoal}
+                                okText="Да, завершить"
+                                cancelText="Отмена"
+                                okButtonProps={{ danger: true }}
+                            >
+                                <Button 
+                                    danger 
+                                    ghost
+                                    loading={settingsSaving}
+                                    className="border-red-500/50 text-red-400 hover:text-red-300 rounded-lg h-9 px-4 transition-all hover:bg-red-500/10"
+                                >
+                                    Завершить сбор
+                                </Button>
+                            </Popconfirm>
+
                             <Button 
                                 type="primary" 
                                 htmlType="submit" 
