@@ -56,6 +56,20 @@ const Sponsorship = () => {
   const [isRecurring, setIsRecurring] = useState<boolean>(true);
   const carouselRef = useRef<HTMLDivElement>(null);
   const [pricingData, setPricingData] = useState(defaultPricing);
+  const [publicSettings, setPublicSettings] = useState<any>(null);
+
+  // Load public settings for goals/top donators
+  useEffect(() => {
+    const fetchPublicSettings = async () => {
+      try {
+        const response = await apiClient.get('/api/settings/public');
+        setPublicSettings(response.data);
+      } catch (err) {
+        console.error('Failed to load public settings:', err);
+      }
+    };
+    fetchPublicSettings();
+  }, []);
 
   // Filtered plans for the selected level and recurrence type
   const activePlans = selectedLevel && pricingData[selectedLevel]
@@ -194,6 +208,14 @@ const Sponsorship = () => {
     const newIndex = Math.min(2, Math.max(0, Math.round(scrollLeft / cardWidth)));
     setActiveCard(newIndex);
   };
+
+  const isSponsorshipActive = user && user.sponsorshipLevel && user.sponsorshipLevel > 0 && (
+    !user.sponsorshipExpiresAt || new Date(user.sponsorshipExpiresAt) > new Date()
+  );
+
+  const currentSponsorshipLevel = isSponsorshipActive ? (user?.sponsorshipLevel || 0) : 0;
+  const isDowngrade = selectedLevel !== null && currentSponsorshipLevel > 0 && selectedLevel < currentSponsorshipLevel;
+  const isDuplicateLevel = selectedLevel !== null && currentSponsorshipLevel > 0 && selectedLevel === currentSponsorshipLevel;
 
   const handleSupportClick = (level: number) => {
     setSelectedLevel(level);
@@ -395,6 +417,159 @@ const Sponsorship = () => {
               Актуально для всех сезонов. Привилегии действуют в течение оплаченного периода подписки.
             </p>
           </div>
+
+          {/* Sponsorship Goal and Top Donators Section */}
+          {publicSettings && (publicSettings.sponsorshipGoalEnabled || (publicSettings.topDonatorAmount1 > 0)) && (
+            <div className="max-w-6xl mx-auto mb-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch relative z-10 text-left">
+              
+              {/* Progress Goal */}
+              {publicSettings.sponsorshipGoalEnabled && (
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 via-legends-blue/10 to-story-gold/10 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative h-full bg-[#0d0d0d] border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Цель сбора</span>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-story-gold/15 text-story-gold border border-story-gold/20 animate-pulse-slow">
+                          Сбор средств
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-2xl font-bold text-white mb-2 font-minecraft tracking-wider">
+                        {publicSettings.sponsorshipGoalText || 'На оплату хостинга'}
+                      </h3>
+                      
+                      <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+                        Все полученные средства идут непосредственно на оплату и поддержание работы инфраструктуры сервера. Каждая ваша поддержка продлевает жизнь проекту.
+                      </p>
+                    </div>
+
+                    <div>
+                      {/* Progress Metrics */}
+                      <div className="flex justify-between items-baseline mb-2">
+                        <span className="text-3xl font-extrabold text-white font-minecraft">
+                          {publicSettings.sponsorshipGoalCurrent} <span className="text-lg font-normal text-gray-400">₽</span>
+                        </span>
+                        <span className="text-sm text-gray-500 font-medium">
+                          цель: {publicSettings.sponsorshipGoalTarget} ₽
+                        </span>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="w-full h-4 bg-black/40 rounded-full overflow-hidden p-0.5 border border-white/5 relative">
+                        <div 
+                          className="h-full rounded-full bg-gradient-to-r from-story-gold via-yellow-400 to-amber-500 shadow-[0_0_10px_rgba(255,215,0,0.5)] transition-all duration-1000 ease-out"
+                          style={{ 
+                            width: `${Math.min(100, Math.max(0, (publicSettings.sponsorshipGoalCurrent / publicSettings.sponsorshipGoalTarget) * 100))}%` 
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="flex justify-between text-xs text-gray-500 mt-2 font-medium">
+                        <span>Собрано: {Math.round(Math.min(100, (publicSettings.sponsorshipGoalCurrent / publicSettings.sponsorshipGoalTarget) * 100))}%</span>
+                        <span>Осталось: {Math.max(0, publicSettings.sponsorshipGoalTarget - publicSettings.sponsorshipGoalCurrent)} ₽</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Top Donators */}
+              {publicSettings.topDonatorAmount1 > 0 && (
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-legends-blue/10 via-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity" />
+                  <div className="relative h-full bg-[#0d0d0d] border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md flex flex-col">
+                    <div className="flex items-center justify-between mb-6">
+                      <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Топ спонсоров</span>
+                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#FFD700]/10 text-[#FFD700] border border-[#FFD700]/20">
+                        <Crown className="w-3.5 h-3.5" /> Лучшие за всё время
+                      </span>
+                    </div>
+
+                    <div className="flex-grow flex flex-col justify-center gap-4">
+                      {/* Top 1 */}
+                      {publicSettings.topDonatorAmount1 > 0 && (
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-[#FFD700]/30 transition-all duration-300">
+                          <div className="flex items-center gap-4">
+                            <span className="text-xl font-bold text-center w-6">🥇</span>
+                            <img 
+                              src={`https://mc-heads.net/avatar/${publicSettings.topDonatorName1 || 'Steve'}/40`} 
+                              alt={publicSettings.topDonatorName1}
+                              className="w-10 h-10 rounded-lg bg-black/20 border border-white/10"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://mc-heads.net/avatar/Steve/40';
+                              }}
+                            />
+                            <div>
+                              <div className="font-bold text-white text-base font-minecraft tracking-wide">
+                                {publicSettings.topDonatorName1}
+                              </div>
+                              <div className="text-xs text-gray-500">1-е место на сервере</div>
+                            </div>
+                          </div>
+                          <span className="text-lg font-bold text-[#FFD700] font-minecraft">
+                            {publicSettings.topDonatorAmount1} <span className="text-xs font-normal text-gray-400">₽</span>
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Top 2 */}
+                      {publicSettings.topDonatorAmount2 > 0 && (
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-gray-400/30 transition-all duration-300">
+                          <div className="flex items-center gap-4">
+                            <span className="text-xl font-bold text-center w-6">🥈</span>
+                            <img 
+                              src={`https://mc-heads.net/avatar/${publicSettings.topDonatorName2 || 'Steve'}/40`} 
+                              alt={publicSettings.topDonatorName2}
+                              className="w-10 h-10 rounded-lg bg-black/20 border border-white/10"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://mc-heads.net/avatar/Steve/40';
+                              }}
+                            />
+                            <div>
+                              <div className="font-bold text-white text-base font-minecraft tracking-wide">
+                                {publicSettings.topDonatorName2}
+                              </div>
+                              <div className="text-xs text-gray-500">2-е место на сервере</div>
+                            </div>
+                          </div>
+                          <span className="text-lg font-bold text-gray-300 font-minecraft">
+                            {publicSettings.topDonatorAmount2} <span className="text-xs font-normal text-gray-400">₽</span>
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Top 3 */}
+                      {publicSettings.topDonatorAmount3 > 0 && (
+                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-amber-600/30 transition-all duration-300">
+                          <div className="flex items-center gap-4">
+                            <span className="text-xl font-bold text-center w-6">🥉</span>
+                            <img 
+                              src={`https://mc-heads.net/avatar/${publicSettings.topDonatorName3 || 'Steve'}/40`} 
+                              alt={publicSettings.topDonatorName3}
+                              className="w-10 h-10 rounded-lg bg-black/20 border border-white/10"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://mc-heads.net/avatar/Steve/40';
+                              }}
+                            />
+                            <div>
+                              <div className="font-bold text-white text-base font-minecraft tracking-wide">
+                                {publicSettings.topDonatorName3}
+                              </div>
+                              <div className="text-xs text-gray-500">3-е место на сервере</div>
+                            </div>
+                          </div>
+                          <span className="text-lg font-bold text-amber-500 font-minecraft">
+                            {publicSettings.topDonatorAmount3} <span className="text-xs font-normal text-gray-400">₽</span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Cards Container (Carousel on mobile, Grid on desktop) */}
           <div
@@ -774,10 +949,36 @@ const Sponsorship = () => {
                   </div>
                 </div>
 
+                {isDuplicateLevel && (
+                  <div className="mb-6 p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 flex items-start gap-3">
+                    <ShieldAlert className="w-5 h-5 text-yellow-400 shrink-0 mt-0.5" />
+                    <div className="text-sm text-left">
+                      <p className="font-bold text-white mb-1">У вас уже активна подписка этого уровня</p>
+                      <p className="text-gray-300 leading-relaxed text-xs">
+                        Она действует до {user?.sponsorshipExpiresAt ? new Date(user.sponsorshipExpiresAt).toLocaleDateString('ru-RU') : 'бессрочно'}.
+                        Продление подписки произойдет автоматически, либо вы сможете повторно поддержать проект после завершения текущего периода.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {isDowngrade && (
+                  <div className="mb-6 p-4 rounded-xl border border-red-500/30 bg-red-500/10 flex items-start gap-3">
+                    <ShieldAlert className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    <div className="text-sm text-left">
+                      <p className="font-bold text-white mb-1">Понижение уровня подписки</p>
+                      <p className="text-gray-300 leading-relaxed text-xs">
+                        Внимание! Вы переходите с Уровня {currentSponsorshipLevel} на более низкий Уровень {selectedLevel}. 
+                        Ваши текущие привилегии будут заменены на привилегии выбранного уровня после оплаты.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-auto">
                   <button
                     onClick={handleStripeCheckout}
-                    disabled={checkoutLoading}
+                    disabled={checkoutLoading || isDuplicateLevel}
                     className="w-full py-3.5 md:py-4 rounded-xl bg-gradient-to-r from-story-gold to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold text-base md:text-lg transition-all text-center flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:-translate-y-1 disabled:opacity-50 disabled:pointer-events-none"
                   >
                     {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}

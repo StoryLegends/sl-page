@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Form, Input, Button, Switch, InputNumber, Space, Modal, Alert, message, Select } from 'antd';
-import { Sliders, Shield, Bell, Database, AlertTriangle, RefreshCw, Download, AlertCircle, Settings } from 'lucide-react';
+import { Sliders, Shield, Bell, Database, AlertTriangle, RefreshCw, Download, AlertCircle, Settings, Heart, Crown } from 'lucide-react';
 import { adminApi, type SiteSettings } from '../../../api/admin';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -254,6 +254,85 @@ const SettingsTab: React.FC = () => {
                                 <Form.Item name="sendEmailOnApplicationRejected" valuePropName="checked" className="mb-0">
                                     <Switch size="small" />
                                 </Form.Item>
+                            </div>
+                        </div>
+
+                        {/* SECTION: SPONSORSHIP SETTINGS */}
+                        <div>
+                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <Heart className="w-3 h-3 text-red-400" />
+                                Настройки спонсорства и целей сборов
+                            </div>
+
+                            <div className="flex flex-col gap-4 py-2">
+                                <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                    <div className="space-y-0.5">
+                                        <div className="text-sm font-semibold text-white">Отображать цель сбора средств</div>
+                                        <div className="text-xs text-gray-400">Показывает прогресс-бар сбора на странице спонсорства.</div>
+                                    </div>
+                                    <Form.Item name="sponsorshipGoalEnabled" valuePropName="checked" className="mb-0">
+                                        <Switch />
+                                    </Form.Item>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5 py-2 border-b border-white/5">
+                                    <span className="text-xs text-gray-300 font-semibold">Описание/текст цели</span>
+                                    <Form.Item name="sponsorshipGoalText" className="mb-0">
+                                        <Input className="bg-white/5 border-white/10 text-white rounded-lg placeholder-gray-600" placeholder="Например, На оплату хостинга" />
+                                    </Form.Item>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 py-2 border-b border-white/5">
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-xs text-gray-300 font-semibold">Текущая сумма сбора (₽)</span>
+                                        <Form.Item name="sponsorshipGoalCurrent" className="mb-0">
+                                            <InputNumber className="w-full bg-white/5 border-white/10 text-white rounded-lg placeholder-gray-600" placeholder="Например, 1500" />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="flex flex-col gap-1.5">
+                                        <span className="text-xs text-gray-300 font-semibold">Целевая сумма сбора (₽)</span>
+                                        <Form.Item name="sponsorshipGoalTarget" className="mb-0">
+                                            <InputNumber className="w-full bg-white/5 border-white/10 text-white rounded-lg placeholder-gray-600" placeholder="Например, 5000" />
+                                        </Form.Item>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col gap-1.5 py-2">
+                                    <span className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
+                                        <Crown className="w-3.5 h-3.5 text-[#FFD700]" /> Топ 3 Спонсора (для стенда)
+                                    </span>
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-3 gap-2 items-center">
+                                            <span className="text-xs text-gray-300 font-medium">🥇 1 место:</span>
+                                            <Form.Item name="topDonatorName1" className="mb-0">
+                                                <Input className="bg-white/5 border-white/10 text-white rounded-lg placeholder-gray-600" placeholder="Никнейм" />
+                                            </Form.Item>
+                                            <Form.Item name="topDonatorAmount1" className="mb-0">
+                                                <InputNumber className="w-full bg-white/5 border-white/10 text-white rounded-lg placeholder-gray-600" placeholder="Сумма в ₽" />
+                                            </Form.Item>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-2 items-center">
+                                            <span className="text-xs text-gray-300 font-medium">🥈 2 место:</span>
+                                            <Form.Item name="topDonatorName2" className="mb-0">
+                                                <Input className="bg-white/5 border-white/10 text-white rounded-lg placeholder-gray-600" placeholder="Никнейм" />
+                                            </Form.Item>
+                                            <Form.Item name="topDonatorAmount2" className="mb-0">
+                                                <InputNumber className="w-full bg-white/5 border-white/10 text-white rounded-lg placeholder-gray-600" placeholder="Сумма в ₽" />
+                                            </Form.Item>
+                                        </div>
+
+                                        <div className="grid grid-cols-3 gap-2 items-center">
+                                            <span className="text-xs text-gray-300 font-medium">🥉 3 место:</span>
+                                            <Form.Item name="topDonatorName3" className="mb-0">
+                                                <Input className="bg-white/5 border-white/10 text-white rounded-lg placeholder-gray-600" placeholder="Никнейм" />
+                                            </Form.Item>
+                                            <Form.Item name="topDonatorAmount3" className="mb-0">
+                                                <InputNumber className="w-full bg-white/5 border-white/10 text-white rounded-lg placeholder-gray-600" placeholder="Сумма в ₽" />
+                                            </Form.Item>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

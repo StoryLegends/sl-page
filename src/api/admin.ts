@@ -36,6 +36,16 @@ export interface SiteSettings {
     seasonTitle: string;
     seasonDescription: string;
     seasonDate: string;
+    sponsorshipGoalEnabled: boolean;
+    sponsorshipGoalTarget: number;
+    sponsorshipGoalCurrent: number;
+    sponsorshipGoalText: string;
+    topDonatorName1: string;
+    topDonatorAmount1: number;
+    topDonatorName2: string;
+    topDonatorAmount2: number;
+    topDonatorName3: string;
+    topDonatorAmount3: number;
 }
 
 export interface FeatureFlag {
@@ -186,6 +196,16 @@ export const adminApi = {
         seasonTitle: string;
         seasonDescription: string;
         seasonDate: string;
+        sponsorshipGoalEnabled: boolean;
+        sponsorshipGoalTarget: number;
+        sponsorshipGoalCurrent: number;
+        sponsorshipGoalText: string;
+        topDonatorName1: string;
+        topDonatorAmount1: number;
+        topDonatorName2: string;
+        topDonatorAmount2: number;
+        topDonatorName3: string;
+        topDonatorAmount3: number;
     }> => {
         const response = await apiClient.get('/api/settings/public');
         return response.data;
