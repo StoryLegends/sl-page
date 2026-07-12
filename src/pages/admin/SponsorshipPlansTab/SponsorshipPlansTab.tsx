@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Switch, Modal, Form, Input, Select, Tag, Space, message, Popconfirm, Card, InputNumber } from 'antd';
+import { Table, Button, Switch, Modal, Form, Input, Select, Tag, Space, message, Popconfirm, Card, InputNumber, Avatar } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { adminApi, type SponsorshipPlan } from '../../../api/admin';
 import { 
@@ -27,6 +27,7 @@ const SponsorshipPlansTab: React.FC = () => {
     const [historyPagination, setHistoryPagination] = useState({ current: 1, pageSize: 10, total: 0 });
     const [settingsSaving, setSettingsSaving] = useState(false);
     const [goalForm] = Form.useForm();
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
     const fetchPlans = async () => {
         setLoading(true);
@@ -280,17 +281,18 @@ const SponsorshipPlansTab: React.FC = () => {
             dataIndex: 'actorUsername',
             key: 'actorUsername',
             render: (username: string, record: any) => {
+                const isLetter = record.avatarUrl && record.avatarUrl.length === 1;
                 return (
-                    <div className="flex items-center gap-3">
-                        <img 
-                            src={`https://mc-heads.net/avatar/${username}/32`}
-                            alt={username}
-                            className="w-8 h-8 rounded bg-black/20 border border-white/10 shrink-0"
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://mc-heads.net/avatar/Steve/32';
-                            }}
-                        />
-                        <div className="text-left">
+                    <div className="flex items-center gap-3 text-left">
+                        <Avatar 
+                            src={isLetter ? undefined : record.avatarUrl} 
+                            size="large"
+                            className="bg-legends-blue text-black font-bold shrink-0 border border-white/10"
+                            style={{ backgroundColor: '#ffd700', color: '#000' }}
+                        >
+                            {isLetter ? record.avatarUrl : username.substring(0, 1).toUpperCase()}
+                        </Avatar>
+                        <div>
                             <div className="font-bold text-white text-sm">{username}</div>
                             <div className="text-[10px] text-gray-500">ID: {record.actorId}</div>
                         </div>
@@ -385,24 +387,76 @@ const SponsorshipPlansTab: React.FC = () => {
                     {/* Grid line (bottom) */}
                     <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
 
+                    {/* Vertical hover guide line */}
+                    {hoveredIndex !== null && points[hoveredIndex] && (
+                        <line 
+                            x1={points[hoveredIndex].x} 
+                            y1={padding} 
+                            x2={points[hoveredIndex].x} 
+                            y2={height - padding} 
+                            stroke="rgba(255, 215, 0, 0.4)" 
+                            strokeWidth="1.5" 
+                            strokeDasharray="4,4" 
+                            className="pointer-events-none"
+                        />
+                    )}
+
                     {/* Area fill */}
                     {areaD && <path d={areaD} fill="url(#chartGradient)" />}
 
                     {/* Area line */}
                     {pathD && <path d={pathD} fill="none" stroke="#ffd700" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
 
-                    {/* Hover dots */}
+                    {/* Pulsing hover dot */}
+                    {hoveredIndex !== null && points[hoveredIndex] && (
+                        <circle cx={points[hoveredIndex].x} cy={points[hoveredIndex].y} r="5" fill="#ffd700" stroke="#000" strokeWidth="2" className="pointer-events-none" />
+                    )}
+
+                    {/* Static dots */}
                     {points.map((p: any, idx: number) => {
                         if (p.amount === 0) return null;
                         return (
-                            <g key={idx} className="group/dot cursor-pointer">
-                                <circle cx={p.x} cy={p.y} r="4" fill="#ffd700" stroke="#000" strokeWidth="1.5" />
-                                <circle cx={p.x} cy={p.y} r="10" fill="#ffd700" fillOpacity="0" className="hover:fill-opacity-20 transition-all" />
-                                <title>{`${p.date}: ${p.amount} ₽`}</title>
-                            </g>
+                            <circle key={idx} cx={p.x} cy={p.y} r="3" fill="#ffd700" className="pointer-events-none" />
+                        );
+                    })}
+
+                    {/* Interactive vertical hover zones */}
+                    {points.map((p: any, idx: number) => {
+                        const zoneWidth = chartWidth / (points.length - 1);
+                        const xStart = p.x - zoneWidth / 2;
+                        return (
+                            <rect
+                                key={`zone-${idx}`}
+                                x={xStart}
+                                y={0}
+                                width={zoneWidth}
+                                height={height}
+                                fill="transparent"
+                                className="cursor-pointer"
+                                onMouseEnter={() => setHoveredIndex(idx)}
+                                onMouseLeave={() => setHoveredIndex(null)}
+                            />
                         );
                     })}
                 </svg>
+                
+                {/* Floating tooltip */}
+                {hoveredIndex !== null && points[hoveredIndex] && (
+                    <div 
+                        className="absolute bg-[#0b1320]/95 border border-[#ffd700]/30 rounded-xl p-2.5 text-xs text-white pointer-events-none z-10 transition-all duration-75"
+                        style={{
+                            left: `${(points[hoveredIndex].x / width) * 100}%`,
+                            top: `${(points[hoveredIndex].y / height) * 100}%`,
+                            transform: 'translate(-50%, -100%) translateY(-12px)',
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                            backdropFilter: 'blur(4px)'
+                        }}
+                    >
+                        <div className="text-[10px] text-gray-400 font-semibold mb-0.5">{points[hoveredIndex].date}</div>
+                        <div className="font-bold text-[#ffd700] text-sm">{points[hoveredIndex].amount} ₽</div>
+                    </div>
+                )}
+
                 <div className="flex justify-between text-[10px] text-gray-500 mt-2 px-1">
                     <span>{analytics.dailyRevenue[0]?.date}</span>
                     <span>{analytics.dailyRevenue[analytics.dailyRevenue.length - 1]?.date}</span>
