@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Table, Button, Switch, Modal, Form, Input, Select, Tag, Space, message, Popconfirm, Card, InputNumber, Avatar } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { adminApi, type SponsorshipPlan } from '../../../api/admin';
+import PlayerDossier from '../shared/PlayerDossier';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -30,6 +31,8 @@ const SponsorshipPlansTab: React.FC = () => {
     const [settingsSaving, setSettingsSaving] = useState(false);
     const [goalForm] = Form.useForm();
     const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+    const [dossierVisible, setDossierVisible] = useState(false);
 
     const fetchPlans = async () => {
         setLoading(true);
@@ -307,7 +310,13 @@ const SponsorshipPlansTab: React.FC = () => {
             render: (username: string, record: any) => {
                 const isLetter = record.avatarUrl && record.avatarUrl.length === 1;
                 return (
-                    <div className="flex items-center gap-3 text-left">
+                    <div 
+                        className="flex items-center gap-3 text-left cursor-pointer group"
+                        onClick={() => {
+                            setSelectedUserId(record.actorId);
+                            setDossierVisible(true);
+                        }}
+                    >
                         <Avatar 
                             src={isLetter ? undefined : record.avatarUrl} 
                             size="large"
@@ -317,7 +326,7 @@ const SponsorshipPlansTab: React.FC = () => {
                             {isLetter ? record.avatarUrl : username.substring(0, 1).toUpperCase()}
                         </Avatar>
                         <div>
-                            <div className="font-bold text-white text-sm">{username}</div>
+                            <div className="font-bold text-white text-sm group-hover:text-[#00BFFF] transition-colors">{username}</div>
                             <div className="text-[10px] text-gray-500">ID: {record.actorId}</div>
                         </div>
                     </div>
@@ -783,6 +792,16 @@ const SponsorshipPlansTab: React.FC = () => {
                     </Form.Item>
                 </Form>
             </Modal>
+
+            {/* Dossier Modal */}
+            <PlayerDossier 
+                userId={selectedUserId} 
+                visible={dossierVisible} 
+                onClose={() => {
+                    setDossierVisible(false);
+                    setSelectedUserId(null);
+                }} 
+            />
         </div>
     );
 };

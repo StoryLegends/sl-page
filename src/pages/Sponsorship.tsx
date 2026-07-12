@@ -57,6 +57,7 @@ const Sponsorship = () => {
   const carouselRef = useRef<HTMLDivElement>(null);
   const [pricingData, setPricingData] = useState(defaultPricing);
   const [publicSettings, setPublicSettings] = useState<any>(null);
+  const [agreedToSponsorshipTerms, setAgreedToSponsorshipTerms] = useState<boolean>(false);
 
   // Load public settings for goals/top donators
   useEffect(() => {
@@ -157,6 +158,10 @@ const Sponsorship = () => {
 
   const handleStripeCheckout = async () => {
     if (!selectedLevel || activePlans.length === 0) return;
+    if (!agreedToSponsorshipTerms) {
+      message.error('Вы должны согласиться с политикой конфиденциальности и пользовательским соглашением для совершения оплаты');
+      return;
+    }
     setCheckoutLoading(true);
     try {
       const plan = activePlans[selectedPlan];
@@ -458,7 +463,7 @@ const Sponsorship = () => {
                       {/* Progress Bar */}
                       <div className="w-full h-4 bg-black/40 rounded-full overflow-hidden p-0.5 border border-white/5 relative">
                         <div 
-                          className="h-full rounded-full bg-gradient-to-r from-story-gold via-yellow-400 to-amber-500 shadow-[0_0_10px_rgba(255,215,0,0.5)] transition-all duration-1000 ease-out"
+                          className="h-full rounded-full bg-gradient-to-r from-[#FFD700] to-[#00BFFF] shadow-[0_0_12px_rgba(0,191,255,0.5)] transition-all duration-1000 ease-out"
                           style={{ 
                             width: `${Math.min(100, Math.max(0, (publicSettings.sponsorshipGoalCurrent / publicSettings.sponsorshipGoalTarget) * 100))}%` 
                           }}
@@ -1044,9 +1049,23 @@ const Sponsorship = () => {
                 )}
 
                 <div className="mt-auto">
+                  {/* Agreement Checkbox */}
+                  <div className="flex items-start gap-2.5 mb-4 select-none">
+                    <input
+                      type="checkbox"
+                      id="agreedToSponsorshipTerms"
+                      checked={agreedToSponsorshipTerms}
+                      onChange={(e) => setAgreedToSponsorshipTerms(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded border-gray-700 bg-white/5 text-story-gold focus:ring-story-gold/30 accent-story-gold shrink-0 cursor-pointer"
+                    />
+                    <label htmlFor="agreedToSponsorshipTerms" className="text-xs text-gray-400 cursor-pointer leading-tight text-left">
+                      Я согласен с <a href="/privacy-policy" className="text-[#4DD2FF] hover:underline" target="_blank" rel="noopener noreferrer">Политикой конфиденциальности</a> и <a href="/user-agreement" className="text-[#4DD2FF] hover:underline" target="_blank" rel="noopener noreferrer">Пользовательским соглашением</a>
+                    </label>
+                  </div>
+
                   <button
                     onClick={handleStripeCheckout}
-                    disabled={checkoutLoading || isDuplicateLevel}
+                    disabled={checkoutLoading || isDuplicateLevel || !agreedToSponsorshipTerms}
                     className="w-full py-3.5 md:py-4 rounded-xl bg-gradient-to-r from-story-gold to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold text-base md:text-lg transition-all text-center flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,215,0,0.3)] hover:shadow-[0_0_30px_rgba(255,215,0,0.5)] transform hover:-translate-y-1 disabled:opacity-50 disabled:pointer-events-none"
                   >
                     {checkoutLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CreditCard className="w-5 h-5" />}

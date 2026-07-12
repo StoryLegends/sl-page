@@ -23,6 +23,7 @@ const RegisterPage = () => {
     const [settings, setSettings] = useState<any>(null);
     const [settingsLoading, setSettingsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
 
     React.useEffect(() => {
         const fetchSettings = async () => {
@@ -46,6 +47,12 @@ const RegisterPage = () => {
         if (isSubmitting) return;
 
         setError('');
+
+        if (!agreedToTerms) {
+            setError('Вы должны согласиться с политикой конфиденциальности и пользовательским соглашением');
+            showNotification('Вы должны согласиться с условиями', 'error');
+            return;
+        }
 
         if (!executeRecaptcha) {
             showNotification('reCAPTCHA не готова', 'error');
@@ -96,7 +103,7 @@ const RegisterPage = () => {
             showNotification(errorMsg, 'error');
             setIsSubmitting(false);
         }
-    }, [executeRecaptcha, username, email, password, confirmPassword, minecraftNickname, register, navigate, showNotification, isSubmitting]);
+    }, [executeRecaptcha, username, email, password, confirmPassword, minecraftNickname, register, navigate, showNotification, isSubmitting, agreedToTerms]);
 
     return (
         <Layout>
@@ -221,9 +228,24 @@ const RegisterPage = () => {
                                     </p>
                                 </div>
 
+                                {/* Agreement Checkbox */}
+                                <div className="flex items-start gap-2.5 mt-3 select-none">
+                                    <input
+                                        type="checkbox"
+                                        id="agreedToTerms"
+                                        checked={agreedToTerms}
+                                        onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                        className="mt-1 w-4 h-4 rounded border-gray-700 bg-white/5 text-story-gold focus:ring-story-gold/30 accent-story-gold shrink-0 cursor-pointer"
+                                        required
+                                    />
+                                    <label htmlFor="agreedToTerms" className="text-xs text-gray-400 cursor-pointer leading-tight text-left">
+                                        Я согласен с <a href="/privacy-policy" className="text-story-gold hover:underline" target="_blank" rel="noopener noreferrer">Политикой конфиденциальности</a> и <a href="/user-agreement" className="text-story-gold hover:underline" target="_blank" rel="noopener noreferrer">Пользовательским соглашением</a>
+                                    </label>
+                                </div>
+
                                 <button
                                     type="submit"
-                                    disabled={isSubmitting}
+                                    disabled={isSubmitting || !agreedToTerms}
                                     className="w-full h-12 flex items-center justify-center bg-gradient-to-r from-story-gold to-story-gold-dark hover:from-story-gold-light hover:to-story-gold text-black font-bold py-3.5 px-4 rounded-xl transition-all duration-300 transform hover:scale-[1.02] shadow-lg shadow-story-gold/20 mt-4 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                                 >
                                     {isSubmitting ? (
