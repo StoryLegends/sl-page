@@ -202,10 +202,13 @@ export const adminApi = {
         sponsorshipGoalText: string;
         topDonatorName1: string;
         topDonatorAmount1: number;
+        topDonatorAvatar1?: string | null;
         topDonatorName2: string;
         topDonatorAmount2: number;
+        topDonatorAvatar2?: string | null;
         topDonatorName3: string;
         topDonatorAmount3: number;
+        topDonatorAvatar3?: string | null;
     }> => {
         const response = await apiClient.get('/api/settings/public');
         return response.data;

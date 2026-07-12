@@ -475,99 +475,167 @@ const Sponsorship = () => {
               )}
 
               {/* Top Donators */}
-              {publicSettings.topDonatorAmount1 > 0 && (
-                <div className="relative group">
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-legends-blue/10 via-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative h-full bg-[#0d0d0d] border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md flex flex-col">
-                    <div className="flex items-center justify-between mb-6">
-                      <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Топ спонсоров</span>
-                      <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#FFD700]/10 text-[#FFD700] border border-[#FFD700]/20">
-                        <Crown className="w-3.5 h-3.5" /> Лучшие за всё время
-                      </span>
-                    </div>
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-legends-blue/10 via-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity" />
+                <div className="relative h-full bg-[#0d0d0d] border border-white/10 rounded-2xl p-6 md:p-8 backdrop-blur-md flex flex-col">
+                  <div className="flex items-center justify-between mb-6">
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wider">Топ спонсоров</span>
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[#FFD700]/10 text-[#FFD700] border border-[#FFD700]/20">
+                      <Crown className="w-3.5 h-3.5" /> Лучшие за всё время
+                    </span>
+                  </div>
 
-                    <div className="flex-grow flex flex-col justify-center gap-4">
-                      {/* Top 1 */}
-                      {publicSettings.topDonatorAmount1 > 0 && (
-                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-[#FFD700]/30 transition-all duration-300">
-                          <div className="flex items-center gap-4">
-                            <span className="text-xl font-bold text-center w-6">🥇</span>
-                            <img 
-                              src={`https://mc-heads.net/avatar/${publicSettings.topDonatorName1 || 'Steve'}/40`} 
-                              alt={publicSettings.topDonatorName1}
-                              className="w-10 h-10 rounded-lg bg-black/20 border border-white/10"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://mc-heads.net/avatar/Steve/40';
-                              }}
-                            />
-                            <div>
-                              <div className="font-bold text-white text-base font-minecraft tracking-wide">
-                                {publicSettings.topDonatorName1}
+                  <div className="flex-grow flex flex-col justify-center gap-4">
+                    {publicSettings.topDonatorAmount1 === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 px-4 text-center my-auto">
+                        <Heart className="w-12 h-12 text-red-500/30 mb-3 animate-pulse" />
+                        <span className="text-gray-400 text-sm font-semibold">Спонсоров пока нет</span>
+                        <span className="text-gray-500 text-xs mt-1 max-w-[200px]">Вы можете совершить оплату и стать первым в топе!</span>
+                      </div>
+                    ) : (
+                      <>
+                        {/* Top 1 */}
+                        {publicSettings.topDonatorAmount1 > 0 && (
+                          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-[#FFD700]/30 transition-all duration-300">
+                            <div className="flex items-center gap-4">
+                              <span className="text-xl font-bold text-center w-6">🥇</span>
+                              {(() => {
+                                const avatarUrl = publicSettings.topDonatorAvatar1;
+                                const username = publicSettings.topDonatorName1;
+                                const isLetter = avatarUrl && avatarUrl.length === 1;
+                                if (isLetter || !avatarUrl) {
+                                  return (
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-story-gold/20 to-story-gold/10 border border-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                      {isLetter ? avatarUrl : username.substring(0, 1).toUpperCase()}
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <img 
+                                    src={avatarUrl} 
+                                    alt={username}
+                                    className="w-10 h-10 rounded-lg bg-black/20 border border-white/10 object-cover shrink-0"
+                                    onError={(e) => {
+                                      const parent = (e.target as HTMLElement).parentElement;
+                                      if (parent) {
+                                        const fallback = document.createElement('div');
+                                        fallback.className = "w-10 h-10 rounded-lg bg-gradient-to-br from-story-gold/20 to-story-gold/10 border border-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0";
+                                        fallback.innerText = username.substring(0, 1).toUpperCase();
+                                        parent.replaceChild(fallback, e.target as HTMLElement);
+                                      }
+                                    }}
+                                  />
+                                );
+                              })()}
+                              <div>
+                                <div className="font-bold text-white text-base font-minecraft tracking-wide">
+                                  {publicSettings.topDonatorName1}
+                                </div>
+                                <div className="text-xs text-gray-500">1-е место на сервере</div>
                               </div>
-                              <div className="text-xs text-gray-500">1-е место на сервере</div>
                             </div>
+                            <span className="text-lg font-bold text-[#FFD700] font-minecraft">
+                              {publicSettings.topDonatorAmount1} <span className="text-xs font-normal text-gray-400">₽</span>
+                            </span>
                           </div>
-                          <span className="text-lg font-bold text-[#FFD700] font-minecraft">
-                            {publicSettings.topDonatorAmount1} <span className="text-xs font-normal text-gray-400">₽</span>
-                          </span>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Top 2 */}
-                      {publicSettings.topDonatorAmount2 > 0 && (
-                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-gray-400/30 transition-all duration-300">
-                          <div className="flex items-center gap-4">
-                            <span className="text-xl font-bold text-center w-6">🥈</span>
-                            <img 
-                              src={`https://mc-heads.net/avatar/${publicSettings.topDonatorName2 || 'Steve'}/40`} 
-                              alt={publicSettings.topDonatorName2}
-                              className="w-10 h-10 rounded-lg bg-black/20 border border-white/10"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://mc-heads.net/avatar/Steve/40';
-                              }}
-                            />
-                            <div>
-                              <div className="font-bold text-white text-base font-minecraft tracking-wide">
-                                {publicSettings.topDonatorName2}
+                        {/* Top 2 */}
+                        {publicSettings.topDonatorAmount2 > 0 && (
+                          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-gray-400/30 transition-all duration-300">
+                            <div className="flex items-center gap-4">
+                              <span className="text-xl font-bold text-center w-6">🥈</span>
+                              {(() => {
+                                const avatarUrl = publicSettings.topDonatorAvatar2;
+                                const username = publicSettings.topDonatorName2;
+                                const isLetter = avatarUrl && avatarUrl.length === 1;
+                                if (isLetter || !avatarUrl) {
+                                  return (
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-story-gold/20 to-story-gold/10 border border-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                      {isLetter ? avatarUrl : username.substring(0, 1).toUpperCase()}
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <img 
+                                    src={avatarUrl} 
+                                    alt={username}
+                                    className="w-10 h-10 rounded-lg bg-black/20 border border-white/10 object-cover shrink-0"
+                                    onError={(e) => {
+                                      const parent = (e.target as HTMLElement).parentElement;
+                                      if (parent) {
+                                        const fallback = document.createElement('div');
+                                        fallback.className = "w-10 h-10 rounded-lg bg-gradient-to-br from-story-gold/20 to-story-gold/10 border border-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0";
+                                        fallback.innerText = username.substring(0, 1).toUpperCase();
+                                        parent.replaceChild(fallback, e.target as HTMLElement);
+                                      }
+                                    }}
+                                  />
+                                );
+                              })()}
+                              <div>
+                                <div className="font-bold text-white text-base font-minecraft tracking-wide">
+                                  {publicSettings.topDonatorName2}
+                                </div>
+                                <div className="text-xs text-gray-500">2-е место на сервере</div>
                               </div>
-                              <div className="text-xs text-gray-500">2-е место на сервере</div>
                             </div>
+                            <span className="text-lg font-bold text-gray-300 font-minecraft">
+                              {publicSettings.topDonatorAmount2} <span className="text-xs font-normal text-gray-400">₽</span>
+                            </span>
                           </div>
-                          <span className="text-lg font-bold text-gray-300 font-minecraft">
-                            {publicSettings.topDonatorAmount2} <span className="text-xs font-normal text-gray-400">₽</span>
-                          </span>
-                        </div>
-                      )}
+                        )}
 
-                      {/* Top 3 */}
-                      {publicSettings.topDonatorAmount3 > 0 && (
-                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-amber-600/30 transition-all duration-300">
-                          <div className="flex items-center gap-4">
-                            <span className="text-xl font-bold text-center w-6">🥉</span>
-                            <img 
-                              src={`https://mc-heads.net/avatar/${publicSettings.topDonatorName3 || 'Steve'}/40`} 
-                              alt={publicSettings.topDonatorName3}
-                              className="w-10 h-10 rounded-lg bg-black/20 border border-white/10"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://mc-heads.net/avatar/Steve/40';
-                              }}
-                            />
-                            <div>
-                              <div className="font-bold text-white text-base font-minecraft tracking-wide">
-                                {publicSettings.topDonatorName3}
+                        {/* Top 3 */}
+                        {publicSettings.topDonatorAmount3 > 0 && (
+                          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-amber-600/30 transition-all duration-300">
+                            <div className="flex items-center gap-4">
+                              <span className="text-xl font-bold text-center w-6">🥉</span>
+                              {(() => {
+                                const avatarUrl = publicSettings.topDonatorAvatar3;
+                                const username = publicSettings.topDonatorName3;
+                                const isLetter = avatarUrl && avatarUrl.length === 1;
+                                if (isLetter || !avatarUrl) {
+                                  return (
+                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-story-gold/20 to-story-gold/10 border border-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                                      {isLetter ? avatarUrl : username.substring(0, 1).toUpperCase()}
+                                    </div>
+                                  );
+                                }
+                                return (
+                                  <img 
+                                    src={avatarUrl} 
+                                    alt={username}
+                                    className="w-10 h-10 rounded-lg bg-black/20 border border-white/10 object-cover shrink-0"
+                                    onError={(e) => {
+                                      const parent = (e.target as HTMLElement).parentElement;
+                                      if (parent) {
+                                        const fallback = document.createElement('div');
+                                        fallback.className = "w-10 h-10 rounded-lg bg-gradient-to-br from-story-gold/20 to-story-gold/10 border border-white/10 flex items-center justify-center text-white font-bold text-sm shrink-0";
+                                        fallback.innerText = username.substring(0, 1).toUpperCase();
+                                        parent.replaceChild(fallback, e.target as HTMLElement);
+                                      }
+                                    }}
+                                  />
+                                );
+                              })()}
+                              <div>
+                                <div className="font-bold text-white text-base font-minecraft tracking-wide">
+                                  {publicSettings.topDonatorName3}
+                                </div>
+                                <div className="text-xs text-gray-500">3-е место на сервере</div>
                               </div>
-                              <div className="text-xs text-gray-500">3-е место на сервере</div>
                             </div>
+                            <span className="text-lg font-bold text-amber-500 font-minecraft">
+                              {publicSettings.topDonatorAmount3} <span className="text-xs font-normal text-gray-400">₽</span>
+                            </span>
                           </div>
-                          <span className="text-lg font-bold text-amber-500 font-minecraft">
-                            {publicSettings.topDonatorAmount3} <span className="text-xs font-normal text-gray-400">₽</span>
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
 
