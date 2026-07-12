@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Table, Button, Switch, Modal, Form, Input, Select, Tag, Space, message, Popconfirm, Card, InputNumber, Avatar } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { adminApi, type SponsorshipPlan } from '../../../api/admin';
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 
 const SponsorshipPlansTab: React.FC = () => {
+    const navigate = useNavigate();
     const [plans, setPlans] = useState<SponsorshipPlan[]>([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
@@ -520,7 +522,11 @@ const SponsorshipPlansTab: React.FC = () => {
                     </div>
                 </Card>
 
-                <Card className="bg-[#14213d] border border-white/5 rounded-2xl shadow-lg text-left" bodyStyle={{ padding: '20px' }}>
+                <Card 
+                    className="bg-[#14213d] border border-white/5 rounded-2xl shadow-lg text-left cursor-pointer hover:border-blue-500/30 transition-all duration-300" 
+                    bodyStyle={{ padding: '20px' }}
+                    onClick={() => navigate('/admin/users?filter=sponsors')}
+                >
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-1">Активные спонсоры</p>

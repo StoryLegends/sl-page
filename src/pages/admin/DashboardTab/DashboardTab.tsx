@@ -326,7 +326,7 @@ const DashboardTab: React.FC = () => {
                 <Col xs={12} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
-                        onClick={() => navigate('/admin/users')}
+                        onClick={() => navigate('/admin/users?filter=banned')}
                         className="bg-[#14213d] border border-white/5 hover:border-red-500/30 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group h-full flex flex-col justify-between"
                         styles={{ body: { padding: 20, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
                     >
@@ -374,7 +374,7 @@ const DashboardTab: React.FC = () => {
                 <Col xs={12} sm={12} md={8} lg={4}>
                     <Card 
                         hoverable
-                        onClick={() => navigate('/admin/users')}
+                        onClick={() => navigate('/admin/users?filter=warned')}
                         className="bg-[#14213d] border border-white/5 hover:border-amber-400/30 transition-all rounded-2xl overflow-hidden cursor-pointer shadow-lg group h-full flex flex-col justify-between"
                         styles={{ body: { padding: 20, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' } }}
                     >

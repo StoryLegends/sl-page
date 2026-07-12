@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Table, Button, Input, Select, Space, Tag, Modal, Form, Avatar, message, Tooltip, Checkbox } from 'antd';
 import {
     SearchOutlined,
@@ -31,6 +32,20 @@ const UsersTab: React.FC = () => {
     // Create modal
     const [isCreateVisible, setIsCreateVisible] = useState(false);
     const [form] = Form.useForm();
+    const location = useLocation();
+
+    // Parse location query/state for active filters on load
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const filter = params.get('filter') || location.state?.filter;
+        if (filter === 'sponsors' || filter === 'SPONSOR') {
+            setStatusFilter('SPONSOR');
+        } else if (filter === 'banned' || filter === 'BANNED') {
+            setStatusFilter('BANNED');
+        } else if (filter === 'warned' || filter === 'WARNED') {
+            setStatusFilter('WARNED');
+        }
+    }, [location]);
 
     const fetchUsers = async (currentPage = page, query = searchQuery, status = statusFilter) => {
         setLoading(true);
@@ -261,7 +276,6 @@ const UsersTab: React.FC = () => {
                         style={{ height: 28, width: 200, fontSize: 12 }}
                     />
                     <Checkbox
-
                         checked={statusFilter === 'BANNED'}
                         onChange={e => setStatusFilter(e.target.checked ? 'BANNED' : '')}
                         className="text-gray-300 hover:text-white text-xs select-none"
@@ -274,6 +288,13 @@ const UsersTab: React.FC = () => {
                         className="text-gray-300 hover:text-white text-xs select-none"
                     >
                         С варнами
+                    </Checkbox>
+                    <Checkbox
+                        checked={statusFilter === 'SPONSOR'}
+                        onChange={e => setStatusFilter(e.target.checked ? 'SPONSOR' : '')}
+                        className="text-gray-300 hover:text-white text-xs select-none"
+                    >
+                        Спонсоры
                     </Checkbox>
                     <Button type="primary" onClick={handleSearch} size="small" style={{ background: '#00BFFF', borderColor: '#00BFFF', color: '#000', fontWeight: 600, borderRadius: 8, height: 28, fontSize: 12, padding: '0 12px' }}>
                         Найти

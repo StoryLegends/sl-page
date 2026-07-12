@@ -372,11 +372,13 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
             const level = values.level;
             const expiresAt = values.expiresAt ? values.expiresAt.toISOString() : null;
             const totalDonated = values.totalDonated;
+            const subscriptionRecurring = !!values.subscriptionRecurring;
 
             await apiClient.post(`/api/admin/users/${user.id}/sponsorship`, {
                 level,
                 expiresAt,
-                totalDonated
+                totalDonated,
+                subscriptionRecurring
             });
             message.success('Спонсорство игрока обновлено');
             setIsSponsorshipVisible(false);
@@ -876,7 +878,8 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                     sponsorshipForm.setFieldsValue({
                                         level: user.sponsorshipLevel || 0,
                                         expiresAt: user.sponsorshipExpiresAt ? dayjs(user.sponsorshipExpiresAt) : null,
-                                        totalDonated: user.totalDonated || 0
+                                        totalDonated: user.totalDonated || 0,
+                                        subscriptionRecurring: user.subscriptionRecurring || false
                                     });
                                     setIsSponsorshipVisible(true);
                                 }}
@@ -1476,6 +1479,9 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                 </Form.Item>
                 <Form.Item name="totalDonated" label="Сумма пожертвований (₽) для топ-стенда">
                     <InputNumber min={0} style={{ width: '100%' }} className="bg-white/5 border-white/10 text-white rounded-lg" placeholder="Например, 1500" />
+                </Form.Item>
+                <Form.Item name="subscriptionRecurring" valuePropName="checked" label="Автопродление спонсорства">
+                    <Switch className="bg-white/10" />
                 </Form.Item>
                 <Form.Item className="mb-0 flex justify-end">
                     <Space>
