@@ -994,7 +994,20 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                                     )}
                                                 </Space>
                                             </Descriptions.Item>
-                                            <Descriptions.Item label="Email">{user.email || '—'}</Descriptions.Item>
+                                            <Descriptions.Item label="Email">
+                                                <Space size={8}>
+                                                    <span>{user.email || '—'}</span>
+                                                    {user.emailVerified ? (
+                                                        <Tooltip title="Email подтвержден">
+                                                            <SafetyOutlined style={{ color: '#52c41a', fontSize: '13px' }} />
+                                                        </Tooltip>
+                                                    ) : (
+                                                        <Tooltip title="Email не подтвержден">
+                                                            <SafetyOutlined style={{ color: '#595959', opacity: 0.4, fontSize: '13px' }} />
+                                                        </Tooltip>
+                                                    )}
+                                                </Space>
+                                            </Descriptions.Item>
                                             <Descriptions.Item label="Спонсорство">
                                                 {user.sponsorshipLevel && user.sponsorshipLevel > 0 ? (
                                                     <Tag color="gold" className="font-bold border-yellow-600/30 m-0">
@@ -1160,12 +1173,29 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                                                     </Space>
                                                                     <Space size={4}>
                                                                          {(() => {
-                                                                             const isSameCanvas = (item.registrationCanvas && item.registrationCanvas !== 'unknown' && (item.registrationCanvas === user.registrationCanvas || item.registrationCanvas === user.lastLoginCanvas1 || item.registrationCanvas === user.lastLoginCanvas2)) ||
-                                                                                                  (item.lastLoginCanvas1 && item.lastLoginCanvas1 !== 'unknown' && (item.lastLoginCanvas1 === user.registrationCanvas || item.lastLoginCanvas1 === user.lastLoginCanvas1 || item.lastLoginCanvas1 === user.lastLoginCanvas2));
-                                                                             return isSameCanvas ? (
-                                                                                 <Tag color="warning" className="text-[9px] uppercase font-bold m-0 px-1 py-0.5 border-amber-500/20 bg-amber-950/20 text-amber-300">Совпадение по отпечатку</Tag>
-                                                                             ) : null;
-                                                                         })()}
+                                                                              const shareSubnet = (ip1?: string, ip2?: string) => {
+                                                                                  if (!ip1 || !ip2) return false;
+                                                                                  const cleanIp = (ip: string) => ip.split(' ')[0].trim();
+                                                                                  const c1 = cleanIp(ip1);
+                                                                                  const c2 = cleanIp(ip2);
+                                                                                  if (c1 === c2) return true;
+                                                                                  const p1 = c1.split('.');
+                                                                                  const p2 = c2.split('.');
+                                                                                  return p1.length === 4 && p2.length === 4 && p1[0] === p2[0] && p1[1] === p2[1] && p1[2] === p2[2];
+                                                                              };
+                                                                              const userIps = [user.registrationIp, user.lastLoginIp1, user.lastLoginIp2];
+                                                                              const itemIps = [item.registrationIp, item.lastLoginIp1, item.lastLoginIp2];
+                                                                              const hasIpMatch = userIps.some(ip1 => ip1 && itemIps.some(ip2 => ip2 && shareSubnet(ip1, ip2)));
+
+                                                                              const userTzs = [user.registrationTimezone, user.lastLoginTimezone1, user.lastLoginTimezone2];
+                                                                              const itemTzs = [item.registrationTimezone, item.lastLoginTimezone1, item.lastLoginTimezone2];
+                                                                              const hasTzMatch = userTzs.some(tz1 => tz1 && tz1 !== 'unknown' && itemTzs.some(tz2 => tz2 && tz2 !== 'unknown' && tz1.toLowerCase() === tz2.toLowerCase()));
+
+                                                                              const isMatched = hasIpMatch && hasTzMatch;
+                                                                              return isMatched ? (
+                                                                                  <Tag color="warning" className="text-[9px] uppercase font-bold m-0 px-1 py-0.5 border-amber-500/20 bg-amber-950/20 text-amber-300">Совпадение по IP/Timezone</Tag>
+                                                                              ) : null;
+                                                                          })()}
                                                                          {item.banned ? (
                                                                               <Tag color="red" icon={<StopOutlined />} className="text-[10px] font-bold m-0">ЗАБАНЕН</Tag>
                                                                          ) : (

@@ -99,11 +99,7 @@ const DashboardTab: React.FC = () => {
                         const related = await adminApi.getRelatedAccounts(u.id);
                         if (related && related.length > 0) {
                             const bannedRelated = related.filter(a => a.banned);
-                            const hasCanvasMatch = related.some(r => 
-                                (r.registrationCanvas && r.registrationCanvas !== 'unknown' && (r.registrationCanvas === u.registrationCanvas || r.registrationCanvas === u.lastLoginCanvas1 || r.registrationCanvas === u.lastLoginCanvas2)) ||
-                                (r.lastLoginCanvas1 && r.lastLoginCanvas1 !== 'unknown' && (r.lastLoginCanvas1 === u.registrationCanvas || r.lastLoginCanvas1 === u.lastLoginCanvas1 || r.lastLoginCanvas1 === u.lastLoginCanvas2))
-                            );
-                            const matchType = hasCanvasMatch ? 'IP/Отпечатку' : 'IP';
+                            const matchType = 'IP/Timezone';
 
                             actions.push({
                                 key: `clone-${u.id}`,
