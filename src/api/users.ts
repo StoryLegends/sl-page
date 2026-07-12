@@ -75,6 +75,7 @@ export interface User {
     sponsorshipExpiresAt?: string | null;
     stripeSubscriptionId?: string | null;
     subscriptionRecurring?: boolean;
+    totalDonated?: number;
 }
 
 export interface UpdateProfileData {

@@ -216,6 +216,23 @@ export const adminApi = {
         return response.data;
     },
 
+    getSponsorshipAnalytics: async (): Promise<{
+        totalRevenue: number;
+        monthlyRevenue: number;
+        activeSubscribers: number;
+        dailyRevenue: Array<{ date: string; amount: number }>;
+    }> => {
+        const response = await apiClient.get('/api/admin/sponsorship-plans/analytics');
+        return response.data;
+    },
+
+    getSponsorshipHistory: async (page = 0, size = 50): Promise<any> => {
+        const response = await apiClient.get('/api/admin/sponsorship-plans/history', {
+            params: { page, size }
+        });
+        return response.data;
+    },
+
     // Database
     downloadBackup: async (): Promise<Blob> => {
         const response = await apiClient.get('/api/admin/db/backup', { responseType: 'blob' });

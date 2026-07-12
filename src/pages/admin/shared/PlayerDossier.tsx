@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Drawer, Tabs, Descriptions, Table, Tag, Typography, Spin, Alert, Button, Space, Avatar, Badge, Divider, Tooltip, List, Modal, Form, Input, Checkbox, Switch, Dropdown, Select, message, DatePicker } from 'antd';
+import { Drawer, Tabs, Descriptions, Table, Tag, Typography, Spin, Alert, Button, Space, Avatar, Badge, Divider, Tooltip, List, Modal, Form, Input, Checkbox, Switch, Dropdown, Select, message, DatePicker, InputNumber } from 'antd';
 import {
     SafetyOutlined,
     CopyOutlined,
@@ -371,10 +371,12 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
         try {
             const level = values.level;
             const expiresAt = values.expiresAt ? values.expiresAt.toISOString() : null;
+            const totalDonated = values.totalDonated;
 
             await apiClient.post(`/api/admin/users/${user.id}/sponsorship`, {
                 level,
-                expiresAt
+                expiresAt,
+                totalDonated
             });
             message.success('Спонсорство игрока обновлено');
             setIsSponsorshipVisible(false);
@@ -873,7 +875,8 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                                 onClick={() => {
                                     sponsorshipForm.setFieldsValue({
                                         level: user.sponsorshipLevel || 0,
-                                        expiresAt: user.sponsorshipExpiresAt ? dayjs(user.sponsorshipExpiresAt) : null
+                                        expiresAt: user.sponsorshipExpiresAt ? dayjs(user.sponsorshipExpiresAt) : null,
+                                        totalDonated: user.totalDonated || 0
                                     });
                                     setIsSponsorshipVisible(true);
                                 }}
@@ -1470,6 +1473,9 @@ const PlayerDossier: React.FC<PlayerDossierProps> = ({ userId, visible, onClose,
                 </Form.Item>
                 <Form.Item name="expiresAt" label="Дата окончания спонсорства (оставьте пустым для бессрочного)">
                     <DatePicker showTime style={{ width: '100%' }} className="bg-white/5 border-white/10 text-white" placeholder="Выберите дату и время" />
+                </Form.Item>
+                <Form.Item name="totalDonated" label="Сумма пожертвований (₽) для топ-стенда">
+                    <InputNumber min={0} style={{ width: '100%' }} className="bg-white/5 border-white/10 text-white rounded-lg" placeholder="Например, 1500" />
                 </Form.Item>
                 <Form.Item className="mb-0 flex justify-end">
                     <Space>
