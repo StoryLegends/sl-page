@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { History as HistoryIcon, Plus, Edit, Trash2, Save, Eye, Upload, ArrowRight, Calendar, Palette } from 'lucide-react';
+import { History as HistoryIcon, Plus, Edit, Trash2, Save, Eye, ArrowRight, Calendar, Palette } from 'lucide-react';
 import { historyApi, type ServerHistory } from '../../../api/history';
 import { useNotification } from '../../../context/NotificationContext';
-import { uploadToImgur } from '../../../utils/imgur';
+import { RichTextEditor } from '../../../components/ui/RichTextEditor';
 
 const HistoryTab: React.FC = () => {
     const { showNotification } = useNotification();
@@ -12,7 +12,6 @@ const HistoryTab: React.FC = () => {
     // Active Editor State - Full Window inside Admin Workspace
     const [editingItem, setEditingItem] = useState<Partial<ServerHistory> | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [uploadingImage, setUploadingImage] = useState(false);
     const [previewMode, setPreviewMode] = useState<'SPLIT' | 'EDITOR_ONLY' | 'PREVIEW_ONLY'>('SPLIT');
 
     const loadHistory = async () => {
@@ -38,10 +37,10 @@ const HistoryTab: React.FC = () => {
             description: 'Краткое описание эпохи...',
             pathSlug: nextSlug,
             eventDate: '2025',
-            featureOnline: '',
-            featurePlatform: 'Minecraft',
-            featureWorkTime: '',
-            featureRuntime: '',
+            featureOnline: '8-10 человек в среднем',
+            featurePlatform: 'Minecraft Java + Bedrock',
+            featureWorkTime: 'Круглосуточно',
+            featureRuntime: '~ 3 месяца',
             colorsJson: JSON.stringify(['#34383b', '#728697']),
             colors: ['#34383b', '#728697'],
             contentHtml: '<h2>Заголовок эпохи</h2><p>Напишите подробный лор и историю этого периода...</p>',
@@ -50,19 +49,54 @@ const HistoryTab: React.FC = () => {
         });
     };
 
-    const handleEdit = (item: ServerHistory) => {
+    const handleEdit = async (item: ServerHistory) => {
         let parsedColors = item.colors || [];
         if (typeof item.colorsJson === 'string') {
             try { parsedColors = JSON.parse(item.colorsJson); } catch {}
         }
         if (parsedColors.length === 0) parsedColors = ['#34383b', '#728697'];
 
+        // Determine folder path for loading static details fallback
+        let folder = item.pathSlug || String(item.id);
+        try {
+            const indexRes = await fetch('/history-index.json');
+            if (indexRes.ok) {
+                const indexData = await indexRes.json();
+                const found = indexData.find((i: any) => i.id === item.pathSlug || i.path === item.pathSlug || String(i.id) === String(item.id));
+                if (found?.path) folder = found.path;
+            }
+        } catch {}
+
+        let online = item.featureOnline || '';
+        let platform = item.featurePlatform || '';
+        let workTime = item.featureWorkTime || '';
+        let runtime = item.featureRuntime || '';
+        let contentHtml = item.contentHtml || '';
+
+        try {
+            const detailsRes = await fetch(`/history/${encodeURIComponent(folder)}/details.json`);
+            if (detailsRes.ok) {
+                const details = await detailsRes.json();
+                if (details.seasons && details.seasons.length > 0) {
+                    const s0 = details.seasons[0];
+                    if (!online && s0.features?.online) online = s0.features.online;
+                    if (!platform && s0.features?.platform) platform = s0.features.platform;
+                    if (!workTime && s0.features?.work_time) workTime = s0.features.work_time;
+                    if (!runtime && s0.features?.runtime) runtime = s0.features.runtime;
+                    if (!contentHtml || contentHtml.trim() === '' || contentHtml.includes('Заголовок эпохи')) {
+                        contentHtml = details.seasons.map((s: any) => `<h2>${s.name} ${s.s_description ? '— ' + s.s_description : ''}</h2><p>${s.description || ''}</p>`).join('') || details.description || '';
+                    }
+                }
+            }
+        } catch {}
+
         setEditingItem({
             ...item,
-            featureOnline: item.featureOnline || '',
-            featurePlatform: item.featurePlatform || 'Minecraft',
-            featureWorkTime: item.featureWorkTime || '',
-            featureRuntime: item.featureRuntime || '',
+            featureOnline: online || '8-10 человек в среднем',
+            featurePlatform: platform || 'Minecraft Java + Bedrock',
+            featureWorkTime: workTime || 'Круглосуточно',
+            featureRuntime: runtime || '~ 3 месяца',
+            contentHtml: contentHtml || '<h2>Заголовок эпохи</h2><p>Напишите подробный лор и историю этого периода...</p>',
             colors: parsedColors
         });
     };
@@ -99,27 +133,6 @@ const HistoryTab: React.FC = () => {
         } catch (err) {
             showNotification('Ошибка при удалении.', 'error');
         }
-    };
-
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setUploadingImage(true);
-        try {
-            const link = await uploadToImgur(file);
-            // Append image tag to contentHtml
-            const imgHtml = `<p><img src="${link}" alt="Uploaded image" class="w-full rounded-2xl border border-white/10 my-4 shadow-xl" /></p>`;
-            setEditingItem(prev => prev ? { ...prev, contentHtml: (prev.contentHtml || '') + imgHtml } : null);
-            showNotification('Изображение загружено и вставлено в редактор!', 'success');
-        } catch (err) {
-            showNotification('Не удалось загрузить изображение.', 'error');
-        } finally {
-            setUploadingImage(false);
-        }
-    };
-
-    const insertHtml = (snippet: string) => {
-        setEditingItem(prev => prev ? { ...prev, contentHtml: (prev.contentHtml || '') + snippet } : null);
     };
 
     // If an item is being edited, render Full-Window Editor inside workspace
@@ -325,39 +338,15 @@ const HistoryTab: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Formatting Toolbar */}
+                            {/* WordPress / Word Visual Rich Text Editor */}
                             <div className="space-y-2 pt-2">
-                                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-2">
-                                    <span className="text-xs font-bold text-gray-300">HTML Текст Статьи:</span>
-                                    <div className="flex items-center gap-1.5 text-xs">
-                                        <button
-                                            type="button"
-                                            onClick={() => insertHtml('<h2>Новый раздел</h2>\n')}
-                                            className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded-md font-mono"
-                                        >
-                                            +H2
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => insertHtml('<p>Текст абзаца...</p>\n')}
-                                            className="px-2 py-1 bg-white/10 hover:bg-white/20 text-white rounded-md font-mono"
-                                        >
-                                            +Абзац
-                                        </button>
-                                        <label className="px-2 py-1 bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/30 rounded-md font-semibold cursor-pointer flex items-center gap-1">
-                                            <Upload className="w-3 h-3" />
-                                            {uploadingImage ? 'Загрузка...' : 'Imgur Фото'}
-                                            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <textarea
-                                    rows={16}
+                                <label className="block text-gray-300 font-bold text-xs">
+                                    📝 Текст статьи и лора (Визуальный Word/WordPress редактор)
+                                </label>
+                                <RichTextEditor
                                     value={editingItem.contentHtml || ''}
-                                    onChange={e => setEditingItem({ ...editingItem, contentHtml: e.target.value })}
-                                    className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-white font-mono text-xs leading-relaxed focus:outline-none focus:border-story-gold/50"
-                                    placeholder="<h2>История...</h2>"
+                                    onChange={html => setEditingItem({ ...editingItem, contentHtml: html })}
+                                    minHeight="480px"
                                 />
                             </div>
                         </div>
