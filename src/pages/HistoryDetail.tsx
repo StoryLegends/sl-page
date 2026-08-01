@@ -8,19 +8,26 @@ import SEO from '../components/SEO';
 import { historyApi } from '../api/history';
 
 interface PhotoObject {
-    id: number;
+    id: number | string;
     description: string;
 }
 
-type PhotoItem = number | PhotoObject;
+type PhotoItem = number | string | PhotoObject;
 
 const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[], folderName: string, seasonName: string }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [selectedImage, setSelectedImage] = useState<PhotoItem | null>(null);
     const [isClosing, setIsClosing] = useState(false);
 
-    const getPhotoId = (item: PhotoItem) => typeof item === 'number' ? item : item.id;
-    const getPhotoDescription = (item: PhotoItem) => typeof item === 'number' ? null : item.description;
+    const getPhotoId = (item: PhotoItem): string | number => typeof item === 'object' ? item.id : item;
+    const getPhotoDescription = (item: PhotoItem) => typeof item === 'object' ? item.description : null;
+    const resolvePhotoUrl = (item: PhotoItem) => {
+        const pid = getPhotoId(item);
+        const s = String(pid);
+        return (typeof pid === 'string' && (s.startsWith('http') || s.startsWith('/')))
+            ? s
+            : `/history/${folderName}/images/${pid}.webp`;
+    };
 
     const handleCloseLightbox = () => {
         setIsClosing(true);
@@ -119,7 +126,6 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
                     className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
                 >
                     {photos.map((photo, index) => {
-                        const photoId = getPhotoId(photo);
                         return (
                             <div
                                 key={index}
@@ -127,8 +133,8 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
                                 onClick={() => setSelectedImage(photo)}
                             >
                                 <img
-                                    src={`/history/${folderName}/images/${photoId}.webp`}
-                                    alt={`${seasonName} photo ${photoId}`}
+                                    src={resolvePhotoUrl(photo)}
+                                    alt={`${seasonName} photo ${getPhotoId(photo)}`}
                                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
                                     onError={(e) => {
                                         (e.target as HTMLImageElement).style.display = 'none';
@@ -162,7 +168,7 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
                             <TransformComponent wrapperClass="!w-full !h-full" contentClass="!w-full !h-full flex items-center justify-center">
                                 <img
                                     key={getPhotoId(selectedImage)}
-                                    src={`/history/${folderName}/images/${getPhotoId(selectedImage)}.webp`}
+                                    src={resolvePhotoUrl(selectedImage)}
                                     alt={`${seasonName} full screen`}
                                     className="max-w-full max-h-full md:max-h-screen object-contain will-change-transform"
                                 />
@@ -324,29 +330,53 @@ const HistoryDetail = () => {
                         }
                         if (colors.length === 0) colors = ['#34383b', '#728697'];
                         
-                        setFolderName(serverItem.pathSlug || id);
-                        
-                        // If contentHtml exists from CMS editor, construct HistoryDetails object
-                        if (serverItem.contentHtml) {
+                        const slug = serverItem.pathSlug || id;
+                        setFolderName(slug);
+
+                        let richDetails: any = null;
+                        try {
+                            const detailsRes = await fetch(`/history/${encodeURIComponent(slug)}/details.json`);
+                            if (detailsRes.ok) {
+                                richDetails = await detailsRes.json();
+                            }
+                        } catch (e) {}
+
+                        if (richDetails) {
                             setDetails({
-                                id: String(serverItem.id),
-                                name: serverItem.title,
-                                date: serverItem.eventDate || '',
-                                description: serverItem.description || '',
-                                colors: colors,
-                                seasons: [
-                                    {
-                                        name: serverItem.title,
-                                        date: serverItem.eventDate || '',
-                                        s_description: serverItem.description || '',
-                                        features: { online: '—', platform: 'Minecraft', work_time: '—', runtime: '—' },
-                                        description: serverItem.contentHtml
-                                    }
-                                ],
-                                photos: []
+                                ...richDetails,
+                                name: serverItem.title || richDetails.name,
+                                description: serverItem.description || richDetails.description,
+                                colors: colors.length > 0 ? colors : richDetails.colors
                             });
                             return;
                         }
+
+                        let parsedPhotos: any[] = [];
+                        if (typeof serverItem.photosJson === 'string') {
+                            try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
+                        } else if (serverItem.photos) {
+                            parsedPhotos = serverItem.photos;
+                        }
+
+                        setDetails({
+                            id: String(serverItem.id),
+                            name: serverItem.title,
+                            date: serverItem.eventDate || '',
+                            description: serverItem.description || '',
+                            colors: colors,
+                            seasons: [
+                                {
+                                    name: serverItem.title,
+                                    date: serverItem.eventDate || '',
+                                    s_description: serverItem.description || '',
+                                    features: { online: '—', platform: 'Minecraft', work_time: '—', runtime: '—' },
+                                    description: serverItem.contentHtml || '',
+                                    photos: parsedPhotos
+                                }
+                            ],
+                            photos: []
+                        });
+                        return;
                     }
                 }
 
