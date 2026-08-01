@@ -310,8 +310,11 @@ interface HistoryDetails {
     photos: number[]; // Global photos if any (though user asked for per-season carousel, keeping for compatibility)
 }
 
+import { useAuth } from '../context/AuthContext';
+
 const HistoryDetail = () => {
     const { id } = useParams<{ id: string }>();
+    const { hasFeature } = useAuth();
     const [details, setDetails] = useState<HistoryDetails | null>(null);
     const [loading, setLoading] = useState(true);
     const [isExiting, setIsExiting] = useState(false);
@@ -323,62 +326,177 @@ const HistoryDetail = () => {
             try {
                 if (!id) throw new Error('No id');
 
-                // 1. Load static index to resolve folder path
-                let indexData: any[] = [];
-                try {
-                    const indexRes = await fetch('/history-index.json');
-                    if (indexRes.ok) indexData = await indexRes.json();
-                } catch {}
+                const useDbFirst = hasFeature('history');
 
-                const indexItem = indexData.find((i: any) => i.id === id || i.path === id);
-                const folderPath = indexItem?.path || id;
-                setFolderName(folderPath);
+                // Helper to load index and resolve folder name
+                const getFolderName = async (): Promise<string> => {
+                    let indexData: any[] = [];
+                    try {
+                        const indexRes = await fetch('/history-index.json');
+                        if (indexRes.ok) indexData = await indexRes.json();
+                    } catch {}
+                    const indexItem = indexData.find((i: any) => i.id === id || i.path === id);
+                    return indexItem?.path || id;
+                };
 
-                // 2. Try loading rich details from repo files first
-                let richDetails: any = null;
-                try {
-                    const detailsRes = await fetch(`/history/${encodeURIComponent(folderPath)}/details.json`);
-                    if (detailsRes.ok) richDetails = await detailsRes.json();
-                } catch {}
+                const resolvedFolder = await getFolderName();
+                setFolderName(resolvedFolder);
 
-                // 3. Optional API override/fallback while DB flow is unfinished
-                let serverItem: any = null;
-                try {
-                    serverItem = await historyApi.getHistoryBySlug(id);
-                } catch {}
+                // Helper to fetch rich static details file
+                const fetchFileDetails = async (folder: string) => {
+                    const detailsRes = await fetch(`/history/${encodeURIComponent(folder)}/details.json`);
+                    if (detailsRes.ok) return await detailsRes.json();
+                    return null;
+                };
 
-                // 4. File-based primary source
-                if (richDetails) {
-                    let colors = richDetails.colors || [];
-                    if (serverItem && typeof serverItem.colorsJson === 'string') {
-                        try {
-                            const parsedColors = JSON.parse(serverItem.colorsJson);
-                            if (Array.isArray(parsedColors) && parsedColors.length > 0) {
-                                colors = parsedColors;
+                if (useDbFirst) {
+                    // --- FEATURE FLAG ENABLED: DB FIRST -> FALLBACK TO FILES ---
+                    try {
+                        const serverItem = await historyApi.getHistoryBySlug(id);
+                        const staticDetails = await fetchFileDetails(serverItem.pathSlug || resolvedFolder);
+
+                        let colors: string[] = [];
+                        if (typeof serverItem.colorsJson === 'string') {
+                            try { colors = JSON.parse(serverItem.colorsJson); } catch {}
+                        }
+                        if (colors.length === 0) colors = staticDetails?.colors || ['#34383b', '#728697'];
+
+                        let parsedPhotos: any[] = [];
+                        if (typeof serverItem.photosJson === 'string') {
+                            try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
+                        }
+
+                        if (staticDetails) {
+                            // Combine DB item over static details
+                            const seasons = [...(staticDetails.seasons || [])];
+                            if (seasons.length > 0 && typeof seasons[0] === 'object') {
+                                const firstSeason = { ...seasons[0] };
+                                const features = { ...firstSeason.features };
+                                if (serverItem.featureOnline) features.online = serverItem.featureOnline;
+                                if (serverItem.featurePlatform) features.platform = serverItem.featurePlatform;
+                                if (serverItem.featureWorkTime) features.work_time = serverItem.featureWorkTime;
+                                if (serverItem.featureRuntime) features.runtime = serverItem.featureRuntime;
+                                firstSeason.features = features;
+                                seasons[0] = firstSeason;
                             }
-                        } catch {}
+
+                            setDetails({
+                                ...staticDetails,
+                                name: serverItem.title || staticDetails.name,
+                                description: serverItem.description || staticDetails.description,
+                                colors,
+                                seasons
+                            });
+                            return;
+                        }
+
+                        // No static details.json, use DB item alone
+                        setDetails({
+                            id: String(serverItem.id),
+                            name: serverItem.title,
+                            date: serverItem.eventDate || '',
+                            description: serverItem.description || '',
+                            colors,
+                            seasons: [{
+                                name: serverItem.title,
+                                date: serverItem.eventDate || '',
+                                s_description: serverItem.description || '',
+                                features: {
+                                    online: serverItem.featureOnline || '—',
+                                    platform: serverItem.featurePlatform || 'Minecraft',
+                                    work_time: serverItem.featureWorkTime || '—',
+                                    runtime: serverItem.featureRuntime || '—'
+                                },
+                                description: serverItem.contentHtml || '',
+                                photos: parsedPhotos
+                            }],
+                            photos: []
+                        });
+                        return;
+                    } catch (dbErr) {
+                        console.warn('DB history detail fetch failed, falling back to files:', dbErr);
+                        const richDetails = await fetchFileDetails(resolvedFolder);
+                        if (richDetails) {
+                            setDetails(richDetails);
+                            return;
+                        }
+                        throw dbErr;
+                    }
+                } else {
+                    // --- FEATURE FLAG DISABLED: FILES FIRST -> FALLBACK TO DB ---
+                    const richDetails = await fetchFileDetails(resolvedFolder);
+                    let serverItem: any = null;
+                    try {
+                        serverItem = await historyApi.getHistoryBySlug(id);
+                    } catch {}
+
+                    if (richDetails) {
+                        let colors = richDetails.colors || [];
+                        if (serverItem && typeof serverItem.colorsJson === 'string') {
+                            try {
+                                const parsedColors = JSON.parse(serverItem.colorsJson);
+                                if (Array.isArray(parsedColors) && parsedColors.length > 0) colors = parsedColors;
+                            } catch {}
+                        }
+
+                        const seasons = [...(richDetails.seasons || [])];
+                        if (serverItem && seasons.length > 0 && typeof seasons[0] === 'object') {
+                            const firstSeason = { ...seasons[0] };
+                            const features = { ...firstSeason.features };
+                            if (serverItem.featureOnline) features.online = serverItem.featureOnline;
+                            if (serverItem.featurePlatform) features.platform = serverItem.featurePlatform;
+                            if (serverItem.featureWorkTime) features.work_time = serverItem.featureWorkTime;
+                            if (serverItem.featureRuntime) features.runtime = serverItem.featureRuntime;
+                            firstSeason.features = features;
+                            seasons[0] = firstSeason;
+                        }
+
+                        setDetails({
+                            ...richDetails,
+                            name: serverItem?.title || richDetails.name,
+                            description: serverItem?.description || richDetails.description,
+                            colors: colors.length > 0 ? colors : ['#34383b', '#728697'],
+                            seasons
+                        });
+                        return;
                     }
 
-                    const seasons = [...(richDetails.seasons || [])];
-                    if (serverItem && seasons.length > 0 && typeof seasons[0] === 'object') {
-                        const firstSeason = { ...seasons[0] };
-                        const features = { ...firstSeason.features };
-                        if (serverItem.featureOnline !== undefined && serverItem.featureOnline !== '') features.online = serverItem.featureOnline;
-                        if (serverItem.featurePlatform !== undefined && serverItem.featurePlatform !== '') features.platform = serverItem.featurePlatform;
-                        if (serverItem.featureWorkTime !== undefined && serverItem.featureWorkTime !== '') features.work_time = serverItem.featureWorkTime;
-                        if (serverItem.featureRuntime !== undefined && serverItem.featureRuntime !== '') features.runtime = serverItem.featureRuntime;
-                        firstSeason.features = features;
-                        seasons[0] = firstSeason;
-                    }
+                    if (serverItem) {
+                        let colors: string[] = [];
+                        if (typeof serverItem.colorsJson === 'string') {
+                            try { colors = JSON.parse(serverItem.colorsJson); } catch {}
+                        }
+                        if (colors.length === 0) colors = ['#34383b', '#728697'];
 
-                    setDetails({
-                        ...richDetails,
-                        name: serverItem?.title || richDetails.name,
-                        description: serverItem?.description || richDetails.description,
-                        colors: colors.length > 0 ? colors : ['#34383b', '#728697'],
-                        seasons
-                    });
-                    return;
+                        let parsedPhotos: any[] = [];
+                        if (typeof serverItem.photosJson === 'string') {
+                            try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
+                        }
+
+                        setDetails({
+                            id: String(serverItem.id),
+                            name: serverItem.title,
+                            date: serverItem.eventDate || '',
+                            description: serverItem.description || '',
+                            colors,
+                            seasons: [{
+                                name: serverItem.title,
+                                date: serverItem.eventDate || '',
+                                s_description: serverItem.description || '',
+                                features: {
+                                    online: serverItem.featureOnline || '—',
+                                    platform: serverItem.featurePlatform || 'Minecraft',
+                                    work_time: serverItem.featureWorkTime || '—',
+                                    runtime: serverItem.featureRuntime || '—'
+                                },
+                                description: serverItem.contentHtml || '',
+                                photos: parsedPhotos
+                            }],
+                            photos: []
+                        });
+                        return;
+                    }
+                    throw new Error('History details not found');
                 }
 
                 // 5. API fallback if file data is missing

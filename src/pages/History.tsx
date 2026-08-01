@@ -6,6 +6,8 @@ import Loader from '../components/ui/Loader';
 import SEO from '../components/SEO';
 import { historyApi } from '../api/history';
 
+import { useAuth } from '../context/AuthContext';
+
 interface HistoryItem {
   id: string;
   name: string;
@@ -17,40 +19,65 @@ interface HistoryItem {
 }
 
 const History = () => {
+  const { hasFeature } = useAuth();
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
     const fetchHistory = async () => {
-      try {
+      const useDbFirst = hasFeature('history');
+
+      const fetchFromFiles = async (): Promise<HistoryItem[]> => {
         const res = await fetch('/history-index.json');
         if (!res.ok) throw new Error('history-index not found');
-        const data = await res.json();
-        setHistoryItems(data);
-      } catch (error) {
-        console.error('Failed to load history from files, using API fallback:', error);
-        try {
-          const items = await historyApi.getPublicHistory();
-          const mapped: HistoryItem[] = items.map(item => {
-            let colors = item.colors || [];
-            if (typeof item.colorsJson === 'string') {
-              try { colors = JSON.parse(item.colorsJson); } catch {}
-            }
-            if (colors.length === 0) colors = ['#34383b', '#728697'];
-            return {
-              id: item.pathSlug || String(item.id),
-              name: item.title,
-              description: item.description || '',
-              path: item.pathSlug || String(item.id),
-              date: item.eventDate || '',
-              colors: colors
-            };
-          });
-          setHistoryItems(mapped);
-        } catch (e) {
-          console.error('Fallback fetch failed:', e);
+        return await res.json();
+      };
+
+      const fetchFromDb = async (): Promise<HistoryItem[]> => {
+        const items = await historyApi.getPublicHistory();
+        if (!items || items.length === 0) throw new Error('No DB items');
+        return items.map(item => {
+          let colors = item.colors || [];
+          if (typeof item.colorsJson === 'string') {
+            try { colors = JSON.parse(item.colorsJson); } catch {}
+          }
+          if (colors.length === 0) colors = ['#34383b', '#728697'];
+          return {
+            id: item.pathSlug || String(item.id),
+            name: item.title,
+            description: item.description || '',
+            path: item.pathSlug || String(item.id),
+            date: item.eventDate || '',
+            colors: colors
+          };
+        });
+      };
+
+      try {
+        if (useDbFirst) {
+          // Flag ENABLED: DB first -> Fallback to files
+          try {
+            const data = await fetchFromDb();
+            setHistoryItems(data);
+          } catch (dbErr) {
+            console.warn('DB history fetch failed, falling back to files:', dbErr);
+            const data = await fetchFromFiles();
+            setHistoryItems(data);
+          }
+        } else {
+          // Flag DISABLED: Files first -> Fallback to DB
+          try {
+            const data = await fetchFromFiles();
+            setHistoryItems(data);
+          } catch (fileErr) {
+            console.warn('File history fetch failed, falling back to DB:', fileErr);
+            const data = await fetchFromDb();
+            setHistoryItems(data);
+          }
         }
+      } catch (error) {
+        console.error('All history fetch strategies failed:', error);
       } finally {
         setIsExiting(true);
         setTimeout(() => {
@@ -60,7 +87,7 @@ const History = () => {
     };
 
     fetchHistory();
-  }, []);
+  }, [hasFeature]);
 
   if (loading) {
     return (
