@@ -9,11 +9,21 @@ const ReviewsMarquee: React.FC = () => {
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedReviewForModal, setSelectedReviewForModal] = useState<Review | null>(null);
 
+    // Fisher-Yates shuffle helper
+    const shuffleArray = <T,>(array: T[]): T[] => {
+        const arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    };
+
     useEffect(() => {
         const load = async () => {
             try {
                 const data = await reviewsApi.getPublicReviews();
-                setReviews(data);
+                setReviews(shuffleArray(data));
             } catch (err) {
                 console.error('Failed to load public reviews:', err);
             } finally {
@@ -27,9 +37,10 @@ const ReviewsMarquee: React.FC = () => {
         return null;
     }
 
-    // Ensure enough cards to fill viewport — repeat until we have at least 8 per row
+    // Ensure enough cards to fill marquee viewport (at least 8 cards before doubling)
     const minCards = 8;
-    const ensureMinLength = (arr: Review[]) => {
+    const fillRowToMinLength = (arr: Review[]) => {
+        if (arr.length === 0) return [];
         const result: Review[] = [];
         while (result.length < minCards) {
             result.push(...arr);
@@ -37,14 +48,15 @@ const ReviewsMarquee: React.FC = () => {
         return result;
     };
 
-    // Split reviews into 2 rows
-    const half = Math.ceil(reviews.length / 2);
-    const row1 = reviews.slice(0, half > 0 ? half : 1);
-    const row2 = reviews.length > 1 ? reviews.slice(half) : row1;
+    // Generate row 1 and row 2 using ALL reviews with an offset rotation so both rows alternate all reviews
+    const offset = Math.max(1, Math.floor(reviews.length / 2));
+    const row1Base = reviews;
+    const row2Base = [...reviews.slice(offset), ...reviews.slice(0, offset)];
 
-    // Build seamless sets — two identical halves so translateX(-50%) loops perfectly
-    const row1Set = ensureMinLength(row1);
-    const row2Set = ensureMinLength(row2);
+    const row1Set = fillRowToMinLength(row1Base);
+    const row2Set = fillRowToMinLength(row2Base);
+
+    // Double for seamless infinite marquee scroll (translateX -50%)
     const row1List = [...row1Set, ...row1Set];
     const row2List = [...row2Set, ...row2Set];
 
