@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Crown, Plus, Edit, Trash2, X, ExternalLink, Upload } from 'lucide-react';
-import { glorylistApi, type GloryItem, type GloryLink } from '../../../api/glorylist';
+import { glorylistApi, resolveGloryImage, type GloryItem, type GloryLink } from '../../../api/glorylist';
 import { useNotification } from '../../../context/NotificationContext';
 import { uploadToImgur } from '../../../utils/imgur';
 
@@ -164,7 +164,7 @@ const GloryListTab: React.FC = () => {
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex items-center gap-3">
                                             <img
-                                                src={item.image ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/glorylist/${item.image}`) : '/glorylist/default.webp'}
+                                                src={resolveGloryImage(item.image, item.name)}
                                                 alt={item.name}
                                                 className="w-12 h-12 rounded-xl object-cover border border-white/20 bg-black/40"
                                             />

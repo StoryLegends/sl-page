@@ -38,8 +38,17 @@ export const glorylistApi = {
         const response = await api.post('/api/admin/glorylist', item);
         return response.data;
     },
-
     deleteGloryItem: async (id: number): Promise<void> => {
         await api.delete(`/api/admin/glorylist/${id}`);
     }
+};
+
+export const resolveGloryImage = (img?: string, name?: string): string => {
+    if (!img || img.trim() === '') {
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Player')}&background=random`;
+    }
+    if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:') || img.startsWith('/')) {
+        return img;
+    }
+    return `/glorylist/skins/${img}`;
 };

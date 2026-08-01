@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SEO from '../components/SEO';
-import { glorylistApi } from '../api/glorylist';
+import { glorylistApi, resolveGloryImage } from '../api/glorylist';
 
 const DiscordIcon = ({ className }: { className?: string }) => (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -118,7 +118,7 @@ const ModalInner = ({ item, theme, onClose }: { item: GloryItem, theme: any, onC
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ delay: 0.1, duration: 0.3 }}
-                            src={`/glorylist/skins/${item.image}`}
+                            src={resolveGloryImage(item.image, item.name)}
                             alt={item.name}
                             decoding="async"
                             className="h-full w-auto object-contain hover:scale-105 transition-transform duration-300"
@@ -223,10 +223,9 @@ const GloryList = () => {
                         if (typeof item.linksJson === 'string') {
                             try { parsedLinks = JSON.parse(item.linksJson); } catch {}
                         }
-                        const imagePath = item.image ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/glorylist/${item.image}`) : '/glorylist/default.webp';
                         return {
                             ...item,
-                            image: imagePath,
+                            image: item.image,
                             links: parsedLinks,
                             Discord: item.discord || item.Discord
                         };
@@ -327,7 +326,7 @@ const GloryList = () => {
                                         {/* Image Container */}
                                         <div className="relative mb-6 h-48 w-full flex items-center justify-center">
                                             <img
-                                                src={`/glorylist/skins/${item.image}`}
+                                                src={resolveGloryImage(item.image, item.name)}
                                                 alt={item.name}
                                                 className="h-full object-contain drop-shadow-2xl group-hover:scale-110 transition-transform duration-500 relative z-0"
                                                 style={{ maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' }}
