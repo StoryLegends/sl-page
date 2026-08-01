@@ -498,45 +498,6 @@ const HistoryDetail = () => {
                     }
                     throw new Error('History details not found');
                 }
-
-                // 5. API fallback if file data is missing
-                if (serverItem) {
-                    let colors: string[] = [];
-                    if (typeof serverItem.colorsJson === 'string') {
-                        try { colors = JSON.parse(serverItem.colorsJson); } catch {}
-                    }
-                    if (colors.length === 0) colors = ['#34383b', '#728697'];
-
-                    let parsedPhotos: any[] = [];
-                    if (typeof serverItem.photosJson === 'string') {
-                        try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
-                    }
-
-                    setDetails({
-                        id: String(serverItem.id),
-                        name: serverItem.title,
-                        date: serverItem.eventDate || '',
-                        description: serverItem.description || '',
-                        colors,
-                        seasons: [{
-                            name: serverItem.title,
-                            date: serverItem.eventDate || '',
-                            s_description: serverItem.description || '',
-                            features: {
-                                online: serverItem.featureOnline || '—',
-                                platform: serverItem.featurePlatform || 'Minecraft',
-                                work_time: serverItem.featureWorkTime || '—',
-                                runtime: serverItem.featureRuntime || '—'
-                            },
-                            description: serverItem.contentHtml || '',
-                            photos: parsedPhotos
-                        }],
-                        photos: []
-                    });
-                    return;
-                }
-
-                throw new Error('History item not found');
             } catch (err) {
                 console.error(err);
                 setError('Failed to load history details.');
