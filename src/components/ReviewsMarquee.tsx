@@ -24,17 +24,29 @@ const ReviewsMarquee: React.FC = () => {
     }, []);
 
     if (loading || reviews.length === 0) {
-        return null; // Don't show ticker if empty
+        return null;
     }
+
+    // Ensure enough cards to fill viewport — repeat until we have at least 8 per row
+    const minCards = 8;
+    const ensureMinLength = (arr: Review[]) => {
+        const result: Review[] = [];
+        while (result.length < minCards) {
+            result.push(...arr);
+        }
+        return result;
+    };
 
     // Split reviews into 2 rows
     const half = Math.ceil(reviews.length / 2);
     const row1 = reviews.slice(0, half > 0 ? half : 1);
     const row2 = reviews.length > 1 ? reviews.slice(half) : row1;
 
-    // Duplicate rows for infinite seamless marquee loop
-    const row1List = [...row1, ...row1, ...row1, ...row1];
-    const row2List = [...row2, ...row2, ...row2, ...row2];
+    // Build seamless sets — two identical halves so translateX(-50%) loops perfectly
+    const row1Set = ensureMinLength(row1);
+    const row2Set = ensureMinLength(row2);
+    const row1List = [...row1Set, ...row1Set];
+    const row2List = [...row2Set, ...row2Set];
 
     const renderCard = (r: Review, idx: number) => (
         <div
@@ -112,18 +124,22 @@ const ReviewsMarquee: React.FC = () => {
 
             {/* 2-Row Marquee Container */}
             <div className="space-y-4 py-2 relative">
-                {/* Gradient Side Fades */}
-                <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#0b1320]/90 to-transparent z-10 pointer-events-none" />
-                <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#0b1320]/90 to-transparent z-10 pointer-events-none" />
+                {/* Very wide, soft side fades using dark bg */}
+                <div className="absolute left-0 top-0 bottom-0 w-40 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, var(--color-dark-bg, #0b1120) 0%, transparent 100%)' }} />
+                <div className="absolute right-0 top-0 bottom-0 w-40 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, var(--color-dark-bg, #0b1120) 0%, transparent 100%)' }} />
 
                 {/* Row 1 - Marquee Left */}
-                <div className="flex gap-4 animate-marquee hover:[animation-play-state:paused]">
-                    {row1List.map((r, i) => renderCard(r, i))}
+                <div className="overflow-hidden">
+                    <div className="flex gap-4 marquee-scroll hover:[animation-play-state:paused]" style={{ width: 'max-content' }}>
+                        {row1List.map((r, i) => renderCard(r, i))}
+                    </div>
                 </div>
 
                 {/* Row 2 - Marquee Right (Reverse) */}
-                <div className="flex gap-4 animate-marquee-reverse hover:[animation-play-state:paused]">
-                    {row2List.map((r, i) => renderCard(r, i))}
+                <div className="overflow-hidden">
+                    <div className="flex gap-4 marquee-scroll-reverse hover:[animation-play-state:paused]" style={{ width: 'max-content' }}>
+                        {row2List.map((r, i) => renderCard(r, i))}
+                    </div>
                 </div>
             </div>
 
