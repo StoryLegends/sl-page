@@ -45,6 +45,9 @@ const SettingsTab = lazy(() => import('./pages/admin/SettingsTab/SettingsTab'));
 const MessengerTab = lazy(() => import('./pages/admin/MessengerTab/MessengerTab'));
 const FeatureFlagsTab = lazy(() => import('./pages/admin/FeatureFlagsTab/FeatureFlagsTab'));
 const SponsorshipPlansTab = lazy(() => import('./pages/admin/SponsorshipPlansTab/SponsorshipPlansTab'));
+const ReviewsTab = lazy(() => import('./pages/admin/ReviewsTab/ReviewsTab'));
+const GloryListTab = lazy(() => import('./pages/admin/GloryListTab/GloryListTab'));
+const HistoryTab = lazy(() => import('./pages/admin/HistoryTab/HistoryTab'));
 
 // Lazy load new Public pages
 const Sponsorship = lazy(() => import('./pages/Sponsorship'));
@@ -130,6 +133,9 @@ function App() {
                   <Route path="badges" element={<BadgesTab />} />
                   <Route path="feature-flags" element={<FeatureFlagsTab />} />
                   <Route path="sponsorship" element={<SponsorshipPlansTab />} />
+                  <Route path="reviews" element={<ReviewsTab />} />
+                  <Route path="glorylist" element={<GloryListTab />} />
+                  <Route path="history" element={<HistoryTab />} />
                   <Route path="settings" element={<SettingsTab />} />
                 </Route>
 

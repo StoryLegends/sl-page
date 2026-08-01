@@ -5,6 +5,7 @@ import { ArrowLeft, Users, Monitor, Clock, Hourglass, ChevronLeft, ChevronRight,
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import Loader from '../components/ui/Loader';
 import SEO from '../components/SEO';
+import { historyApi } from '../api/history';
 
 interface PhotoObject {
     id: number;
@@ -314,11 +315,46 @@ const HistoryDetail = () => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                // First, we need to find the folder name for this ID from the index
+                if (id) {
+                    const serverItem = await historyApi.getHistoryBySlug(id);
+                    if (serverItem) {
+                        let colors = serverItem.colors || [];
+                        if (typeof serverItem.colorsJson === 'string') {
+                            try { colors = JSON.parse(serverItem.colorsJson); } catch {}
+                        }
+                        if (colors.length === 0) colors = ['#34383b', '#728697'];
+                        
+                        setFolderName(serverItem.pathSlug || id);
+                        
+                        // If contentHtml exists from CMS editor, construct HistoryDetails object
+                        if (serverItem.contentHtml) {
+                            setDetails({
+                                id: String(serverItem.id),
+                                name: serverItem.title,
+                                date: serverItem.eventDate || '',
+                                description: serverItem.description || '',
+                                colors: colors,
+                                seasons: [
+                                    {
+                                        name: serverItem.title,
+                                        date: serverItem.eventDate || '',
+                                        s_description: serverItem.description || '',
+                                        features: { online: '—', platform: 'Minecraft', work_time: '—', runtime: '—' },
+                                        description: serverItem.contentHtml
+                                    }
+                                ],
+                                photos: []
+                            });
+                            return;
+                        }
+                    }
+                }
+
+                // Fallback to static JSON file
                 const indexResponse = await fetch('/history-index.json');
                 if (!indexResponse.ok) throw new Error('Failed to load history index');
                 const indexData = await indexResponse.json();
-                const item = indexData.find((i: any) => i.id === id);
+                const item = indexData.find((i: any) => i.id === id || i.path === id);
 
                 if (!item) {
                     throw new Error('History item not found');
@@ -327,7 +363,6 @@ const HistoryDetail = () => {
                 setFolderName(item.path);
 
                 const encodedPath = encodeURIComponent(item.path);
-                console.log(`Fetching details from: /history/${encodedPath}/details.json`);
                 const detailsResponse = await fetch(`/history/${encodedPath}/details.json`);
                 if (!detailsResponse.ok) throw new Error('Failed to load details');
                 const detailsData = await detailsResponse.json();

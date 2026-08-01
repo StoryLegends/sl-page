@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Users, Video, Trophy, Crown, Code, ChevronLeft, ChevronRight, Gavel, ArrowRight, PenTool } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import SEO from '../components/SEO';
+import ReviewsMarquee from '../components/ReviewsMarquee';
 
 const About = () => {
   // Load images dynamically from src/assets/gallery
@@ -253,9 +254,11 @@ const About = () => {
                 7il777
               </div>
             </div>
-
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <ReviewsMarquee />
 
         {/* Last Video Section */}
         <div className="mb-16 relative z-[60]">

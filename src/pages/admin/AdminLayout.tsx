@@ -58,6 +58,9 @@ const AdminLayout: React.FC = () => {
         if (path.includes('/admin/badges')) return 'badges';
         if (path.includes('/admin/messenger')) return 'messenger';
         if (path.includes('/admin/sponsorship')) return 'sponsorship';
+        if (path.includes('/admin/reviews')) return 'reviews';
+        if (path.includes('/admin/glorylist')) return 'glorylist';
+        if (path.includes('/admin/history')) return 'history';
         if (path.includes('/admin/feature-flags')) return 'feature-flags';
         if (path.includes('/admin/settings')) return 'settings';
         return 'dashboard';
@@ -128,6 +131,24 @@ const AdminLayout: React.FC = () => {
             icon: <DollarOutlined />,
             label: 'Тарифы спонсорства',
             onClick: () => navigate('/admin/sponsorship')
+        },
+        {
+            key: 'reviews',
+            icon: <MessageOutlined />,
+            label: 'Отзывы',
+            onClick: () => navigate('/admin/reviews')
+        },
+        {
+            key: 'glorylist',
+            icon: <GiftOutlined />,
+            label: 'Зал славы',
+            onClick: () => navigate('/admin/glorylist')
+        },
+        {
+            key: 'history',
+            icon: <HistoryOutlined />,
+            label: 'История сервера',
+            onClick: () => navigate('/admin/history')
         },
         {
             key: 'settings',

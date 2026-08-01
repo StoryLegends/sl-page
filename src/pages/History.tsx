@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import { Clock, Calendar, Map, ArrowRight } from 'lucide-react';
 import Loader from '../components/ui/Loader';
 import SEO from '../components/SEO';
+import { historyApi } from '../api/history';
 
 interface HistoryItem {
   id: string;
@@ -23,13 +24,34 @@ const History = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await fetch('/history-index.json');
-        if (response.ok) {
-          const data = await response.json();
-          setHistoryItems(data);
-        }
+        const items = await historyApi.getPublicHistory();
+        const mapped: HistoryItem[] = items.map(item => {
+          let colors = item.colors || [];
+          if (typeof item.colorsJson === 'string') {
+            try { colors = JSON.parse(item.colorsJson); } catch {}
+          }
+          if (colors.length === 0) colors = ['#34383b', '#728697'];
+          return {
+            id: item.pathSlug || String(item.id),
+            name: item.title,
+            description: item.description || '',
+            path: item.pathSlug || String(item.id),
+            date: item.eventDate || '',
+            colors: colors
+          };
+        });
+        setHistoryItems(mapped);
       } catch (error) {
-        console.error('Failed to load history index', error);
+        console.error('Failed to load history from API, using fallback:', error);
+        try {
+          const res = await fetch('/history-index.json');
+          if (res.ok) {
+            const data = await res.json();
+            setHistoryItems(data);
+          }
+        } catch (e) {
+          console.error('Fallback fetch failed:', e);
+        }
       } finally {
         setIsExiting(true);
         setTimeout(() => {

@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import SEO from '../components/SEO';
+import { glorylistApi } from '../api/glorylist';
 
 const DiscordIcon = ({ className }: { className?: string }) => (
     <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -20,16 +21,12 @@ interface LinkItem {
 
 interface GloryItem {
     name: string;
-    image: string;
+    image?: string;
     description: string;
     details?: string;
     links: LinkItem[];
     Discrod?: string;
     Discord?: string;
-}
-
-interface GloryData {
-    [key: string]: GloryItem[];
 }
 
 const sectionTitles: { [key: string]: string } = {
@@ -210,7 +207,7 @@ const CharacterModal = ({ item, onClose, theme }: { item?: GloryItem | null, onC
 };
 
 const GloryList = () => {
-    const [data, setData] = useState<GloryData | null>(null);
+    const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [isExiting, setIsExiting] = useState(false);
     const [selectedItem, setSelectedItem] = useState<{ item: GloryItem, sectionKey: string } | null>(null);
@@ -218,13 +215,35 @@ const GloryList = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await fetch('/glorylist/list.json');
-                if (response.ok) {
-                    const result = await response.json();
-                    setData(result);
-                }
+                const result = await glorylistApi.getPublicGloryList();
+                // Parse linksJson if needed
+                Object.keys(result).forEach(cat => {
+                    result[cat] = result[cat].map((item: any) => {
+                        let parsedLinks = item.links || [];
+                        if (typeof item.linksJson === 'string') {
+                            try { parsedLinks = JSON.parse(item.linksJson); } catch {}
+                        }
+                        const imagePath = item.image ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/glorylist/${item.image}`) : '/glorylist/default.webp';
+                        return {
+                            ...item,
+                            image: imagePath,
+                            links: parsedLinks,
+                            Discord: item.discord || item.Discord
+                        };
+                    });
+                });
+                setData(result);
             } catch (error) {
-                console.error('Failed to load glory list', error);
+                console.error('Failed to load dynamic glory list from API, trying fallback:', error);
+                try {
+                    const res = await fetch('/glorylist/list.json');
+                    if (res.ok) {
+                        const json = await res.json();
+                        setData(json);
+                    }
+                } catch (e) {
+                    console.error('Fallback fetch failed:', e);
+                }
             } finally {
                 setIsExiting(true);
                 setTimeout(() => {
@@ -298,7 +317,7 @@ const GloryList = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-                                {items.map((item, index) => (
+                                {items.map((item: any, index: number) => (
                                     <div
                                         key={index}
                                         onClick={() => setSelectedItem({ item, sectionKey })}

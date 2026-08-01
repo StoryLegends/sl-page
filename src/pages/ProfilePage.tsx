@@ -10,8 +10,11 @@ import UserAvatar from '../components/UserAvatar';
 import BoosterBadge from '../components/BoosterBadge';
 
 
+import { reviewsApi, type Review } from '../api/reviews';
+import { Star, CornerDownRight, History as HistoryIcon } from 'lucide-react';
+
 const ProfilePage = () => {
-    const { user, isAdmin, refreshUser } = useAuth();
+    const { user, isAdmin, refreshUser, hasFeature } = useAuth();
     const navigate = useNavigate();
     const { showNotification } = useNotification();
 
@@ -64,6 +67,41 @@ const ProfilePage = () => {
     const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile');
     const [isEditing, setIsEditing] = useState(false);
     const [myApp, setMyApp] = useState<any>(null);
+
+    const [userReview, setUserReview] = useState<Review | null>(null);
+    const [reviewRating, setReviewRating] = useState<number>(5);
+    const [reviewContent, setReviewContent] = useState<string>('');
+    const [submittingReview, setSubmittingReview] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (user) {
+            reviewsApi.getMyReview().then(res => {
+                if (res) {
+                    setUserReview(res);
+                    setReviewRating(res.rating);
+                    setReviewContent(res.content);
+                }
+            });
+        }
+    }, [user]);
+
+    const handleSaveReview = async () => {
+        if (reviewContent.trim().length < 50) {
+            showNotification('Текст отзыва должен содержать не менее 50 символов.', 'error');
+            return;
+        }
+        setSubmittingReview(true);
+        try {
+            const saved = await reviewsApi.submitOrUpdateReview(reviewRating, reviewContent);
+            setUserReview(saved);
+            showNotification('Ваш отзыв успешно сохранен и отправлен на модерацию!', 'success');
+        } catch (err: any) {
+            console.error(err);
+            showNotification(err.response?.data?.error || 'Не удалось сохранить отзыв.', 'error');
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
 
     useEffect(() => {
         if (user) {
@@ -615,14 +653,14 @@ const ProfilePage = () => {
                                                         Сохранить изменения
                                                     </button>
                                                 </div>
-                                            </form>
-                                        )}
-                                    </div>
-                                ) : (
+                                             </form>
+                                         )}
+                                     </div>
+                                 ) : (
                                     // ACCOUNT SETTINGS (Email, Password, 2FA)
                                     <div className="space-y-8 animate-fadeIn">
                                         <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">Настройки аккаунта</h3>
-
+                                        
                                         {/* Security: Email & Password */}
                                         <div className="space-y-6">
                                             {/* Email Change Section */}
@@ -637,7 +675,6 @@ const ProfilePage = () => {
                                                             {user.email}
                                                         </div>
                                                     </div>
-                                                    {/* In a real app, you would have a form here to request email change */}
                                                     <p className="text-xs text-gray-500">
                                                         Для смены email, пожалуйста, обратитесь к администрации через Discord.
                                                     </p>
@@ -645,180 +682,261 @@ const ProfilePage = () => {
                                             </div>
 
                                             {/* Password Change Section */}
-                                            <div className="bg-white/5 border border-white/5 rounded-xl p-6">
-                                                <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                                                    <span className="text-gray-400">🔑</span> Смена пароля
-                                                </h4>
-                                                <form onSubmit={handleUpdatePassword} className="space-y-4">
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-300 mb-1">Текущий пароль</label>
-                                                        <input
-                                                            type="password"
-                                                            value={passwordData.oldPassword}
-                                                            onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
-                                                            className="w-full px-4 py-2 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:border-story-gold/50 text-white"
-                                                            placeholder="Текущий пароль"
-                                                            required
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-300 mb-1">Новый пароль</label>
-                                                        <input
-                                                            type="password"
-                                                            value={passwordData.newPassword}
-                                                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                                                            className="w-full px-4 py-2 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:border-story-gold/50 text-white"
-                                                            placeholder="••••••••"
-                                                            minLength={6}
-                                                            required
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-gray-300 mb-1">Подтвердите пароль</label>
-                                                        <input
-                                                            type="password"
-                                                            value={passwordData.confirmPassword}
-                                                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                                                            className="w-full px-4 py-2 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:border-story-gold/50 text-white"
-                                                            placeholder="••••••••"
-                                                            minLength={6}
-                                                            required
-                                                        />
-                                                    </div>
-                                                    <div className="flex justify-end pt-2">
-                                                        <button
-                                                            type="submit"
-                                                            disabled={!passwordData.newPassword || passwordData.newPassword !== passwordData.confirmPassword}
-                                                            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                        >
-                                                            Обновить пароль
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                            </div>
-                                        </div>
+                                             {/* Password Change Section */}
+                                             <div className="bg-white/5 border border-white/5 rounded-xl p-6">
+                                                 <h4 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                                     <span className="text-gray-400">🔑</span> Смена пароля
+                                                 </h4>
+                                                 <form onSubmit={handleUpdatePassword} className="space-y-4">
+                                                     <div>
+                                                         <label className="block text-sm font-medium text-gray-300 mb-1">Текущий пароль</label>
+                                                         <input
+                                                             type="password"
+                                                             value={passwordData.oldPassword}
+                                                             onChange={(e) => setPasswordData({ ...passwordData, oldPassword: e.target.value })}
+                                                             className="w-full px-4 py-2 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:border-story-gold/50 text-white"
+                                                             placeholder="Текущий пароль"
+                                                             required
+                                                         />
+                                                     </div>
+                                                     <div>
+                                                         <label className="block text-sm font-medium text-gray-300 mb-1">Новый пароль</label>
+                                                         <input
+                                                             type="password"
+                                                             value={passwordData.newPassword}
+                                                             onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                                                             className="w-full px-4 py-2 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:border-story-gold/50 text-white"
+                                                             placeholder="••••••••"
+                                                             minLength={6}
+                                                             required
+                                                         />
+                                                     </div>
+                                                     <div>
+                                                         <label className="block text-sm font-medium text-gray-300 mb-1">Подтвердите пароль</label>
+                                                         <input
+                                                             type="password"
+                                                             value={passwordData.confirmPassword}
+                                                             onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                                                             className="w-full px-4 py-2 bg-black/30 border border-white/10 rounded-lg focus:outline-none focus:border-story-gold/50 text-white"
+                                                             placeholder="••••••••"
+                                                             minLength={6}
+                                                             required
+                                                         />
+                                                     </div>
+                                                     <div className="flex justify-end pt-2">
+                                                         <button
+                                                             type="submit"
+                                                             disabled={!passwordData.newPassword || passwordData.newPassword !== passwordData.confirmPassword}
+                                                             className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                         >
+                                                             Обновить пароль
+                                                         </button>
+                                                     </div>
+                                                 </form>
+                                             </div>
 
-                                        {/* Security: 2FA */}
-                                        <div className="border-t border-white/10 pt-6">
-                                            <h4 className="text-lg font-bold text-white mb-4">Двухфакторная аутентификация</h4>
-                                            <div className="bg-white/5 border border-white/5 rounded-xl p-4 flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-white font-medium mb-1">Status: {user.totpEnabled ? <span className="text-green-400">Enabled</span> : <span className="text-gray-400">Disabled</span>}</p>
-                                                    <p className="text-gray-400 text-sm">Protect your account with an extra layer of security.</p>
-                                                </div>
-                                                {user.totpEnabled ? (
-                                                    <button
-                                                        onClick={handleDisableTotp}
-                                                        className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg border border-red-500/20 hover:bg-red-500/30 transition-colors font-medium text-sm"
-                                                    >
-                                                        Отключить
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={handleEnableTotp}
-                                                        className="px-4 py-2 bg-story-gold/20 text-story-gold rounded-lg border border-story-gold/20 hover:bg-story-gold/30 transition-colors font-medium text-sm"
-                                                    >
-                                                        Настроить
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
+                                             {/* Security: 2FA */}
+                                             <div className="border-t border-white/10 pt-6">
+                                                 <h4 className="text-lg font-bold text-white mb-4">Двухфакторная аутентификация</h4>
+                                                 <div className="bg-white/5 border border-white/5 rounded-xl p-4 flex items-center justify-between">
+                                                     <div>
+                                                         <p className="text-white font-medium mb-1">Status: {user?.totpEnabled ? <span className="text-green-400">Enabled</span> : <span className="text-gray-400">Disabled</span>}</p>
+                                                         <p className="text-gray-400 text-sm">Protect your account with an extra layer of security.</p>
+                                                     </div>
+                                                     {user?.totpEnabled ? (
+                                                         <button
+                                                             onClick={handleDisableTotp}
+                                                             className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg border border-red-500/20 hover:bg-red-500/30 transition-colors font-medium text-sm"
+                                                         >
+                                                             Отключить
+                                                         </button>
+                                                     ) : (
+                                                         <button
+                                                             onClick={handleEnableTotp}
+                                                             className="px-4 py-2 bg-story-gold/20 text-story-gold rounded-lg border border-story-gold/20 hover:bg-story-gold/30 transition-colors font-medium text-sm"
+                                                         >
+                                                             Настроить
+                                                         </button>
+                                                     )}
+                                                 </div>
+                                             </div>
 
-                                        {/* Security: Sponsorship */}
-                                        <div className="border-t border-white/10 pt-6">
-                                            <h4 className="text-lg font-bold text-white mb-4">Управление спонсорством</h4>
-                                            <div className="bg-white/5 border border-white/5 rounded-xl p-6">
-                                                {user.sponsorshipLevel && user.sponsorshipLevel > 0 ? (
-                                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                                                        <div className="text-left w-full">
-                                                            <p className="text-white font-medium mb-1">
-                                                                Активный статус: <span className="text-story-gold font-bold">Уровень {user.sponsorshipLevel}</span>
-                                                            </p>
-                                                            <p className="text-gray-400 text-sm">
-                                                                {user.subscriptionRecurring ? (
-                                                                    <>
-                                                                        Тип: <span className="text-green-400 font-semibold">Подписка (автопродление включено)</span>.
-                                                                        <br />
-                                                                        Следующее списание: {formatDate(user.sponsorshipExpiresAt)}
-                                                                    </>
-                                                                ) : user.stripeSubscriptionId ? (
-                                                                    <>
-                                                                        Тип: <span className="text-amber-400 font-semibold">Автопродление отключено</span>.
-                                                                        <br />
-                                                                        Действует до: {formatDate(user.sponsorshipExpiresAt)}
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        Тип: <span className="text-blue-400 font-semibold">Единоразовый платёж</span>.
-                                                                        <br />
-                                                                        Действует до: {formatDate(user.sponsorshipExpiresAt)}
-                                                                    </>
-                                                                )}
-                                                            </p>
-                                                        </div>
-                                                        {user.subscriptionRecurring && (
-                                                            <button
-                                                                onClick={async () => {
-                                                                    if (confirm('Вы уверены, что хотите отменить автопродление спонсорства? Привилегии останутся активными до конца оплаченного срока.')) {
-                                                                        try {
-                                                                            await usersApi.cancelSubscription();
-                                                                            showNotification('Автопродление подписки успешно отменено.', 'success');
-                                                                            refreshUser();
-                                                                        } catch (err) {
-                                                                            console.error(err);
-                                                                            showNotification('Не удалось отменить автопродление. Попробуйте позже.', 'error');
-                                                                        }
-                                                                    }
-                                                                }}
-                                                                className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg border border-red-500/20 hover:bg-red-500/30 transition-colors font-medium text-sm whitespace-nowrap"
-                                                            >
-                                                                Отменить автопродление
-                                                            </button>
-                                                        )}
-                                                         {!user.subscriptionRecurring && user.stripeSubscriptionId && (
-                                                             <button
-                                                                 onClick={async () => {
-                                                                     if (confirm('Вы хотите возобновить автопродление спонсорства? Списания продолжатся автоматически.')) {
-                                                                         try {
-                                                                             await usersApi.resumeSubscription();
-                                                                             showNotification('Автопродление подписки успешно возобновлено.', 'success');
-                                                                             refreshUser();
-                                                                         } catch (err) {
-                                                                             console.error(err);
-                                                                             showNotification('Не удалось возобновить автопродление. Попробуйте позже.', 'error');
-                                                                         }
-                                                                     }
-                                                                 }}
-                                                                 className="px-4 py-2 bg-story-gold/10 text-story-gold rounded-lg border border-story-gold/30 hover:bg-story-gold/20 transition-colors font-medium text-sm whitespace-nowrap"
-                                                             >
-                                                                 Включить автопродление
-                                                             </button>
+                                             {/* Security: Sponsorship (Scoped by sponsorship feature flag) */}
+                                             {hasFeature('sponsorship') && (
+                                                 <div className="border-t border-white/10 pt-6">
+                                                     <h4 className="text-lg font-bold text-white mb-4">Управление спонсорством</h4>
+                                                     <div className="bg-white/5 border border-white/5 rounded-xl p-6">
+                                                         {user?.sponsorshipLevel && user.sponsorshipLevel > 0 ? (
+                                                             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                                                 <div className="text-left w-full">
+                                                                     <p className="text-white font-medium mb-1">
+                                                                         Активный статус: <span className="text-story-gold font-bold">Уровень {user.sponsorshipLevel}</span>
+                                                                     </p>
+                                                                     <p className="text-gray-400 text-sm">
+                                                                         {user.subscriptionRecurring ? (
+                                                                             <>
+                                                                                 Тип: <span className="text-green-400 font-semibold">Подписка (автопродление включено)</span>.
+                                                                                 <br />
+                                                                                 Следующее списание: {formatDate(user.sponsorshipExpiresAt)}
+                                                                             </>
+                                                                         ) : user.stripeSubscriptionId ? (
+                                                                             <>
+                                                                                 Тип: <span className="text-amber-400 font-semibold">Автопродление отключено</span>.
+                                                                                 <br />
+                                                                                 Действует до: {formatDate(user.sponsorshipExpiresAt)}
+                                                                             </>
+                                                                         ) : (
+                                                                             <>
+                                                                                 Тип: <span className="text-blue-400 font-semibold">Единоразовый платёж</span>.
+                                                                                 <br />
+                                                                                 Действует до: {formatDate(user.sponsorshipExpiresAt)}
+                                                                             </>
+                                                                         )}
+                                                                     </p>
+                                                                 </div>
+                                                                 {user.subscriptionRecurring && (
+                                                                     <button
+                                                                         onClick={async () => {
+                                                                             if (confirm('Вы уверены, что хотите отменить автопродление спонсорства? Привилегии останутся активными до конца оплаченного срока.')) {
+                                                                                 try {
+                                                                                     await usersApi.cancelSubscription();
+                                                                                     showNotification('Автопродление подписки успешно отменено.', 'success');
+                                                                                     refreshUser();
+                                                                                 } catch (err) {
+                                                                                     console.error(err);
+                                                                                     showNotification('Не удалось отменить автопродление. Попробуйте позже.', 'error');
+                                                                                 }
+                                                                             }
+                                                                         }}
+                                                                         className="px-4 py-2 bg-red-500/20 text-red-300 rounded-lg border border-red-500/20 hover:bg-red-500/30 transition-colors font-medium text-sm whitespace-nowrap"
+                                                                     >
+                                                                         Отменить автопродление
+                                                                     </button>
+                                                                 )}
+                                                                 {!user.subscriptionRecurring && user.stripeSubscriptionId && (
+                                                                     <button
+                                                                         onClick={async () => {
+                                                                             if (confirm('Вы хотите возобновить автопродление спонсорства? Списания продолжатся автоматически.')) {
+                                                                                 try {
+                                                                                     await usersApi.resumeSubscription();
+                                                                                     showNotification('Автопродление подписки успешно возобновлено.', 'success');
+                                                                                     refreshUser();
+                                                                                 } catch (err) {
+                                                                                     console.error(err);
+                                                                                     showNotification('Не удалось возобновить автопродление. Попробуйте позже.', 'error');
+                                                                                 }
+                                                                             }
+                                                                         }}
+                                                                         className="px-4 py-2 bg-story-gold/10 text-story-gold rounded-lg border border-story-gold/30 hover:bg-story-gold/20 transition-colors font-medium text-sm whitespace-nowrap"
+                                                                     >
+                                                                         Включить автопродление
+                                                                     </button>
+                                                                 )}
+                                                             </div>
+                                                         ) : (
+                                                             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                                                                 <div className="text-left">
+                                                                     <p className="text-white font-medium mb-1">Спонсорство не активно</p>
+                                                                     <p className="text-gray-400 text-sm">Поддержите сервер и получите уникальные косметические бонусы и префиксы в игре!</p>
+                                                                 </div>
+                                                                 <button
+                                                                     onClick={() => navigate('/sponsorship')}
+                                                                     className="px-4 py-2 bg-story-gold text-black rounded-lg hover:bg-story-gold-light transition-colors font-bold text-sm whitespace-nowrap"
+                                                                 >
+                                                                     Стать спонсором
+                                                                 </button>
+                                                             </div>
                                                          )}
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                                                        <div className="text-left">
-                                                            <p className="text-white font-medium mb-1">Спонсорство не активно</p>
-                                                            <p className="text-gray-400 text-sm">Поддержите сервер и получите уникальные косметические бонусы и префиксы в игре!</p>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => navigate('/sponsorship')}
-                                                            className="px-4 py-2 bg-story-gold text-black rounded-lg hover:bg-story-gold-light transition-colors font-bold text-sm whitespace-nowrap"
-                                                        >
-                                                            Стать спонсором
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                                                     </div>
+                                                 </div>
+                                             )}
 
-                </div>
-            </div>
+                                             {/* Reviews Card Section */}
+                                             <div className="border-t border-white/10 pt-6">
+                                                 <div className="flex items-center justify-between mb-4">
+                                                     <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                                                         <Star className="w-5 h-5 text-story-gold fill-story-gold" />
+                                                         Ваш отзыв о сервере
+                                                     </h4>
+                                                     {userReview && (
+                                                         <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${userReview.status === 'APPROVED' ? 'bg-green-500/10 text-green-400 border-green-500/20' : userReview.status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                                                             {userReview.status === 'APPROVED' ? 'Опубликован' : userReview.status === 'REJECTED' ? 'Отклонен' : 'На модерации'}
+                                                         </span>
+                                                     )}
+                                                 </div>
+
+                                                 <div className="bg-white/5 border border-white/5 rounded-xl p-6 space-y-4">
+                                                     <div>
+                                                         <label className="text-sm font-medium text-gray-300 mb-2 block">Ваша оценка:</label>
+                                                         <div className="flex items-center gap-2">
+                                                             {[1, 2, 3, 4, 5].map(star => (
+                                                                 <button
+                                                                     key={star}
+                                                                     type="button"
+                                                                     onClick={() => setReviewRating(star)}
+                                                                     className="p-1 hover:scale-110 transition-transform"
+                                                                 >
+                                                                     <Star className={`w-7 h-7 ${star <= reviewRating ? 'fill-story-gold text-story-gold' : 'text-gray-600'}`} />
+                                                                 </button>
+                                                             ))}
+                                                             <span className="text-sm text-gray-400 ml-2 font-mono">{reviewRating}/5</span>
+                                                         </div>
+                                                     </div>
+
+                                                     <div>
+                                                         <div className="flex justify-between items-center mb-1 text-sm">
+                                                             <label className="text-gray-300 font-medium">Текст отзыва:</label>
+                                                             <span className={`text-xs font-mono ${reviewContent.trim().length < 50 ? 'text-amber-400 font-bold' : 'text-green-400'}`}>
+                                                                 {reviewContent.trim().length} / 50 символов (мин.)
+                                                             </span>
+                                                         </div>
+                                                         <textarea
+                                                             rows={4}
+                                                             value={reviewContent}
+                                                             onChange={e => setReviewContent(e.target.value)}
+                                                             placeholder="Напишите честный отзыв о вашей игре на StoryLegends (минимум 50 символов)..."
+                                                             className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-story-gold/50 placeholder-gray-500"
+                                                         />
+                                                     </div>
+
+                                                     {userReview?.adminReply && (
+                                                         <div className="p-3.5 rounded-xl bg-purple-900/20 border border-purple-500/30 text-xs space-y-1">
+                                                             <div className="flex items-center gap-2 font-bold text-purple-300">
+                                                                 <CornerDownRight className="w-4 h-4 text-purple-400" />
+                                                                 Ответ от {userReview.adminReplyAuthorName || 'Администрации'}:
+                                                             </div>
+                                                             <p className="text-purple-100 pl-6 leading-relaxed">
+                                                                 {userReview.adminReply}
+                                                             </p>
+                                                         </div>
+                                                     )}
+
+                                                     <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                                                         {userReview?.edited ? (
+                                                             <span className="text-xs text-amber-300/80 flex items-center gap-1">
+                                                                 <HistoryIcon className="w-3.5 h-3.5 text-amber-400" />
+                                                                 Отзыв был отредактирован (сохранена предыдущая версия)
+                                                             </span>
+                                                         ) : <div />}
+
+                                                         <button
+                                                             onClick={handleSaveReview}
+                                                             disabled={submittingReview || reviewContent.trim().length < 50}
+                                                             className="px-5 py-2.5 bg-story-gold text-black rounded-xl hover:bg-story-gold-light transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                                                         >
+                                                             {submittingReview ? 'Сохранение...' : userReview ? 'Обновить отзыв' : 'Опубликовать отзыв'}
+                                                         </button>
+                                                     </div>
+                                                 </div>
+                                             </div>
+                                         </div>
+                                     </div>
+                                 )}
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
 
             {/* Ban Notification Modal */}
             {showBanModal && (
