@@ -19,26 +19,26 @@ export interface ServerHistory {
 
 export const historyApi = {
     getPublicHistory: async (): Promise<ServerHistory[]> => {
-        const response = await api.get('/history');
+        const response = await api.get('/api/history');
         return response.data;
     },
 
     getHistoryBySlug: async (slug: string): Promise<ServerHistory> => {
-        const response = await api.get(`/history/${slug}`);
+        const response = await api.get(`/api/history/${slug}`);
         return response.data;
     },
 
     getAdminHistory: async (): Promise<ServerHistory[]> => {
-        const response = await api.get('/admin/history');
+        const response = await api.get('/api/admin/history');
         return response.data;
     },
 
     saveHistory: async (history: Partial<ServerHistory>): Promise<ServerHistory> => {
-        const response = await api.post('/admin/history', history);
+        const response = await api.post('/api/admin/history', history);
         return response.data;
     },
 
     deleteHistory: async (id: number): Promise<void> => {
-        await api.delete(`/admin/history/${id}`);
+        await api.delete(`/api/admin/history/${id}`);
     }
 };

@@ -34,18 +34,18 @@ export interface ReviewReminderSettings {
 
 export const reviewsApi = {
     getPublicReviews: async (): Promise<Review[]> => {
-        const response = await api.get('/reviews/public');
+        const response = await api.get('/api/reviews/public');
         return response.data;
     },
 
     getReviewHistory: async (reviewId: number): Promise<ReviewEditHistory[]> => {
-        const response = await api.get(`/reviews/history/${reviewId}`);
+        const response = await api.get(`/api/reviews/history/${reviewId}`);
         return response.data;
     },
 
     getMyReview: async (): Promise<Review | null> => {
         try {
-            const response = await api.get('/reviews/my');
+            const response = await api.get('/api/reviews/my');
             return response.data;
         } catch {
             return null;
@@ -53,36 +53,36 @@ export const reviewsApi = {
     },
 
     submitOrUpdateReview: async (rating: number, content: string): Promise<Review> => {
-        const response = await api.post('/reviews', { rating, content });
+        const response = await api.post('/api/reviews', { rating, content });
         return response.data;
     },
 
     getAdminReviews: async (status?: string): Promise<Review[]> => {
-        const response = await api.get('/admin/reviews', { params: { status } });
+        const response = await api.get('/api/admin/reviews', { params: { status } });
         return response.data;
     },
 
     updateReviewStatus: async (id: number, status: 'APPROVED' | 'REJECTED' | 'PENDING'): Promise<Review> => {
-        const response = await api.post(`/admin/reviews/${id}/status`, { status });
+        const response = await api.post(`/api/admin/reviews/${id}/status`, { status });
         return response.data;
     },
 
     addAdminReply: async (id: number, reply: string): Promise<Review> => {
-        const response = await api.post(`/admin/reviews/${id}/reply`, { reply });
+        const response = await api.post(`/api/admin/reviews/${id}/reply`, { reply });
         return response.data;
     },
 
     deleteReview: async (id: number): Promise<void> => {
-        await api.delete(`/admin/reviews/${id}`);
+        await api.delete(`/api/admin/reviews/${id}`);
     },
 
     getReminderSettings: async (): Promise<ReviewReminderSettings> => {
-        const response = await api.get('/admin/reviews/reminder-settings');
+        const response = await api.get('/api/admin/reviews/reminder-settings');
         return response.data;
     },
 
     updateReminderSettings: async (settings: Partial<ReviewReminderSettings>): Promise<ReviewReminderSettings> => {
-        const response = await api.post('/admin/reviews/reminder-settings', settings);
+        const response = await api.post('/api/admin/reviews/reminder-settings', settings);
         return response.data;
     }
 };
