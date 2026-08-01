@@ -321,82 +321,43 @@ const HistoryDetail = () => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                if (id) {
-                    const serverItem = await historyApi.getHistoryBySlug(id);
-                    if (serverItem) {
-                        let colors = serverItem.colors || [];
-                        if (typeof serverItem.colorsJson === 'string') {
-                            try { colors = JSON.parse(serverItem.colorsJson); } catch {}
-                        }
-                        if (colors.length === 0) colors = ['#34383b', '#728697'];
-                        
-                        const slug = serverItem.pathSlug || id;
-                        setFolderName(slug);
+                if (!id) throw new Error('No id');
 
-                        let richDetails: any = null;
-                        try {
-                            const detailsRes = await fetch(`/history/${encodeURIComponent(slug)}/details.json`);
-                            if (detailsRes.ok) {
-                                richDetails = await detailsRes.json();
-                            }
-                        } catch (e) {}
+                const serverItem = await historyApi.getHistoryBySlug(id);
+                setFolderName(serverItem.pathSlug || String(serverItem.id || id));
 
-                        if (richDetails) {
-                            setDetails({
-                                ...richDetails,
-                                name: serverItem.title || richDetails.name,
-                                description: serverItem.description || richDetails.description,
-                                colors: colors.length > 0 ? colors : richDetails.colors
-                            });
-                            return;
-                        }
+                let colors: string[] = [];
+                if (typeof serverItem.colorsJson === 'string') {
+                    try { colors = JSON.parse(serverItem.colorsJson); } catch {}
+                }
+                if (colors.length === 0) colors = ['#34383b', '#728697'];
 
-                        let parsedPhotos: any[] = [];
-                        if (typeof serverItem.photosJson === 'string') {
-                            try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
-                        } else if (serverItem.photos) {
-                            parsedPhotos = serverItem.photos;
-                        }
-
-                        setDetails({
-                            id: String(serverItem.id),
-                            name: serverItem.title,
-                            date: serverItem.eventDate || '',
-                            description: serverItem.description || '',
-                            colors: colors,
-                            seasons: [
-                                {
-                                    name: serverItem.title,
-                                    date: serverItem.eventDate || '',
-                                    s_description: serverItem.description || '',
-                                    features: { online: '—', platform: 'Minecraft', work_time: '—', runtime: '—' },
-                                    description: serverItem.contentHtml || '',
-                                    photos: parsedPhotos
-                                }
-                            ],
-                            photos: []
-                        });
-                        return;
-                    }
+                let parsedPhotos: any[] = [];
+                if (typeof serverItem.photosJson === 'string') {
+                    try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
                 }
 
-                // Fallback to static JSON file
-                const indexResponse = await fetch('/history-index.json');
-                if (!indexResponse.ok) throw new Error('Failed to load history index');
-                const indexData = await indexResponse.json();
-                const item = indexData.find((i: any) => i.id === id || i.path === id);
-
-                if (!item) {
-                    throw new Error('History item not found');
-                }
-
-                setFolderName(item.path);
-
-                const encodedPath = encodeURIComponent(item.path);
-                const detailsResponse = await fetch(`/history/${encodedPath}/details.json`);
-                if (!detailsResponse.ok) throw new Error('Failed to load details');
-                const detailsData = await detailsResponse.json();
-                setDetails(detailsData);
+                setDetails({
+                    id: String(serverItem.id),
+                    name: serverItem.title,
+                    date: serverItem.eventDate || '',
+                    description: serverItem.description || '',
+                    colors,
+                    seasons: [{
+                        name: serverItem.title,
+                        date: serverItem.eventDate || '',
+                        s_description: serverItem.description || '',
+                        features: {
+                            online: serverItem.featureOnline || '—',
+                            platform: serverItem.featurePlatform || 'Minecraft',
+                            work_time: serverItem.featureWorkTime || '—',
+                            runtime: serverItem.featureRuntime || '—'
+                        },
+                        description: serverItem.contentHtml || '',
+                        photos: parsedPhotos
+                    }],
+                    photos: []
+                });
             } catch (err) {
                 console.error(err);
                 setError('Failed to load history details.');

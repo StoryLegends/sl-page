@@ -6,6 +6,10 @@ export interface ServerHistory {
     description?: string;
     pathSlug: string;
     eventDate?: string;
+    featureOnline?: string;
+    featurePlatform?: string;
+    featureWorkTime?: string;
+    featureRuntime?: string;
     colorsJson?: string;
     colors?: string[];
     contentHtml?: string;

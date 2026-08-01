@@ -182,7 +182,7 @@ const Navbar: React.FC = () => {
                         <Link to="/profile" className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
                           <User className="w-4 h-4" /> Профиль
                         </Link>
-                        <Link to="/profile#review-section" className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
+                        <Link to={{ pathname: '/profile', hash: '#review-section' }} className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
                           <MessageSquare className="w-4 h-4" /> Отзыв
                         </Link>
                         <Link to="/application" className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>

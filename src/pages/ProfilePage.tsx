@@ -19,17 +19,6 @@ const ProfilePage = () => {
     const location = useLocation();
     const { showNotification } = useNotification();
 
-    // Scroll to hash section (e.g. #review-section)
-    useEffect(() => {
-        if (location.hash) {
-            const timer = setTimeout(() => {
-                const el = document.querySelector(location.hash);
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 300);
-            return () => clearTimeout(timer);
-        }
-    }, [location.hash]);
-
     const [maintenanceMode, setMaintenanceMode] = useState(false);
 
     useEffect(() => {
@@ -84,6 +73,37 @@ const ProfilePage = () => {
     const [reviewRating, setReviewRating] = useState<number>(5);
     const [reviewContent, setReviewContent] = useState<string>('');
     const [submittingReview, setSubmittingReview] = useState<boolean>(false);
+
+    const openReviewSection = () => {
+        setActiveTab('settings');
+        window.setTimeout(() => {
+            const el = document.querySelector('#review-section');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 120);
+    };
+
+    useEffect(() => {
+        if (!location.hash) return;
+        if (location.hash === '#review-section') {
+            setActiveTab('settings');
+        }
+
+        let retries = 0;
+        const scrollToHash = () => {
+            const el = document.querySelector(location.hash);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+            if (retries < 8) {
+                retries += 1;
+                window.setTimeout(scrollToHash, 120);
+            }
+        };
+
+        const timer = window.setTimeout(scrollToHash, 120);
+        return () => window.clearTimeout(timer);
+    }, [location.hash]);
 
     useEffect(() => {
         if (user) {
@@ -363,6 +383,13 @@ const ProfilePage = () => {
                                 >
                                     <Settings className="w-4 h-4" />
                                     Настройки аккаунта
+                                </button>
+                                <button
+                                    onClick={openReviewSection}
+                                    className="w-full text-left px-4 py-3 rounded-xl transition-colors flex items-center gap-3 font-medium text-gray-400 hover:bg-white/5 hover:text-white"
+                                >
+                                    <Star className="w-4 h-4" />
+                                    Отзыв о сервере
                                 </button>
                             </div>
 
@@ -672,7 +699,7 @@ const ProfilePage = () => {
                                     // ACCOUNT SETTINGS (Email, Password, 2FA)
                                     <div className="space-y-8 animate-fadeIn">
                                         <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">Настройки аккаунта</h3>
-                                        
+
                                         {/* Security: Email & Password */}
                                         <div className="space-y-6">
                                             {/* Email Change Section */}

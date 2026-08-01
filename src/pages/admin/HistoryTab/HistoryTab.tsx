@@ -38,6 +38,10 @@ const HistoryTab: React.FC = () => {
             description: 'Краткое описание эпохи...',
             pathSlug: nextSlug,
             eventDate: '2025',
+            featureOnline: '',
+            featurePlatform: 'Minecraft',
+            featureWorkTime: '',
+            featureRuntime: '',
             colorsJson: JSON.stringify(['#34383b', '#728697']),
             colors: ['#34383b', '#728697'],
             contentHtml: '<h2>Заголовок эпохи</h2><p>Напишите подробный лор и историю этого периода...</p>',
@@ -55,6 +59,10 @@ const HistoryTab: React.FC = () => {
 
         setEditingItem({
             ...item,
+            featureOnline: item.featureOnline || '',
+            featurePlatform: item.featurePlatform || 'Minecraft',
+            featureWorkTime: item.featureWorkTime || '',
+            featureRuntime: item.featureRuntime || '',
             colors: parsedColors
         });
     };
@@ -266,6 +274,55 @@ const HistoryTab: React.FC = () => {
                                     className="w-full bg-black/40 border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none focus:border-story-gold/50"
                                     placeholder="Новые главы истории сервера..."
                                 />
+                            </div>
+
+                            {/* Season Info / Features */}
+                            <div className="border-t border-white/10 pt-4">
+                                <label className="block text-gray-300 font-bold mb-2 text-xs flex items-center gap-1.5">
+                                    📊 Краткая информация (боковая панель)
+                                </label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                    <div>
+                                        <label className="block text-gray-400 mb-1">Онлайн</label>
+                                        <input
+                                            type="text"
+                                            value={editingItem.featureOnline || ''}
+                                            onChange={e => setEditingItem({ ...editingItem, featureOnline: e.target.value })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-white text-xs focus:outline-none focus:border-story-gold/50"
+                                            placeholder="8-10 человек в среднем"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-400 mb-1">Платформа</label>
+                                        <input
+                                            type="text"
+                                            value={editingItem.featurePlatform || ''}
+                                            onChange={e => setEditingItem({ ...editingItem, featurePlatform: e.target.value })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-white text-xs focus:outline-none focus:border-story-gold/50"
+                                            placeholder="Java & Bedrock"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-400 mb-1">Часы работы</label>
+                                        <input
+                                            type="text"
+                                            value={editingItem.featureWorkTime || ''}
+                                            onChange={e => setEditingItem({ ...editingItem, featureWorkTime: e.target.value })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-white text-xs focus:outline-none focus:border-story-gold/50"
+                                            placeholder="Круглосуточно"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-400 mb-1">Продолжительность</label>
+                                        <input
+                                            type="text"
+                                            value={editingItem.featureRuntime || ''}
+                                            onChange={e => setEditingItem({ ...editingItem, featureRuntime: e.target.value })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-white text-xs focus:outline-none focus:border-story-gold/50"
+                                            placeholder="+- 3 месяца"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Formatting Toolbar */}
