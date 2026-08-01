@@ -702,7 +702,20 @@ const ProfilePage = () => {
                                                      )}
                                                  </div>
 
-                                                 <div className="bg-white/5 border border-white/5 rounded-xl p-6 space-y-4">
+                                                  {!user.isPlayer ? (
+                                                      <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-5 flex items-center gap-4">
+                                                          <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                                                              <AlertCircle className="w-5 h-5" />
+                                                          </div>
+                                                          <div className="text-left">
+                                                              <h5 className="text-amber-200 font-bold text-sm">Доступно только игрокам</h5>
+                                                              <p className="text-gray-300 text-xs mt-0.5 leading-relaxed">
+                                                                  Оставлять отзывы о сервере могут только игроки с принятой заявкой (со статусом игрока).
+                                                              </p>
+                                                          </div>
+                                                      </div>
+                                                  ) : (
+                                                      <div className="bg-white/5 border border-white/5 rounded-xl p-6 space-y-4">
                                                      <div>
                                                          <label className="text-sm font-medium text-gray-300 mb-2 block">Ваша оценка:</label>
                                                          <div className="flex items-center gap-2">
@@ -765,8 +778,9 @@ const ProfilePage = () => {
                                                          </button>
                                                      </div>
                                                  </div>
-                                             </div>
-                                     </div>
+                                              )}
+                                          </div>
+                                      </div>
                                  ) : (
                                     // ACCOUNT SETTINGS (Email, Password, 2FA)
                                     <div className="space-y-8 animate-fadeIn">
