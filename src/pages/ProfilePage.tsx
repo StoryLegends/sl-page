@@ -75,7 +75,7 @@ const ProfilePage = () => {
     const [submittingReview, setSubmittingReview] = useState<boolean>(false);
 
     const openReviewSection = () => {
-        setActiveTab('settings');
+        setActiveTab('profile');
         window.setTimeout(() => {
             const el = document.querySelector('#review-section');
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -85,7 +85,7 @@ const ProfilePage = () => {
     useEffect(() => {
         if (!location.hash) return;
         if (location.hash === '#review-section') {
-            setActiveTab('settings');
+            openReviewSection();
         }
 
         let retries = 0;
@@ -383,13 +383,6 @@ const ProfilePage = () => {
                                 >
                                     <Settings className="w-4 h-4" />
                                     Настройки аккаунта
-                                </button>
-                                <button
-                                    onClick={openReviewSection}
-                                    className="w-full text-left px-4 py-3 rounded-xl transition-colors flex items-center gap-3 font-medium text-gray-400 hover:bg-white/5 hover:text-white"
-                                >
-                                    <Star className="w-4 h-4" />
-                                    Отзыв о сервере
                                 </button>
                             </div>
 
@@ -694,6 +687,85 @@ const ProfilePage = () => {
                                                 </div>
                                              </form>
                                          )}
+
+                                             {/* Reviews Card Section */}
+                                             <div id="review-section" className="border-t border-white/10 pt-6">
+                                                 <div className="flex items-center justify-between mb-4">
+                                                     <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                                                         <Star className="w-5 h-5 text-story-gold fill-story-gold" />
+                                                         Ваш отзыв о сервере
+                                                     </h4>
+                                                     {userReview && (
+                                                         <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${userReview.status === 'APPROVED' ? 'bg-green-500/10 text-green-400 border-green-500/20' : userReview.status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                                                             {userReview.status === 'APPROVED' ? 'Опубликован' : userReview.status === 'REJECTED' ? 'Отклонен' : 'На модерации'}
+                                                         </span>
+                                                     )}
+                                                 </div>
+
+                                                 <div className="bg-white/5 border border-white/5 rounded-xl p-6 space-y-4">
+                                                     <div>
+                                                         <label className="text-sm font-medium text-gray-300 mb-2 block">Ваша оценка:</label>
+                                                         <div className="flex items-center gap-2">
+                                                             {[1, 2, 3, 4, 5].map(star => (
+                                                                 <button
+                                                                     key={star}
+                                                                     type="button"
+                                                                     onClick={() => setReviewRating(star)}
+                                                                     className="p-1 hover:scale-110 transition-transform"
+                                                                 >
+                                                                     <Star className={`w-7 h-7 ${star <= reviewRating ? 'fill-story-gold text-story-gold' : 'text-gray-600'}`} />
+                                                                 </button>
+                                                             ))}
+                                                             <span className="text-sm text-gray-400 ml-2 font-mono">{reviewRating}/5</span>
+                                                         </div>
+                                                     </div>
+
+                                                     <div>
+                                                         <div className="flex justify-between items-center mb-1 text-sm">
+                                                             <label className="text-gray-300 font-medium">Текст отзыва:</label>
+                                                             <span className={`text-xs font-mono ${reviewContent.trim().length < 50 ? 'text-amber-400 font-bold' : 'text-green-400'}`}>
+                                                                 {reviewContent.trim().length} / 50 символов (мин.)
+                                                             </span>
+                                                         </div>
+                                                         <textarea
+                                                             rows={4}
+                                                             value={reviewContent}
+                                                             onChange={e => setReviewContent(e.target.value)}
+                                                             placeholder="Напишите честный отзыв о вашей игре на StoryLegends (минимум 50 символов)..."
+                                                             className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-story-gold/50 placeholder-gray-500"
+                                                         />
+                                                     </div>
+
+                                                     {userReview?.adminReply && (
+                                                         <div className="p-3.5 rounded-xl bg-purple-900/20 border border-purple-500/30 text-xs space-y-1">
+                                                             <div className="flex items-center gap-2 font-bold text-purple-300">
+                                                                 <CornerDownRight className="w-4 h-4 text-purple-400" />
+                                                                 Ответ от {userReview.adminReplyAuthorName || 'Администрации'}:
+                                                             </div>
+                                                             <p className="text-purple-100 pl-6 leading-relaxed">
+                                                                 {userReview.adminReply}
+                                                             </p>
+                                                         </div>
+                                                     )}
+
+                                                     <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                                                         {userReview?.edited ? (
+                                                             <span className="text-xs text-amber-300/80 flex items-center gap-1">
+                                                                 <HistoryIcon className="w-3.5 h-3.5 text-amber-400" />
+                                                                 Отзыв был отредактирован (сохранена предыдущая версия)
+                                                             </span>
+                                                         ) : <div />}
+
+                                                         <button
+                                                             onClick={handleSaveReview}
+                                                             disabled={submittingReview || reviewContent.trim().length < 50}
+                                                             className="px-5 py-2.5 bg-story-gold text-black rounded-xl hover:bg-story-gold-light transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                                                         >
+                                                             {submittingReview ? 'Сохранение...' : userReview ? 'Обновить отзыв' : 'Опубликовать отзыв'}
+                                                         </button>
+                                                     </div>
+                                                 </div>
+                                             </div>
                                      </div>
                                  ) : (
                                     // ACCOUNT SETTINGS (Email, Password, 2FA)
@@ -890,84 +962,7 @@ const ProfilePage = () => {
                                                  </div>
                                              )}
 
-                                             {/* Reviews Card Section */}
-                                             <div id="review-section" className="border-t border-white/10 pt-6">
-                                                 <div className="flex items-center justify-between mb-4">
-                                                     <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                                                         <Star className="w-5 h-5 text-story-gold fill-story-gold" />
-                                                         Ваш отзыв о сервере
-                                                     </h4>
-                                                     {userReview && (
-                                                         <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${userReview.status === 'APPROVED' ? 'bg-green-500/10 text-green-400 border-green-500/20' : userReview.status === 'REJECTED' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
-                                                             {userReview.status === 'APPROVED' ? 'Опубликован' : userReview.status === 'REJECTED' ? 'Отклонен' : 'На модерации'}
-                                                         </span>
-                                                     )}
-                                                 </div>
 
-                                                 <div className="bg-white/5 border border-white/5 rounded-xl p-6 space-y-4">
-                                                     <div>
-                                                         <label className="text-sm font-medium text-gray-300 mb-2 block">Ваша оценка:</label>
-                                                         <div className="flex items-center gap-2">
-                                                             {[1, 2, 3, 4, 5].map(star => (
-                                                                 <button
-                                                                     key={star}
-                                                                     type="button"
-                                                                     onClick={() => setReviewRating(star)}
-                                                                     className="p-1 hover:scale-110 transition-transform"
-                                                                 >
-                                                                     <Star className={`w-7 h-7 ${star <= reviewRating ? 'fill-story-gold text-story-gold' : 'text-gray-600'}`} />
-                                                                 </button>
-                                                             ))}
-                                                             <span className="text-sm text-gray-400 ml-2 font-mono">{reviewRating}/5</span>
-                                                         </div>
-                                                     </div>
-
-                                                     <div>
-                                                         <div className="flex justify-between items-center mb-1 text-sm">
-                                                             <label className="text-gray-300 font-medium">Текст отзыва:</label>
-                                                             <span className={`text-xs font-mono ${reviewContent.trim().length < 50 ? 'text-amber-400 font-bold' : 'text-green-400'}`}>
-                                                                 {reviewContent.trim().length} / 50 символов (мин.)
-                                                             </span>
-                                                         </div>
-                                                         <textarea
-                                                             rows={4}
-                                                             value={reviewContent}
-                                                             onChange={e => setReviewContent(e.target.value)}
-                                                             placeholder="Напишите честный отзыв о вашей игре на StoryLegends (минимум 50 символов)..."
-                                                             className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white text-sm focus:outline-none focus:border-story-gold/50 placeholder-gray-500"
-                                                         />
-                                                     </div>
-
-                                                     {userReview?.adminReply && (
-                                                         <div className="p-3.5 rounded-xl bg-purple-900/20 border border-purple-500/30 text-xs space-y-1">
-                                                             <div className="flex items-center gap-2 font-bold text-purple-300">
-                                                                 <CornerDownRight className="w-4 h-4 text-purple-400" />
-                                                                 Ответ от {userReview.adminReplyAuthorName || 'Администрации'}:
-                                                             </div>
-                                                             <p className="text-purple-100 pl-6 leading-relaxed">
-                                                                 {userReview.adminReply}
-                                                             </p>
-                                                         </div>
-                                                     )}
-
-                                                     <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                                                         {userReview?.edited ? (
-                                                             <span className="text-xs text-amber-300/80 flex items-center gap-1">
-                                                                 <HistoryIcon className="w-3.5 h-3.5 text-amber-400" />
-                                                                 Отзыв был отредактирован (сохранена предыдущая версия)
-                                                             </span>
-                                                         ) : <div />}
-
-                                                         <button
-                                                             onClick={handleSaveReview}
-                                                             disabled={submittingReview || reviewContent.trim().length < 50}
-                                                             className="px-5 py-2.5 bg-story-gold text-black rounded-xl hover:bg-story-gold-light transition-all font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                                                         >
-                                                             {submittingReview ? 'Сохранение...' : userReview ? 'Обновить отзыв' : 'Опубликовать отзыв'}
-                                                         </button>
-                                                     </div>
-                                                 </div>
-                                             </div>
                                          </div>
                                      </div>
                                  )}
