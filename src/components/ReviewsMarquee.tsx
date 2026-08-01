@@ -123,20 +123,16 @@ const ReviewsMarquee: React.FC = () => {
             </div>
 
             {/* 2-Row Marquee Container */}
-            <div className="space-y-4 py-2 relative">
-                {/* Very wide, soft side fades using dark bg */}
-                <div className="absolute left-0 top-0 bottom-0 w-40 z-10 pointer-events-none" style={{ background: 'linear-gradient(to right, var(--color-dark-bg, #0b1120) 0%, transparent 100%)' }} />
-                <div className="absolute right-0 top-0 bottom-0 w-40 z-10 pointer-events-none" style={{ background: 'linear-gradient(to left, var(--color-dark-bg, #0b1120) 0%, transparent 100%)' }} />
-
+            <div className="space-y-4 py-2">
                 {/* Row 1 - Marquee Left */}
-                <div className="overflow-hidden">
+                <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)' }}>
                     <div className="flex gap-4 marquee-scroll hover:[animation-play-state:paused]" style={{ width: 'max-content' }}>
                         {row1List.map((r, i) => renderCard(r, i))}
                     </div>
                 </div>
 
                 {/* Row 2 - Marquee Right (Reverse) */}
-                <div className="overflow-hidden">
+                <div className="overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 5%, black 95%, transparent)' }}>
                     <div className="flex gap-4 marquee-scroll-reverse hover:[animation-play-state:paused]" style={{ width: 'max-content' }}>
                         {row2List.map((r, i) => renderCard(r, i))}
                     </div>
