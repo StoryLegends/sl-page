@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Layout from '../components/Layout';
 import SEO from '../components/SEO';
 import { User as UserIcon, Settings, Edit3, ShieldCheck, Mail, ExternalLink, LogOut, CheckCircle2, Clock, XCircle, AlertCircle, Sparkles, ShieldAlert } from 'lucide-react';
@@ -16,7 +16,19 @@ import { Star, CornerDownRight, History as HistoryIcon } from 'lucide-react';
 const ProfilePage = () => {
     const { user, isAdmin, refreshUser, hasFeature } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const { showNotification } = useNotification();
+
+    // Scroll to hash section (e.g. #review-section)
+    useEffect(() => {
+        if (location.hash) {
+            const timer = setTimeout(() => {
+                const el = document.querySelector(location.hash);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [location.hash]);
 
     const [maintenanceMode, setMaintenanceMode] = useState(false);
 
@@ -852,7 +864,7 @@ const ProfilePage = () => {
                                              )}
 
                                              {/* Reviews Card Section */}
-                                             <div className="border-t border-white/10 pt-6">
+                                             <div id="review-section" className="border-t border-white/10 pt-6">
                                                  <div className="flex items-center justify-between mb-4">
                                                      <h4 className="text-lg font-bold text-white flex items-center gap-2">
                                                          <Star className="w-5 h-5 text-story-gold fill-story-gold" />

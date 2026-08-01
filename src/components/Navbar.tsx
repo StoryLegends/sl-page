@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Youtube, Shield, User, FileText } from 'lucide-react';
+import { Menu, X, Youtube, Shield, User, FileText, MessageSquare } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 import { useAuth } from '../context/AuthContext';
 
@@ -181,6 +181,9 @@ const Navbar: React.FC = () => {
                         </div>
                         <Link to="/profile" className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
                           <User className="w-4 h-4" /> Профиль
+                        </Link>
+                        <Link to="/profile#review-section" className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
+                          <MessageSquare className="w-4 h-4" /> Отзыв
                         </Link>
                         <Link to="/application" className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:bg-white/10 hover:text-white rounded-lg transition-colors" onClick={() => setUserMenuOpen(false)}>
                           <FileText className="w-4 h-4" /> Заявки
