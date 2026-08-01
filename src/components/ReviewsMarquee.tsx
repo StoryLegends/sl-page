@@ -113,8 +113,8 @@ const ReviewsMarquee: React.FC = () => {
             {/* 2-Row Marquee Container */}
             <div className="space-y-4 py-2 relative">
                 {/* Gradient Side Fades */}
-                <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-[#0b1320] to-transparent z-10 pointer-events-none" />
-                <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-[#0b1320] to-transparent z-10 pointer-events-none" />
+                <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#0b1320]/90 to-transparent z-10 pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#0b1320]/90 to-transparent z-10 pointer-events-none" />
 
                 {/* Row 1 - Marquee Left */}
                 <div className="flex gap-4 animate-marquee hover:[animation-play-state:paused]">
