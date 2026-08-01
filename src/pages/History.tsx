@@ -24,31 +24,30 @@ const History = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const items = await historyApi.getPublicHistory();
-        const mapped: HistoryItem[] = items.map(item => {
-          let colors = item.colors || [];
-          if (typeof item.colorsJson === 'string') {
-            try { colors = JSON.parse(item.colorsJson); } catch {}
-          }
-          if (colors.length === 0) colors = ['#34383b', '#728697'];
-          return {
-            id: item.pathSlug || String(item.id),
-            name: item.title,
-            description: item.description || '',
-            path: item.pathSlug || String(item.id),
-            date: item.eventDate || '',
-            colors: colors
-          };
-        });
-        setHistoryItems(mapped);
+        const res = await fetch('/history-index.json');
+        if (!res.ok) throw new Error('history-index not found');
+        const data = await res.json();
+        setHistoryItems(data);
       } catch (error) {
-        console.error('Failed to load history from API, using fallback:', error);
+        console.error('Failed to load history from files, using API fallback:', error);
         try {
-          const res = await fetch('/history-index.json');
-          if (res.ok) {
-            const data = await res.json();
-            setHistoryItems(data);
-          }
+          const items = await historyApi.getPublicHistory();
+          const mapped: HistoryItem[] = items.map(item => {
+            let colors = item.colors || [];
+            if (typeof item.colorsJson === 'string') {
+              try { colors = JSON.parse(item.colorsJson); } catch {}
+            }
+            if (colors.length === 0) colors = ['#34383b', '#728697'];
+            return {
+              id: item.pathSlug || String(item.id),
+              name: item.title,
+              description: item.description || '',
+              path: item.pathSlug || String(item.id),
+              date: item.eventDate || '',
+              colors: colors
+            };
+          });
+          setHistoryItems(mapped);
         } catch (e) {
           console.error('Fallback fetch failed:', e);
         }

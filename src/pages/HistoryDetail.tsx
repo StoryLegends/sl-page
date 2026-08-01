@@ -323,41 +323,102 @@ const HistoryDetail = () => {
             try {
                 if (!id) throw new Error('No id');
 
-                const serverItem = await historyApi.getHistoryBySlug(id);
-                setFolderName(serverItem.pathSlug || String(serverItem.id || id));
+                // 1. Load static index to resolve folder path
+                let indexData: any[] = [];
+                try {
+                    const indexRes = await fetch('/history-index.json');
+                    if (indexRes.ok) indexData = await indexRes.json();
+                } catch {}
 
-                let colors: string[] = [];
-                if (typeof serverItem.colorsJson === 'string') {
-                    try { colors = JSON.parse(serverItem.colorsJson); } catch {}
+                const indexItem = indexData.find((i: any) => i.id === id || i.path === id);
+                const folderPath = indexItem?.path || id;
+                setFolderName(folderPath);
+
+                // 2. Try loading rich details from repo files first
+                let richDetails: any = null;
+                try {
+                    const detailsRes = await fetch(`/history/${encodeURIComponent(folderPath)}/details.json`);
+                    if (detailsRes.ok) richDetails = await detailsRes.json();
+                } catch {}
+
+                // 3. Optional API override/fallback while DB flow is unfinished
+                let serverItem: any = null;
+                try {
+                    serverItem = await historyApi.getHistoryBySlug(id);
+                } catch {}
+
+                // 4. File-based primary source
+                if (richDetails) {
+                    let colors = richDetails.colors || [];
+                    if (serverItem && typeof serverItem.colorsJson === 'string') {
+                        try {
+                            const parsedColors = JSON.parse(serverItem.colorsJson);
+                            if (Array.isArray(parsedColors) && parsedColors.length > 0) {
+                                colors = parsedColors;
+                            }
+                        } catch {}
+                    }
+
+                    const seasons = [...(richDetails.seasons || [])];
+                    if (serverItem && seasons.length > 0 && typeof seasons[0] === 'object') {
+                        const firstSeason = { ...seasons[0] };
+                        const features = { ...firstSeason.features };
+                        if (serverItem.featureOnline !== undefined && serverItem.featureOnline !== '') features.online = serverItem.featureOnline;
+                        if (serverItem.featurePlatform !== undefined && serverItem.featurePlatform !== '') features.platform = serverItem.featurePlatform;
+                        if (serverItem.featureWorkTime !== undefined && serverItem.featureWorkTime !== '') features.work_time = serverItem.featureWorkTime;
+                        if (serverItem.featureRuntime !== undefined && serverItem.featureRuntime !== '') features.runtime = serverItem.featureRuntime;
+                        firstSeason.features = features;
+                        seasons[0] = firstSeason;
+                    }
+
+                    setDetails({
+                        ...richDetails,
+                        name: serverItem?.title || richDetails.name,
+                        description: serverItem?.description || richDetails.description,
+                        colors: colors.length > 0 ? colors : ['#34383b', '#728697'],
+                        seasons
+                    });
+                    return;
                 }
-                if (colors.length === 0) colors = ['#34383b', '#728697'];
 
-                let parsedPhotos: any[] = [];
-                if (typeof serverItem.photosJson === 'string') {
-                    try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
-                }
+                // 5. API fallback if file data is missing
+                if (serverItem) {
+                    let colors: string[] = [];
+                    if (typeof serverItem.colorsJson === 'string') {
+                        try { colors = JSON.parse(serverItem.colorsJson); } catch {}
+                    }
+                    if (colors.length === 0) colors = ['#34383b', '#728697'];
 
-                setDetails({
-                    id: String(serverItem.id),
-                    name: serverItem.title,
-                    date: serverItem.eventDate || '',
-                    description: serverItem.description || '',
-                    colors,
-                    seasons: [{
+                    let parsedPhotos: any[] = [];
+                    if (typeof serverItem.photosJson === 'string') {
+                        try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
+                    }
+
+                    setDetails({
+                        id: String(serverItem.id),
                         name: serverItem.title,
                         date: serverItem.eventDate || '',
-                        s_description: serverItem.description || '',
-                        features: {
-                            online: serverItem.featureOnline || '—',
-                            platform: serverItem.featurePlatform || 'Minecraft',
-                            work_time: serverItem.featureWorkTime || '—',
-                            runtime: serverItem.featureRuntime || '—'
-                        },
-                        description: serverItem.contentHtml || '',
-                        photos: parsedPhotos
-                    }],
-                    photos: []
-                });
+                        description: serverItem.description || '',
+                        colors,
+                        seasons: [{
+                            name: serverItem.title,
+                            date: serverItem.eventDate || '',
+                            s_description: serverItem.description || '',
+                            features: {
+                                online: serverItem.featureOnline || '—',
+                                platform: serverItem.featurePlatform || 'Minecraft',
+                                work_time: serverItem.featureWorkTime || '—',
+                                runtime: serverItem.featureRuntime || '—'
+                            },
+                            description: serverItem.contentHtml || '',
+                            photos: parsedPhotos
+                        }],
+                        photos: []
+                    });
+                    return;
+                }
+
+                throw new Error('History item not found');
             } catch (err) {
                 console.error(err);
                 setError('Failed to load history details.');
