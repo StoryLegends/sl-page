@@ -352,7 +352,17 @@ const HistoryDetail = () => {
                 if (useDbFirst) {
                     // --- FEATURE FLAG ENABLED: DB FIRST -> FALLBACK TO FILES ---
                     try {
-                        const serverItem = await historyApi.getHistoryBySlug(id);
+                        let serverItem;
+                        try {
+                            serverItem = await historyApi.getHistoryBySlug(id);
+                        } catch (apiErr) {
+                            if (id !== resolvedFolder) {
+                                serverItem = await historyApi.getHistoryBySlug(resolvedFolder);
+                            } else {
+                                throw apiErr;
+                            }
+                        }
+                        
                         const staticDetails = await fetchFileDetails(serverItem.pathSlug || resolvedFolder);
 
                         let colors: string[] = [];
@@ -428,7 +438,13 @@ const HistoryDetail = () => {
                     let serverItem: any = null;
                     try {
                         serverItem = await historyApi.getHistoryBySlug(id);
-                    } catch {}
+                    } catch (err) {
+                        if (id !== resolvedFolder) {
+                            try {
+                                serverItem = await historyApi.getHistoryBySlug(resolvedFolder);
+                            } catch {}
+                        }
+                    }
 
                     if (richDetails) {
                         let colors = richDetails.colors || [];

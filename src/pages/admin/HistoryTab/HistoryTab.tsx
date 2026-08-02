@@ -338,10 +338,10 @@ const HistoryTab: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* WordPress / Word Visual Rich Text Editor */}
+                            {/* Rich Text Editor */}
                             <div className="space-y-2 pt-2">
                                 <label className="block text-gray-300 font-bold text-xs">
-                                    📝 Текст статьи и лора (Визуальный Word/WordPress редактор)
+                                    📝 Текст статьи и лора
                                 </label>
                                 <RichTextEditor
                                     value={editingItem.contentHtml || ''}
