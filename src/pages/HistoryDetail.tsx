@@ -14,6 +14,16 @@ interface PhotoObject {
 
 type PhotoItem = number | string | PhotoObject;
 
+const folderPathMap: Record<string, string> = {
+    '5': 'StoryLegends AF',
+    '4': 'StoryLegends SL',
+    '3': 'StoryModeMSM',
+    '2': 'StoneSheild',
+    '1': '2B2T'
+};
+
+const getRealFolderName = (folder: string) => folderPathMap[folder] || folder;
+
 const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[], folderName: string, seasonName: string }) => {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const [selectedImage, setSelectedImage] = useState<PhotoItem | null>(null);
@@ -24,9 +34,11 @@ const ImageCarousel = ({ photos, folderName, seasonName }: { photos: PhotoItem[]
     const resolvePhotoUrl = (item: PhotoItem) => {
         const pid = getPhotoId(item);
         const s = String(pid);
-        return (typeof pid === 'string' && (s.startsWith('http') || s.startsWith('/')))
-            ? s
-            : `/history/${folderName}/images/${pid}.webp`;
+        if (typeof pid === 'string' && (s.startsWith('http') || s.startsWith('/'))) {
+            return s;
+        }
+        const realFolder = getRealFolderName(folderName);
+        return `/history/${encodeURIComponent(realFolder)}/images/${pid}.webp`;
     };
 
     const handleCloseLightbox = () => {
@@ -632,7 +644,7 @@ const HistoryDetail = () => {
                                                             <div key={logoIndex} className="flex flex-col items-center text-center">
                                                                 <div className="relative w-full">
                                                                     <img
-                                                                        src={logo.image && (logo.image.startsWith('http') || logo.image.startsWith('/')) ? logo.image : `/history/${folderName}/images/${logo.image}`}
+                                                                        src={logo.image && (logo.image.startsWith('http') || logo.image.startsWith('/')) ? logo.image : `/history/${encodeURIComponent(getRealFolderName(folderName))}/images/${logo.image}`}
                                                                         alt={`Season Logo ${logoIndex + 1}`}
                                                                         className="w-full h-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                                                                     />
