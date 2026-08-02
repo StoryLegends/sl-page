@@ -1,6 +1,19 @@
 import apiClient from './client';
 
+export interface MinecraftServerInfo {
+    id: string;
+    name: string;
+    containerName: string;
+    version: string;
+    type: string;
+    port: number;
+    memory: string;
+    path: string;
+}
+
 export interface MinecraftStatus {
+    serverId: string;
+    serverName: string;
     status: 'ONLINE' | 'OFFLINE' | 'STARTING' | 'STOPPING';
     containerName: string;
     version: string;
@@ -13,10 +26,12 @@ export interface MinecraftStatus {
     cpuUsagePercent: number;
 }
 
-export interface MinecraftPlugin {
-    filename: string;
+export interface ContainerFileItem {
+    name: string;
+    relativePath: string;
+    isDir: boolean;
     sizeBytes: number;
-    enabled: boolean;
+    lastModified: number;
 }
 
 export interface MinecraftPlayer {
@@ -26,44 +41,57 @@ export interface MinecraftPlayer {
 }
 
 export const minecraftApi = {
-    getStatus: async (): Promise<MinecraftStatus> => {
-        const res = await apiClient.get('/api/admin/minecraft/status');
+    getServers: async (): Promise<MinecraftServerInfo[]> => {
+        const res = await apiClient.get('/api/admin/minecraft/servers');
         return res.data;
     },
-    powerAction: async (action: 'start' | 'stop' | 'restart' | 'kill') => {
-        const res = await apiClient.post('/api/admin/minecraft/power', { action });
+    createServer: async (data: { name: string; version: string; type: string; memory: string }) => {
+        const res = await apiClient.post('/api/admin/minecraft/servers', data);
+        return res.data;
+    },
+    getStatus: async (serverId: string = 'server-1'): Promise<MinecraftStatus> => {
+        const res = await apiClient.get(`/api/admin/minecraft/status?serverId=${serverId}`);
+        return res.data;
+    },
+    powerAction: async (action: 'start' | 'stop' | 'restart' | 'kill', serverId: string = 'server-1') => {
+        const res = await apiClient.post('/api/admin/minecraft/power', { action, serverId });
         return res.data;
     },
     sendCommand: async (command: string) => {
         const res = await apiClient.post('/api/admin/minecraft/command', { command });
         return res.data;
     },
-    getLogs: async (): Promise<string[]> => {
-        const res = await apiClient.get('/api/admin/minecraft/console');
+    getLogs: async (serverId: string = 'server-1'): Promise<string[]> => {
+        const res = await apiClient.get(`/api/admin/minecraft/console?serverId=${serverId}`);
         return res.data.logs || [];
     },
-    getPlugins: async (): Promise<MinecraftPlugin[]> => {
-        const res = await apiClient.get('/api/admin/minecraft/plugins');
+    listFiles: async (serverId: string = 'server-1', path: string = ''): Promise<ContainerFileItem[]> => {
+        const res = await apiClient.get(`/api/admin/minecraft/files/list?serverId=${serverId}&path=${encodeURIComponent(path)}`);
         return res.data;
     },
-    uploadPlugin: async (file: File) => {
+    readFile: async (serverId: string = 'server-1', path: string): Promise<string> => {
+        const res = await apiClient.get(`/api/admin/minecraft/files/read?serverId=${serverId}&path=${encodeURIComponent(path)}`);
+        return res.data.content;
+    },
+    writeFile: async (path: string, content: string) => {
+        const res = await apiClient.post('/api/admin/minecraft/files/write', { path, content });
+        return res.data;
+    },
+    uploadContainerFile: async (file: File, targetFolder: string = 'plugins') => {
         const formData = new FormData();
         formData.append('file', file);
-        const res = await apiClient.post('/api/admin/minecraft/plugins/upload', formData, {
+        formData.append('targetFolder', targetFolder);
+        const res = await apiClient.post('/api/admin/minecraft/files/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return res.data;
     },
-    getPlayers: async (): Promise<MinecraftPlayer[]> => {
-        const res = await apiClient.get('/api/admin/minecraft/players');
+    deleteContainerFile: async (path: string) => {
+        const res = await apiClient.delete(`/api/admin/minecraft/files?path=${encodeURIComponent(path)}`);
         return res.data;
     },
-    getConfig: async (): Promise<string> => {
-        const res = await apiClient.get('/api/admin/minecraft/config');
-        return res.data.content;
-    },
-    saveConfig: async (content: string) => {
-        const res = await apiClient.post('/api/admin/minecraft/config', { content });
+    getPlayers: async (): Promise<MinecraftPlayer[]> => {
+        const res = await apiClient.get('/api/admin/minecraft/players');
         return res.data;
     }
 };

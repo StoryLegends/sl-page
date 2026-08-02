@@ -1,54 +1,83 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { 
     Play, Square, RotateCw, Zap, Terminal, Cpu, HardDrive, Users, Activity, 
-    Upload, Settings as SettingsIcon, Package, Server, Send, RefreshCw, CheckCircle2
+    Upload, Package, Server, Send, RefreshCw, CheckCircle2,
+    Folder, FileText, FileCode, Plus, ChevronRight, ArrowLeft, Trash2, X
 } from 'lucide-react';
-import { minecraftApi, type MinecraftStatus, type MinecraftPlugin, type MinecraftPlayer } from '../../../api/minecraft';
+import { 
+    minecraftApi, 
+    type MinecraftStatus, 
+    type MinecraftPlayer, 
+    type MinecraftServerInfo, 
+    type ContainerFileItem 
+} from '../../../api/minecraft';
 import { useNotification } from '../../../context/NotificationContext';
 
 const MinecraftServerTab: React.FC = () => {
     const { showNotification } = useNotification();
-    const [status, setStatus] = useState<MinecraftStatus | null>(null);
-    const [activeSubTab, setActiveSubTab] = useState<'console' | 'plugins' | 'players' | 'config' | 'minio'>('console');
     
+    // Server Selector State
+    const [servers, setServers] = useState<MinecraftServerInfo[]>([]);
+    const [selectedServerId, setSelectedServerId] = useState<string>('server-1');
+    const [status, setStatus] = useState<MinecraftStatus | null>(null);
+    const [isCreateServerModalOpen, setIsCreateServerModalOpen] = useState(false);
+    const [newServerForm, setNewServerForm] = useState({
+        name: '',
+        version: '1.20.4',
+        type: 'PAPER',
+        memory: '4G'
+    });
+
+    const [activeSubTab, setActiveSubTab] = useState<'console' | 'files' | 'players'>('console');
+
     // Console / Terminal state
     const [logs, setLogs] = useState<string[]>([]);
     const [command, setCommand] = useState('');
-    const [cmdHistory, setCmdHistory] = useState<string[]>([]);
-    const [historyIndex, setHistoryIndex] = useState(-1);
     const [autoScroll, setAutoScroll] = useState(true);
     const terminalEndRef = useRef<HTMLDivElement>(null);
 
-    // Plugins state
-    const [plugins, setPlugins] = useState<MinecraftPlugin[]>([]);
-    const [isUploadingPlugin, setIsUploadingPlugin] = useState(false);
+    // Container File Manager state
+    const [currentPath, setCurrentPath] = useState('');
+    const [containerFiles, setContainerFiles] = useState<ContainerFileItem[]>([]);
+    const [editingFile, setEditingFile] = useState<{ path: string; content: string } | null>(null);
+    const [isSavingFile, setIsSavingFile] = useState(false);
+    const [isUploadingFile, setIsUploadingFile] = useState(false);
 
     // Players state
     const [players, setPlayers] = useState<MinecraftPlayer[]>([]);
 
-    // Config state
-    const [configText, setConfigText] = useState('');
-    const [isSavingConfig, setIsSavingConfig] = useState(false);
-
     const isOnline = status?.status === 'ONLINE';
 
-    // Refresh server status every 4 seconds
+    // Fetch servers list
+    const fetchServers = async () => {
+        try {
+            const list = await minecraftApi.getServers();
+            setServers(list);
+            if (list.length > 0 && !selectedServerId) {
+                setSelectedServerId(list[0].id);
+            }
+        } catch (err) {}
+    };
+
+    // Refresh server status
     const fetchStatus = async () => {
         try {
-            const data = await minecraftApi.getStatus();
+            const data = await minecraftApi.getStatus(selectedServerId);
             setStatus(data);
-        } catch (err) {
-            console.error('Failed to fetch minecraft status', err);
-        }
+        } catch (err) {}
     };
 
     // Refresh console logs
     const fetchLogs = async () => {
         try {
-            const logLines = await minecraftApi.getLogs();
+            const logLines = await minecraftApi.getLogs(selectedServerId);
             setLogs(logLines);
         } catch (err) {}
     };
+
+    useEffect(() => {
+        fetchServers();
+    }, []);
 
     useEffect(() => {
         fetchStatus();
@@ -58,7 +87,7 @@ const MinecraftServerTab: React.FC = () => {
             if (activeSubTab === 'console') fetchLogs();
         }, 4000);
         return () => clearInterval(interval);
-    }, [activeSubTab]);
+    }, [selectedServerId, activeSubTab]);
 
     // Auto-scroll terminal
     useEffect(() => {
@@ -67,21 +96,46 @@ const MinecraftServerTab: React.FC = () => {
         }
     }, [logs, autoScroll, activeSubTab]);
 
-    // Load sub-tab specific data
+    // Load File Manager directory
+    const loadFiles = async (path: string = currentPath) => {
+        try {
+            const files = await minecraftApi.listFiles(selectedServerId, path);
+            setContainerFiles(files);
+            setCurrentPath(path);
+        } catch (err) {
+            showNotification('Ошибка загрузки файлов контейнера', 'error');
+        }
+    };
+
     useEffect(() => {
-        if (activeSubTab === 'plugins') {
-            minecraftApi.getPlugins().then(setPlugins).catch(console.error);
+        if (activeSubTab === 'files' && !editingFile) {
+            loadFiles(currentPath);
         } else if (activeSubTab === 'players') {
             minecraftApi.getPlayers().then(setPlayers).catch(console.error);
-        } else if (activeSubTab === 'config') {
-            minecraftApi.getConfig().then(setConfigText).catch(console.error);
         }
-    }, [activeSubTab]);
+    }, [activeSubTab, selectedServerId, currentPath]);
+
+    const handleCreateServer = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newServerForm.name.trim()) {
+            showNotification('Укажите название сервера', 'error');
+            return;
+        }
+        try {
+            const res = await minecraftApi.createServer(newServerForm);
+            showNotification(res.message || 'Сервер создан!', 'success');
+            setIsCreateServerModalOpen(false);
+            setNewServerForm({ name: '', version: '1.20.4', type: 'PAPER', memory: '4G' });
+            await fetchServers();
+        } catch (err) {
+            showNotification('Ошибка создания сервера.', 'error');
+        }
+    };
 
     const handlePowerAction = async (action: 'start' | 'stop' | 'restart' | 'kill') => {
         try {
-            const res = await minecraftApi.powerAction(action);
-            showNotification(res.message || 'Действие выполнено', 'success');
+            const res = await minecraftApi.powerAction(action, selectedServerId);
+            showNotification(res.message || 'Команда отправлена', 'success');
             fetchStatus();
         } catch (err) {
             showNotification('Ошибка выполнения действия питания.', 'error');
@@ -93,8 +147,6 @@ const MinecraftServerTab: React.FC = () => {
         if (!command.trim()) return;
         const cmdToRun = command.trim();
         setCommand('');
-        setCmdHistory(prev => [cmdToRun, ...prev]);
-        setHistoryIndex(-1);
 
         setLogs(prev => [...prev, `> ${cmdToRun}`]);
 
@@ -108,58 +160,59 @@ const MinecraftServerTab: React.FC = () => {
         }
     };
 
-    const handleKeyDownCommand = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (cmdHistory.length > 0 && historyIndex < cmdHistory.length - 1) {
-                const nextIdx = historyIndex + 1;
-                setHistoryIndex(nextIdx);
-                setCommand(cmdHistory[nextIdx]);
-            }
-        } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            if (historyIndex > 0) {
-                const nextIdx = historyIndex - 1;
-                setHistoryIndex(nextIdx);
-                setCommand(cmdHistory[nextIdx]);
-            } else if (historyIndex === 0) {
-                setHistoryIndex(-1);
-                setCommand('');
-            }
+    const handleOpenFile = async (filePath: string) => {
+        try {
+            const content = await minecraftApi.readFile(selectedServerId, filePath);
+            setEditingFile({ path: filePath, content });
+        } catch (err) {
+            showNotification('Ошибка при чтении файла', 'error');
         }
     };
 
-    const handleUploadPluginFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSaveEditingFile = async () => {
+        if (!editingFile) return;
+        setIsSavingFile(true);
+        try {
+            const res = await minecraftApi.writeFile(editingFile.path, editingFile.content);
+            showNotification(res.message || 'Файл сохранен в контейнере!', 'success');
+        } catch (err) {
+            showNotification('Ошибка при сохранении файла', 'error');
+        } finally {
+            setIsSavingFile(false);
+        }
+    };
+
+    const handleUploadToContainer = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        setIsUploadingPlugin(true);
+        setIsUploadingFile(true);
         try {
-            const res = await minecraftApi.uploadPlugin(file);
-            showNotification(res.message || 'Плагин успешно загружен!', 'success');
-            const updated = await minecraftApi.getPlugins();
-            setPlugins(updated);
-        } catch (err: any) {
-            showNotification(err.response?.data?.error || 'Ошибка загрузки плагина', 'error');
+            const res = await minecraftApi.uploadContainerFile(file, currentPath || 'plugins');
+            showNotification(res.message || 'Файл загружен в контейнер!', 'success');
+            loadFiles(currentPath);
+        } catch (err) {
+            showNotification('Ошибка загрузки файла в контейнер', 'error');
         } finally {
-            setIsUploadingPlugin(false);
+            setIsUploadingFile(false);
         }
     };
 
-    const handleSaveConfig = async () => {
-        setIsSavingConfig(true);
+    const handleDeleteContainerFile = async (path: string) => {
+        if (!window.confirm(`Удалить файл ${path} из контейнера?`)) return;
         try {
-            const res = await minecraftApi.saveConfig(configText);
-            showNotification(res.message || 'Конфигурация сохранена!', 'success');
+            const res = await minecraftApi.deleteContainerFile(path);
+            showNotification(res.message || 'Файл удален', 'info');
+            loadFiles(currentPath);
         } catch (err) {
-            showNotification('Ошибка при сохранении конфигурации.', 'error');
-        } finally {
-            setIsSavingConfig(false);
+            showNotification('Ошибка при удалении файла', 'error');
         }
     };
+
+    const currentServer = servers.find(s => s.id === selectedServerId) || servers[0];
 
     return (
         <div className="space-y-6 w-full animate-fadeIn">
-            {/* PTERODACTYL-STYLE HEADER BANNER */}
+            {/* SERVER SELECTOR & DOCKER HEADER */}
             <div className="p-6 rounded-2xl bg-[#091322] border border-white/10 shadow-2xl space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
@@ -168,59 +221,79 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h1 className="text-2xl font-bold text-white tracking-wide">StoryLegends Minecraft Server</h1>
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border shadow-md ${
+                                {/* Server Select Dropdown */}
+                                <select
+                                    value={selectedServerId}
+                                    onChange={e => setSelectedServerId(e.target.value)}
+                                    className="bg-black/60 border border-story-gold/40 text-white font-bold text-base px-3 py-1.5 rounded-xl focus:outline-none"
+                                >
+                                    {servers.map(s => (
+                                        <option key={s.id} value={s.id} className="bg-[#091322] text-white">
+                                            {s.name} ({s.type} {s.version}:{s.port})
+                                        </option>
+                                    ))}
+                                </select>
+
+                                {/* Clean Solid Status Badge (No Pulsing Animation) */}
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
                                     isOnline 
-                                        ? 'bg-green-500/20 text-green-300 border-green-500/40' 
-                                        : 'bg-red-500/20 text-red-300 border-red-500/40'
+                                        ? 'bg-green-600 text-white border-green-500' 
+                                        : 'bg-red-600 text-white border-red-500'
                                 }`}>
-                                    <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-400 animate-ping' : 'bg-red-400'}`} />
                                     {isOnline ? 'ОНЛАЙН' : 'ВЫКЛЮЧЕН'}
                                 </span>
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">Docker Container: <code className="text-story-gold font-mono">{status?.containerName || 'sl-minecraft-server'}</code> • {status?.version || 'Paper 1.20.4'}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                                Контейнер: <code className="text-story-gold font-mono">{currentServer?.containerName || 'sl-minecraft-server'}</code> • Версия: {currentServer?.type || 'PAPER'} {currentServer?.version || '1.20.4'} • Порт: {currentServer?.port || 25565}
+                            </p>
                         </div>
                     </div>
 
-                    {/* Power Controls */}
+                    {/* Server Actions & Power Controls (Clean No-Emoji Buttons) */}
                     <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsCreateServerModalOpen(true)}
+                            className="px-3.5 py-2 bg-story-gold/20 hover:bg-story-gold/30 text-story-gold border border-story-gold/40 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 mr-2"
+                        >
+                            <Plus className="w-4 h-4" /> Новый сервер
+                        </button>
+
                         <button
                             onClick={() => handlePowerAction('start')}
                             disabled={isOnline}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+                            className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                         >
-                            <Play className="w-3.5 h-3.5 fill-current" /> Пуск
+                            <Play className="w-3.5 h-3.5" /> Запустить
                         </button>
 
                         <button
                             onClick={() => handlePowerAction('restart')}
                             disabled={!isOnline}
-                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                         >
-                            <RotateCw className="w-3.5 h-3.5" /> Перезапуск
+                            <RotateCw className="w-3.5 h-3.5" /> Перезапустить
                         </button>
 
                         <button
                             onClick={() => handlePowerAction('stop')}
                             disabled={!isOnline}
-                            className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+                            className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                         >
-                            <Square className="w-3.5 h-3.5 fill-current" /> Стоп
+                            <Square className="w-3.5 h-3.5" /> Остановить
                         </button>
 
                         <button
                             onClick={() => handlePowerAction('kill')}
-                            className="px-3 py-2 bg-red-600/80 hover:bg-red-600 text-white font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-1.5"
+                            className="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                             title="Принудительно выключить контейнер"
                         >
-                            <Zap className="w-3.5 h-3.5 text-yellow-300" /> Выключить
+                            <Zap className="w-3.5 h-3.5" /> Выключить
                         </button>
                     </div>
                 </div>
 
                 {/* METRICS METERS BAR */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/10 text-xs">
-                    {/* CPU % */}
                     <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-2">
                         <div className="flex items-center justify-between text-gray-400">
                             <span className="flex items-center gap-1.5 font-bold"><Cpu className="w-4 h-4 text-blue-400" /> CPU Нагрузка</span>
@@ -231,7 +304,6 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* RAM */}
                     <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-2">
                         <div className="flex items-center justify-between text-gray-400">
                             <span className="flex items-center gap-1.5 font-bold"><HardDrive className="w-4 h-4 text-purple-400" /> RAM Память</span>
@@ -242,7 +314,6 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* TPS */}
                     <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-2">
                         <div className="flex items-center justify-between text-gray-400">
                             <span className="flex items-center gap-1.5 font-bold"><Activity className="w-4 h-4 text-green-400" /> TPS (Скорость)</span>
@@ -253,7 +324,6 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* ONLINE PLAYERS */}
                     <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-2">
                         <div className="flex items-center justify-between text-gray-400">
                             <span className="flex items-center gap-1.5 font-bold"><Users className="w-4 h-4 text-story-gold" /> Игроков Онлайн</span>
@@ -269,39 +339,30 @@ const MinecraftServerTab: React.FC = () => {
             {/* PTERODACTYL SUB-TABS NAVIGATION */}
             <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3 text-xs font-bold">
                 <button
-                    onClick={() => setActiveSubTab('console')}
+                    onClick={() => { setActiveSubTab('console'); setEditingFile(null); }}
                     className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
-                        activeSubTab === 'console' ? 'bg-story-gold text-black shadow-lg' : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                        activeSubTab === 'console' ? 'bg-story-gold text-black shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'
                     }`}
                 >
                     <Terminal className="w-4 h-4" /> Консоль и Терминал
                 </button>
 
                 <button
-                    onClick={() => setActiveSubTab('plugins')}
+                    onClick={() => { setActiveSubTab('files'); setEditingFile(null); }}
                     className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
-                        activeSubTab === 'plugins' ? 'bg-story-gold text-black shadow-lg' : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                        activeSubTab === 'files' ? 'bg-story-gold text-black shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'
                     }`}
                 >
-                    <Package className="w-4 h-4" /> Плагины и Моды
+                    <Folder className="w-4 h-4" /> Файловый менеджер контейнера
                 </button>
 
                 <button
-                    onClick={() => setActiveSubTab('players')}
+                    onClick={() => { setActiveSubTab('players'); setEditingFile(null); }}
                     className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
-                        activeSubTab === 'players' ? 'bg-story-gold text-black shadow-lg' : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                        activeSubTab === 'players' ? 'bg-story-gold text-black shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'
                     }`}
                 >
                     <Users className="w-4 h-4" /> Игроки Онлайн
-                </button>
-
-                <button
-                    onClick={() => setActiveSubTab('config')}
-                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
-                        activeSubTab === 'config' ? 'bg-story-gold text-black shadow-lg' : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                    }`}
-                >
-                    <SettingsIcon className="w-4 h-4" /> server.properties
                 </button>
             </div>
 
@@ -311,7 +372,7 @@ const MinecraftServerTab: React.FC = () => {
                     <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs">
                         <span className="font-mono text-gray-400 flex items-center gap-2">
                             <Terminal className="w-4 h-4 text-story-gold" />
-                            Live Minecraft RCON Console Stream
+                            Live RCON Console Stream ({currentServer?.name})
                         </span>
                         <div className="flex items-center gap-4">
                             <label className="flex items-center gap-2 text-gray-400 cursor-pointer">
@@ -332,7 +393,6 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Dark Terminal Window */}
                     <div className="bg-black/90 p-4 rounded-xl font-mono text-xs text-green-400 h-[450px] overflow-y-auto space-y-1.5 border border-white/10 shadow-inner select-text">
                         {logs.map((line, idx) => (
                             <div key={idx} className="leading-relaxed break-all font-mono">
@@ -349,7 +409,6 @@ const MinecraftServerTab: React.FC = () => {
                         <div ref={terminalEndRef} />
                     </div>
 
-                    {/* RCON Command Input Box */}
                     <form onSubmit={handleSendCommand} className="flex gap-2">
                         <div className="relative flex-1">
                             <span className="absolute left-3.5 top-3 text-story-gold font-mono font-bold text-sm">&gt;</span>
@@ -357,14 +416,13 @@ const MinecraftServerTab: React.FC = () => {
                                 type="text"
                                 value={command}
                                 onChange={e => setCommand(e.target.value)}
-                                onKeyDown={handleKeyDownCommand}
                                 className="w-full bg-black/60 border border-white/15 rounded-xl pl-8 pr-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-story-gold/60"
-                                placeholder="Введите команду RCON (например: op nickname, whitelist add name, say Hello!)..."
+                                placeholder="Введите RCON команду (например: op nickname, whitelist add name, say Hello!)..."
                             />
                         </div>
                         <button
                             type="submit"
-                            className="px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all flex items-center gap-2 shrink-0 shadow-lg"
+                            className="px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all flex items-center gap-2 shrink-0 shadow-md"
                         >
                             <Send className="w-4 h-4" /> Отправить
                         </button>
@@ -372,49 +430,156 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
             )}
 
-            {/* SUB-TAB 2: PLUGINS & MODS MANAGER */}
-            {activeSubTab === 'plugins' && (
+            {/* SUB-TAB 2: CONTAINER FILE MANAGER & MULTI-FILE CODE EDITOR */}
+            {activeSubTab === 'files' && (
                 <div className="bg-[#091322] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-6">
-                    <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
-                        <div>
-                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <Package className="w-5 h-5 text-story-gold" />
-                                Плагины и Моды сервера (.jar)
-                            </h3>
-                            <p className="text-xs text-gray-400 mt-1">Загруженные плагины автоматически синхронизируются с MinIO S3 и папкой /plugins сервера</p>
-                        </div>
-
-                        <label className={`px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl cursor-pointer shadow-lg transition-all flex items-center gap-2 ${isUploadingPlugin ? 'opacity-50' : ''}`}>
-                            <Upload className="w-4 h-4" />
-                            {isUploadingPlugin ? 'Загрузка плагина...' : 'Загрузить .jar плагин'}
-                            <input
-                                type="file"
-                                accept=".jar"
-                                className="hidden"
-                                onChange={handleUploadPluginFile}
-                                disabled={isUploadingPlugin}
-                            />
-                        </label>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {plugins.map((plugin, idx) => (
-                            <div key={idx} className="p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all flex items-center justify-between">
-                                <div className="flex items-center gap-3 min-w-0">
-                                    <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold shrink-0">
-                                        JAR
-                                    </div>
-                                    <div className="min-w-0">
-                                        <h4 className="text-sm font-bold text-white truncate">{plugin.filename}</h4>
-                                        <span className="text-xs text-gray-400 font-mono">{(plugin.sizeBytes / (1024 * 1024)).toFixed(2)} MB</span>
+                    {/* EDITING A SPECIFIC FILE */}
+                    {editingFile ? (
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setEditingFile(null)}
+                                        className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors"
+                                        title="Назад к файлам"
+                                    >
+                                        <ArrowLeft className="w-4 h-4" />
+                                    </button>
+                                    <div>
+                                        <h3 className="text-base font-bold text-white font-mono flex items-center gap-2">
+                                            <FileCode className="w-4 h-4 text-story-gold" />
+                                            {editingFile.path}
+                                        </h3>
+                                        <p className="text-xs text-gray-400">Редактирование файла в контейнере Minecraft</p>
                                     </div>
                                 </div>
-                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-500/20 text-green-300 border border-green-500/30">
-                                    Активен
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleSaveEditingFile}
+                                        disabled={isSavingFile}
+                                        className="px-5 py-2 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all flex items-center gap-2 shadow-md"
+                                    >
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        {isSavingFile ? 'Сохранение...' : 'Сохранить файл'}
+                                    </button>
+                                    <button
+                                        onClick={() => setEditingFile(null)}
+                                        className="p-2 text-gray-400 hover:text-white"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
-                        ))}
-                    </div>
+
+                            <textarea
+                                value={editingFile.content}
+                                onChange={e => setEditingFile({ ...editingFile, content: e.target.value })}
+                                className="w-full bg-black/90 border border-white/15 rounded-xl p-4 text-green-400 font-mono text-xs leading-relaxed h-[520px] focus:outline-none focus:border-story-gold/60 select-text"
+                            />
+                        </div>
+                    ) : (
+                        /* CONTAINER DIRECTORY BROWSER TREE */
+                        <div className="space-y-4">
+                            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
+                                <div className="flex items-center gap-2 text-xs font-mono text-gray-300">
+                                    <button
+                                        onClick={() => loadFiles('')}
+                                        className="hover:text-story-gold font-bold flex items-center gap-1"
+                                    >
+                                        /data
+                                    </button>
+                                    {currentPath.split('/').filter(Boolean).map((part, i, arr) => {
+                                        const subPath = arr.slice(0, i + 1).join('/');
+                                        return (
+                                            <React.Fragment key={subPath}>
+                                                <ChevronRight className="w-3 h-3 text-gray-500" />
+                                                <button
+                                                    onClick={() => loadFiles(subPath)}
+                                                    className="hover:text-story-gold font-bold"
+                                                >
+                                                    {part}
+                                                </button>
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                    <label className={`px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl cursor-pointer shadow-md transition-all flex items-center gap-2 ${isUploadingFile ? 'opacity-50' : ''}`}>
+                                        <Upload className="w-4 h-4" />
+                                        {isUploadingFile ? 'Загрузка...' : 'Загрузить файл в контейнер'}
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            onChange={handleUploadToContainer}
+                                            disabled={isUploadingFile}
+                                        />
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Files Table List */}
+                            <div className="bg-black/40 border border-white/10 rounded-xl overflow-hidden text-xs">
+                                <div className="grid grid-cols-12 px-4 py-2.5 bg-white/5 border-b border-white/10 text-gray-400 font-bold">
+                                    <div className="col-span-6">ИМЯ ФАЙЛА / ПАПКИ</div>
+                                    <div className="col-span-3">РАЗМЕР</div>
+                                    <div className="col-span-3 text-right">ДЕЙСТВИЯ</div>
+                                </div>
+
+                                {containerFiles.map((fileItem, idx) => (
+                                    <div key={idx} className="grid grid-cols-12 px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-all items-center text-gray-200">
+                                        <div className="col-span-6 flex items-center gap-2.5">
+                                            {fileItem.isDir ? (
+                                                <Folder className="w-4 h-4 text-story-gold shrink-0" />
+                                            ) : fileItem.name.endsWith('.jar') ? (
+                                                <Package className="w-4 h-4 text-purple-400 shrink-0" />
+                                            ) : (
+                                                <FileText className="w-4 h-4 text-blue-400 shrink-0" />
+                                            )}
+
+                                            {fileItem.isDir ? (
+                                                <button
+                                                    onClick={() => loadFiles(fileItem.relativePath)}
+                                                    className="font-bold hover:text-story-gold text-left truncate"
+                                                >
+                                                    {fileItem.name}
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleOpenFile(fileItem.relativePath)}
+                                                    className="hover:text-blue-300 font-mono text-left truncate"
+                                                >
+                                                    {fileItem.name}
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="col-span-3 font-mono text-gray-400">
+                                            {fileItem.isDir ? '—' : `${(fileItem.sizeBytes / 1024).toFixed(1)} KB`}
+                                        </div>
+
+                                        <div className="col-span-3 flex items-center justify-end gap-2">
+                                            {!fileItem.isDir && (
+                                                <button
+                                                    onClick={() => handleOpenFile(fileItem.relativePath)}
+                                                    className="px-2.5 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 rounded-lg font-bold text-[11px]"
+                                                >
+                                                    Редактировать
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={() => handleDeleteContainerFile(fileItem.relativePath)}
+                                                className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                title="Удалить файл"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -424,7 +589,7 @@ const MinecraftServerTab: React.FC = () => {
                     <div className="flex items-center justify-between border-b border-white/10 pb-4">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
                             <Users className="w-5 h-5 text-story-gold" />
-                            Игроки на сервере
+                            Игроки на сервере ({currentServer?.name})
                         </h3>
                     </div>
 
@@ -473,32 +638,96 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
             )}
 
-            {/* SUB-TAB 4: CONFIG EDITOR */}
-            {activeSubTab === 'config' && (
-                <div className="bg-[#091322] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                        <div>
+            {/* CREATE NEW SERVER MODAL */}
+            {isCreateServerModalOpen && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-[#091322] border border-story-gold/40 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-6">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-4">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                <SettingsIcon className="w-5 h-5 text-story-gold" />
-                                Редактирование server.properties
+                                <Plus className="w-5 h-5 text-story-gold" />
+                                Создание нового Minecraft сервера
                             </h3>
-                            <p className="text-xs text-gray-400 mt-1">Прямое редактирование конфигурации портов, сложности и параметров выживания</p>
+                            <button onClick={() => setIsCreateServerModalOpen(false)} className="text-gray-400 hover:text-white">
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
-                        <button
-                            onClick={handleSaveConfig}
-                            disabled={isSavingConfig}
-                            className="px-5 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all shadow-lg flex items-center gap-2"
-                        >
-                            <CheckCircle2 className="w-4 h-4" />
-                            {isSavingConfig ? 'Сохранение...' : 'Сохранить конфиг'}
-                        </button>
-                    </div>
 
-                    <textarea
-                        value={configText}
-                        onChange={e => setConfigText(e.target.value)}
-                        className="w-full bg-black/80 border border-white/15 rounded-xl p-4 text-green-400 font-mono text-xs leading-relaxed h-[480px] focus:outline-none focus:border-story-gold/60 select-text"
-                    />
+                        <form onSubmit={handleCreateServer} className="space-y-4 text-xs">
+                            <div>
+                                <label className="block text-gray-300 font-bold mb-1">Название сервера</label>
+                                <input
+                                    type="text"
+                                    value={newServerForm.name}
+                                    onChange={e => setNewServerForm({ ...newServerForm, name: e.target.value })}
+                                    placeholder="например: Анархия 1.16.5"
+                                    className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-story-gold"
+                                    required
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Ядро / Движок</label>
+                                    <select
+                                        value={newServerForm.type}
+                                        onChange={e => setNewServerForm({ ...newServerForm, type: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none"
+                                    >
+                                        <option value="PAPER">Paper</option>
+                                        <option value="PURPUR">Purpur</option>
+                                        <option value="FABRIC">Fabric</option>
+                                        <option value="FORGE">Forge</option>
+                                        <option value="SPIGOT">Spigot</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Версия Minecraft</label>
+                                    <select
+                                        value={newServerForm.version}
+                                        onChange={e => setNewServerForm({ ...newServerForm, version: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none"
+                                    >
+                                        <option value="1.20.4">1.20.4</option>
+                                        <option value="1.20.2">1.20.2</option>
+                                        <option value="1.19.4">1.19.4</option>
+                                        <option value="1.16.5">1.16.5</option>
+                                        <option value="1.12.2">1.12.2</option>
+                                        <option value="1.8.8">1.8.8</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-300 font-bold mb-1">Выделяемая RAM Память</label>
+                                <select
+                                    value={newServerForm.memory}
+                                    onChange={e => setNewServerForm({ ...newServerForm, memory: e.target.value })}
+                                    className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none"
+                                >
+                                    <option value="2G">2 GB RAM</option>
+                                    <option value="4G">4 GB RAM</option>
+                                    <option value="8G">8 GB RAM</option>
+                                </select>
+                            </div>
+
+                            <div className="pt-4 flex justify-end gap-3 border-t border-white/10">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCreateServerModalOpen(false)}
+                                    className="px-4 py-2 bg-white/10 text-gray-300 rounded-xl font-bold hover:bg-white/20"
+                                >
+                                    Отмена
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-5 py-2 bg-story-gold text-black rounded-xl font-bold hover:bg-story-gold-light shadow-md"
+                                >
+                                    Создать сервер
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>
