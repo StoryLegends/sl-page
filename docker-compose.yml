@@ -30,8 +30,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9005:9000"
+      - "9006:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -70,7 +70,7 @@ services:
     container_name: sl-backend
     restart: always
     ports:
-      - "${BACKEND_PORT:-8080}:8080"
+      - "8085:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/d34gj8i1b0knkt
       SPRING_DATASOURCE_USERNAME: ud8op8v4fm53g1
@@ -99,9 +99,9 @@ services:
     container_name: sl-frontend
     restart: always
     ports:
-      - "${PORT:-5173}:80"
+      - "5174:80"
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8085}
     depends_on:
       - backend
 
