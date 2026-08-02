@@ -525,7 +525,18 @@ const HistoryDetail = () => {
 
                         // It's a season object
                         const season = value as Season;
-                        const logos = season.logos || (season.logo ? [season.logo] : []);
+                        const validLogos = (season.logos || (season.logo ? [season.logo] : [])).filter(l => l && l.image && l.image.trim() !== '');
+                        const rawMaps = season.map ? (Array.isArray(season.map) ? season.map : [season.map]) : [];
+                        const validMaps = rawMaps.filter(m => m && m.url && m.url.trim() !== '');
+
+                        const hasFeatures = season.features && (
+                            (season.features.online && season.features.online !== '—') ||
+                            (season.features.platform && season.features.platform !== '—') ||
+                            (season.features.work_time && season.features.work_time !== '—') ||
+                            (season.features.runtime && season.features.runtime !== '—')
+                        );
+
+                        const hasRightColumn = Boolean(hasFeatures || validLogos.length > 0 || validMaps.length > 0);
 
                         return (
                             <div key={index} className="space-y-8">
@@ -533,114 +544,117 @@ const HistoryDetail = () => {
                                     <h2 className="text-2xl md:text-4xl font-bold text-white mb-2">{season.s_description}</h2>
                                 </div>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    {/* Left Column Wrapper */}
-                                    <div className="contents lg:flex lg:flex-col lg:gap-8">
-                                        {/* Description Card (Mobile: 1) */}
-                                        <div className="order-1">
-                                            <GlassCard className="p-6">
-                                                <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">Описание</h3>
-                                                <div
-                                                    className="prose prose-invert max-w-none text-gray-100 text-sm leading-relaxed space-y-4"
-                                                    dangerouslySetInnerHTML={{ __html: season.description }}
-                                                />
-                                            </GlassCard>
-                                        </div>
+                                <div className={`grid grid-cols-1 ${hasRightColumn ? 'lg:grid-cols-12' : ''} gap-8 items-start`}>
+                                    {/* Description Column (100% full width if no side cards, else 8/12) */}
+                                    <div className={`space-y-8 ${hasRightColumn ? 'lg:col-span-8' : 'w-full'}`}>
+                                        <GlassCard className="p-6">
+                                            <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">Описание</h3>
+                                            <div
+                                                className="prose prose-invert max-w-none text-gray-100 text-sm leading-relaxed space-y-4"
+                                                dangerouslySetInnerHTML={{ __html: season.description }}
+                                            />
+                                        </GlassCard>
 
-                                        {/* Video Section (Mobile: 4) */}
+                                        {/* Video Section */}
                                         {season.video && (
-                                            <div className="order-4">
-                                                <GlassCard className="p-6">
-                                                    <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4 flex items-center gap-2">
-                                                        <PlayCircle className="w-5 h-5 text-red-500" />
-                                                        Видео
-                                                    </h3>
-                                                    <div className="text-gray-300 mb-4 whitespace-pre-line text-sm">
-                                                        {season.video.description}
+                                            <GlassCard className="p-6">
+                                                <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4 flex items-center gap-2">
+                                                    <PlayCircle className="w-5 h-5 text-red-500" />
+                                                    Видео
+                                                </h3>
+                                                <div className="text-gray-300 mb-4 whitespace-pre-line text-sm">
+                                                    {season.video.description}
+                                                </div>
+                                                {season.video.url.includes('youtu') ? (
+                                                    <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/50">
+                                                        <iframe
+                                                            src={`https://www.youtube.com/embed/${season.video.url.split('/').pop()}`}
+                                                            title="YouTube video player"
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowFullScreen
+                                                            className="absolute inset-0 w-full h-full"
+                                                        ></iframe>
                                                     </div>
-                                                    {season.video.url.includes('youtu') ? (
-                                                        <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/50">
-                                                            <iframe
-                                                                src={`https://www.youtube.com/embed/${season.video.url.split('/').pop()}`}
-                                                                title="YouTube video player"
-                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                                allowFullScreen
-                                                                className="absolute inset-0 w-full h-full"
-                                                            ></iframe>
-                                                        </div>
-                                                    ) : (
-                                                        <a
-                                                            href={season.video.url}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors"
-                                                        >
-                                                            Смотреть видео
-                                                            <ArrowLeft className="w-4 h-4 ml-1 rotate-180" />
-                                                        </a>
-                                                    )}
-                                                </GlassCard>
-                                            </div>
+                                                ) : (
+                                                    <a
+                                                        href={season.video.url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors"
+                                                    >
+                                                        Смотреть видео
+                                                        <ArrowLeft className="w-4 h-4 ml-1 rotate-180" />
+                                                    </a>
+                                                )}
+                                            </GlassCard>
                                         )}
                                     </div>
 
-                                    {/* Right Column Wrapper */}
-                                    <div className="contents lg:flex lg:flex-col lg:gap-8">
-                                        {/* Features Card (Mobile: 2) */}
-                                        <div className="order-2">
-                                            <GlassCard className="p-6">
-                                                <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">Информация</h3>
-                                                <div className="space-y-4">
-                                                    <div className="flex items-start gap-3">
-                                                        <Users className="w-5 h-5 text-blue-400 mt-1" />
-                                                        <div>
-                                                            <span className="text-gray-300 block text-sm">Онлайн</span>
-                                                            <span className="text-white">{season.features.online}</span>
-                                                        </div>
-                                                    </div>
-                                                    {season.features.discord_online && (
-                                                        <div className="flex items-start gap-3">
-                                                            <MessageSquare className="w-5 h-5 text-indigo-400 mt-1" />
-                                                            <div>
-                                                                <span className="text-gray-300 block text-sm">Discord</span>
-                                                                <span className="text-white">{season.features.discord_online}</span>
+                                    {/* Right Side Cards Column */}
+                                    {hasRightColumn && (
+                                        <div className="space-y-8 lg:col-span-4">
+                                            {/* Features Card */}
+                                            {hasFeatures && (
+                                                <GlassCard className="p-6">
+                                                    <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">Информация</h3>
+                                                    <div className="space-y-4">
+                                                        {season.features.online && season.features.online !== '—' && (
+                                                            <div className="flex items-start gap-3">
+                                                                <Users className="w-5 h-5 text-blue-400 mt-1" />
+                                                                <div>
+                                                                    <span className="text-gray-300 block text-sm">Онлайн</span>
+                                                                    <span className="text-white">{season.features.online}</span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-start gap-3">
-                                                        <Monitor className="w-5 h-5 text-purple-400 mt-1" />
-                                                        <div>
-                                                            <span className="text-gray-300 block text-sm">Платформа</span>
-                                                            <span className="text-white">{season.features.platform}</span>
-                                                        </div>
+                                                        )}
+                                                        {season.features.discord_online && (
+                                                            <div className="flex items-start gap-3">
+                                                                <MessageSquare className="w-5 h-5 text-indigo-400 mt-1" />
+                                                                <div>
+                                                                    <span className="text-gray-300 block text-sm">Discord</span>
+                                                                    <span className="text-white">{season.features.discord_online}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {season.features.platform && season.features.platform !== '—' && (
+                                                            <div className="flex items-start gap-3">
+                                                                <Monitor className="w-5 h-5 text-purple-400 mt-1" />
+                                                                <div>
+                                                                    <span className="text-gray-300 block text-sm">Платформа</span>
+                                                                    <span className="text-white">{season.features.platform}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {season.features.work_time && season.features.work_time !== '—' && (
+                                                            <div className="flex items-start gap-3">
+                                                                <Clock className="w-5 h-5 text-green-400 mt-1" />
+                                                                <div>
+                                                                    <span className="text-gray-300 block text-sm">Часы работы</span>
+                                                                    <span className="text-white">{season.features.work_time}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        {season.features.runtime && season.features.runtime !== '—' && (
+                                                            <div className="flex items-start gap-3">
+                                                                <Hourglass className="w-5 h-5 text-yellow-400 mt-1" />
+                                                                <div>
+                                                                    <span className="text-gray-300 block text-sm">Продлился сервер</span>
+                                                                    <span className="text-white">{season.features.runtime}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                    <div className="flex items-start gap-3">
-                                                        <Clock className="w-5 h-5 text-green-400 mt-1" />
-                                                        <div>
-                                                            <span className="text-gray-300 block text-sm">Часы работы</span>
-                                                            <span className="text-white">{season.features.work_time}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-start gap-3">
-                                                        <Hourglass className="w-5 h-5 text-yellow-400 mt-1" />
-                                                        <div>
-                                                            <span className="text-gray-300 block text-sm">Продлился сервер</span>
-                                                            <span className="text-white">{season.features.runtime}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </GlassCard>
-                                        </div>
+                                                </GlassCard>
+                                            )}
 
-                                        {/* Logo Section (Mobile: 3) */}
-                                        {logos.length > 0 && (
-                                            <div className="order-3">
+                                            {/* Logo Section */}
+                                            {validLogos.length > 0 && (
                                                 <GlassCard className="p-6">
                                                     <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">
-                                                        {logos.length > 1 ? 'Логотипы' : 'Логотип'}
+                                                        {validLogos.length > 1 ? 'Логотипы' : 'Логотип'}
                                                     </h3>
-                                                    <div className={`grid grid-cols-1 ${logos.length > 1 ? 'gap-8' : ''}`}>
-                                                        {logos.map((logo, logoIndex) => (
+                                                    <div className={`grid grid-cols-1 ${validLogos.length > 1 ? 'gap-8' : ''}`}>
+                                                        {validLogos.map((logo, logoIndex) => (
                                                             <div key={logoIndex} className="flex flex-col items-center text-center">
                                                                 <div className="relative w-full">
                                                                     <img
@@ -659,19 +673,17 @@ const HistoryDetail = () => {
                                                         ))}
                                                     </div>
                                                 </GlassCard>
-                                            </div>
-                                        )}
+                                            )}
 
-                                        {/* Map Download Section (Mobile: 6) */}
-                                        {season.map && (
-                                            <div className="order-6">
+                                            {/* Map Download Section */}
+                                            {validMaps.length > 0 && (
                                                 <GlassCard className="p-6">
                                                     <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4 flex items-center gap-2">
                                                         <MapIcon className="w-5 h-5 text-green-500" />
                                                         Карта
                                                     </h3>
                                                     <div className="flex flex-col gap-3">
-                                                        {(Array.isArray(season.map) ? season.map : [season.map]).map((mapItem, mapIndex) => (
+                                                        {validMaps.map((mapItem, mapIndex) => (
                                                             <a
                                                                 key={mapIndex}
                                                                 href={mapItem.url}
@@ -680,33 +692,33 @@ const HistoryDetail = () => {
                                                                 className="inline-flex items-center justify-center px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors w-full"
                                                             >
                                                                 <Download className="w-4 h-4 mr-2" />
-                                                                {mapItem.description}
+                                                                {mapItem.description || 'Скачать карту'}
                                                             </a>
                                                         ))}
                                                     </div>
                                                 </GlassCard>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Carousel (Mobile: 5, Desktop: Bottom) */}
-                                    {season.photos && season.photos.length > 0 && (
-                                        <div className="order-5 lg:col-span-2">
-                                            <div className="flex items-center gap-4 py-12">
-                                                <div className="h-px flex-1 opacity-50" style={{ background: `linear-gradient(to right, transparent, ${details.colors?.[0] || '#c084fc'})` }}></div>
-                                                <span className="text-xl md:text-3xl font-bold text-white shadow-lg text-center">
-                                                    Скриншоты сервера
-                                                </span>
-                                                <div className="h-px flex-1 opacity-50" style={{ background: `linear-gradient(to left, transparent, ${details.colors?.[details.colors?.length - 1] || '#3b82f6'})` }}></div>
-                                            </div>
-                                            <ImageCarousel
-                                                photos={season.photos}
-                                                folderName={folderName}
-                                                seasonName={season.name}
-                                            />
+                                            )}
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Carousel */}
+                                {season.photos && season.photos.length > 0 && (
+                                    <div>
+                                        <div className="flex items-center gap-4 py-12">
+                                            <div className="h-px flex-1 opacity-50" style={{ background: `linear-gradient(to right, transparent, ${details.colors?.[0] || '#c084fc'})` }}></div>
+                                            <span className="text-xl md:text-3xl font-bold text-white shadow-lg text-center">
+                                                Скриншоты сервера
+                                            </span>
+                                            <div className="h-px flex-1 opacity-50" style={{ background: `linear-gradient(to left, transparent, ${details.colors?.[details.colors?.length - 1] || '#3b82f6'})` }}></div>
+                                        </div>
+                                        <ImageCarousel
+                                            photos={season.photos}
+                                            folderName={folderName}
+                                            seasonName={season.name}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         );
                     })}

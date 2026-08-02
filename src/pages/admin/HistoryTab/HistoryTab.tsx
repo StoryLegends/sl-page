@@ -197,9 +197,13 @@ const HistoryTab: React.FC = () => {
                 photosJson: finalPhotosJson,
                 colorsJson: JSON.stringify(editingItem.colors || ['#34383b', '#728697'])
             };
-            await historyApi.saveHistory(payload);
+            const saved = await historyApi.saveHistory(payload);
             showNotification(isPublished ? 'История опубликована на сайте!' : 'Черновик успешно сохранен!', 'success');
-            setEditingItem(null);
+            setEditingItem(prev => ({
+                ...prev,
+                ...saved,
+                colors: editingItem.colors
+            }));
             loadHistory();
         } catch (err) {
             console.error(err);
@@ -858,71 +862,75 @@ const HistoryTab: React.FC = () => {
                                         <p className="text-gray-300 text-sm mt-2">{editingItem.description}</p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        {/* Main Content (Left) */}
-                                        <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                                            <h3 className="text-lg font-bold text-white border-b border-white/10 pb-2">Описание</h3>
-                                            <div
-                                                className="prose prose-invert max-w-none text-gray-300 text-xs leading-relaxed space-y-3"
-                                                dangerouslySetInnerHTML={{ __html: editingItem.contentHtml || '<p className="text-gray-500 italic">Контент пуст...</p>' }}
-                                            />
-                                        </div>
+                                    {(() => {
+                                        const hasValidLogo = activeCards.includes('logo') && currentLogo.image && currentLogo.image.trim() !== '';
+                                        const validMaps = currentMaps.filter(m => m.url && m.url.trim() !== '');
+                                        const hasValidMaps = activeCards.includes('maps') && validMaps.length > 0;
+                                        const hasValidFeatures = activeCards.includes('features');
+                                        const hasSideCards = hasValidFeatures || hasValidLogo || hasValidMaps;
 
-                                        {/* Side Cards (Right) */}
-                                        <div className="space-y-4">
-                                            {/* Features Card */}
-                                            {activeCards.includes('features') && (
-                                                <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
-                                                    <h3 className="text-base font-bold text-white border-b border-white/10 pb-2 flex items-center gap-2">
-                                                        <Users className="w-4 h-4 text-blue-400" /> Информация
-                                                    </h3>
-                                                    <div className="space-y-2 text-xs">
-                                                        <div className="flex justify-between"><span className="text-gray-400">Онлайн:</span> <span className="text-white font-bold">{editingItem.featureOnline || '—'}</span></div>
-                                                        <div className="flex justify-between"><span className="text-gray-400">Платформа:</span> <span className="text-white font-bold">{editingItem.featurePlatform || '—'}</span></div>
-                                                        <div className="flex justify-between"><span className="text-gray-400">Часы работы:</span> <span className="text-white font-bold">{editingItem.featureWorkTime || '—'}</span></div>
-                                                        <div className="flex justify-between"><span className="text-gray-400">Продлился:</span> <span className="text-white font-bold">{editingItem.featureRuntime || '—'}</span></div>
-                                                    </div>
+                                        return (
+                                            <div className={`grid grid-cols-1 ${hasSideCards ? 'lg:grid-cols-12' : ''} gap-6 items-start`}>
+                                                {/* Main Content (Left, 100% width if no side cards) */}
+                                                <div className={`p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4 ${hasSideCards ? 'lg:col-span-7' : 'w-full'}`}>
+                                                    <h3 className="text-lg font-bold text-white border-b border-white/10 pb-2">Описание</h3>
+                                                    <div
+                                                        className="prose prose-invert max-w-none text-gray-300 text-xs leading-relaxed space-y-3"
+                                                        dangerouslySetInnerHTML={{ __html: editingItem.contentHtml || '<p className="text-gray-500 italic">Контент пуст...</p>' }}
+                                                    />
                                                 </div>
-                                            )}
 
-                                            {/* Logo Card */}
-                                            {activeCards.includes('logo') && (
-                                                <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3 text-center">
-                                                    <h3 className="text-base font-bold text-white border-b border-white/10 pb-2">Логотип</h3>
-                                                    {currentLogo.image ? (
-                                                        <div className="flex flex-col items-center">
-                                                            <img src={currentLogo.image} alt="Logo preview" className="max-h-24 object-contain mb-2 drop-shadow-md" />
-                                                            {currentLogo.description && <p className="text-xs text-white font-bold">{currentLogo.description}</p>}
-                                                            {currentLogo.second_description && <p className="text-[11px] text-gray-400">{currentLogo.second_description}</p>}
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-gray-500 text-xs italic">Логотип не выбран</p>
-                                                    )}
-                                                </div>
-                                            )}
+                                                {/* Side Cards (Right) */}
+                                                {hasSideCards && (
+                                                    <div className="space-y-4 lg:col-span-5">
+                                                        {/* Features Card */}
+                                                        {hasValidFeatures && (
+                                                            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                                                                <h3 className="text-base font-bold text-white border-b border-white/10 pb-2 flex items-center gap-2">
+                                                                    <Users className="w-4 h-4 text-blue-400" /> Информация
+                                                                </h3>
+                                                                <div className="space-y-2 text-xs">
+                                                                    <div className="flex justify-between"><span className="text-gray-400">Онлайн:</span> <span className="text-white font-bold">{editingItem.featureOnline || '—'}</span></div>
+                                                                    <div className="flex justify-between"><span className="text-gray-400">Платформа:</span> <span className="text-white font-bold">{editingItem.featurePlatform || '—'}</span></div>
+                                                                    <div className="flex justify-between"><span className="text-gray-400">Часы работы:</span> <span className="text-white font-bold">{editingItem.featureWorkTime || '—'}</span></div>
+                                                                    <div className="flex justify-between"><span className="text-gray-400">Продлился:</span> <span className="text-white font-bold">{editingItem.featureRuntime || '—'}</span></div>
+                                                                </div>
+                                                            </div>
+                                                        )}
 
-                                            {/* Maps Card */}
-                                            {activeCards.includes('maps') && (
-                                                <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
-                                                    <h3 className="text-base font-bold text-white border-b border-white/10 pb-2 flex items-center gap-2">
-                                                        <MapIcon className="w-4 h-4 text-green-400" /> Карта
-                                                    </h3>
-                                                    <div className="space-y-2">
-                                                        {currentMaps.length === 0 ? (
-                                                            <p className="text-gray-500 text-xs italic">Ссылки не добавлены</p>
-                                                        ) : (
-                                                            currentMaps.map((m, i) => (
-                                                                <a key={i} href={m.url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 p-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors">
-                                                                    <Download className="w-3.5 h-3.5 text-green-400" />
-                                                                    {m.description || 'Скачать карту'}
-                                                                </a>
-                                                            ))
+                                                        {/* Logo Card */}
+                                                        {hasValidLogo && (
+                                                            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3 text-center">
+                                                                <h3 className="text-base font-bold text-white border-b border-white/10 pb-2">Логотип</h3>
+                                                                <div className="flex flex-col items-center">
+                                                                    <img src={currentLogo.image} alt="Logo preview" className="max-h-24 object-contain mb-2 drop-shadow-md" />
+                                                                    {currentLogo.description && <p className="text-xs text-white font-bold">{currentLogo.description}</p>}
+                                                                    {currentLogo.second_description && <p className="text-[11px] text-gray-400">{currentLogo.second_description}</p>}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Maps Card */}
+                                                        {hasValidMaps && (
+                                                            <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                                                                <h3 className="text-base font-bold text-white border-b border-white/10 pb-2 flex items-center gap-2">
+                                                                    <MapIcon className="w-4 h-4 text-green-400" /> Карта
+                                                                </h3>
+                                                                <div className="space-y-2">
+                                                                    {validMaps.map((m, i) => (
+                                                                        <a key={i} href={m.url} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 p-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors">
+                                                                            <Download className="w-3.5 h-3.5 text-green-400" />
+                                                                            {m.description || 'Скачать карту'}
+                                                                        </a>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
                                                         )}
                                                     </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
 
                                     {/* Photos Gallery Card */}
                                     {activeCards.includes('photos') && currentPhotos.length > 0 && (
