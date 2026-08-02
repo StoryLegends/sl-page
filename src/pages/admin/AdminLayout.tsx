@@ -331,7 +331,7 @@ const AdminLayout: React.FC = () => {
                         </Drawer>
                     )}
 
-                    <Content className="p-3 md:p-6 lg:p-8 max-w-7xl w-full mx-auto" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                    <Content className="p-3 md:p-6 lg:p-8 w-full max-w-[1920px] mx-auto" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
                         <Suspense fallback={
                             <div className="flex items-center justify-center min-h-[400px]">
                                 <Spin size="large" description="Загрузка страницы..." />
