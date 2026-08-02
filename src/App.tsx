@@ -48,6 +48,7 @@ const SponsorshipPlansTab = lazy(() => import('./pages/admin/SponsorshipPlansTab
 const ReviewsTab = lazy(() => import('./pages/admin/ReviewsTab/ReviewsTab'));
 const GloryListTab = lazy(() => import('./pages/admin/GloryListTab/GloryListTab'));
 const HistoryTab = lazy(() => import('./pages/admin/HistoryTab/HistoryTab'));
+const MinecraftServerTab = lazy(() => import('./pages/admin/MinecraftServerTab/MinecraftServerTab'));
 
 // Lazy load new Public pages
 const Sponsorship = lazy(() => import('./pages/Sponsorship'));
@@ -136,6 +137,7 @@ function App() {
                   <Route path="reviews" element={<ReviewsTab />} />
                   <Route path="glorylist" element={<GloryListTab />} />
                   <Route path="history" element={<HistoryTab />} />
+                  <Route path="minecraft" element={<MinecraftServerTab />} />
                   <Route path="settings" element={<SettingsTab />} />
                 </Route>
 

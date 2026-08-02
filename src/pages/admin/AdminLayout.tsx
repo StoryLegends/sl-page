@@ -61,6 +61,7 @@ const AdminLayout: React.FC = () => {
         if (path.includes('/admin/reviews')) return 'reviews';
         if (path.includes('/admin/glorylist')) return 'glorylist';
         if (path.includes('/admin/history')) return 'history';
+        if (path.includes('/admin/minecraft')) return 'minecraft';
         if (path.includes('/admin/feature-flags')) return 'feature-flags';
         if (path.includes('/admin/settings')) return 'settings';
         return 'dashboard';
@@ -149,6 +150,12 @@ const AdminLayout: React.FC = () => {
             icon: <HistoryOutlined />,
             label: 'История сервера',
             onClick: () => navigate('/admin/history')
+        },
+        {
+            key: 'minecraft',
+            icon: <CodeOutlined />,
+            label: 'Сервер Minecraft',
+            onClick: () => navigate('/admin/minecraft')
         },
         {
             key: 'settings',

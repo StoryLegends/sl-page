@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # 1. MinIO S3 Object Storage Service
+  minio:
+    image: minio/minio:latest
+    container_name: sl-minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # 2. Minecraft Java Server Docker Container (Paper MC)
+  minecraft:
+    image: itzg/minecraft-server:latest
+    container_name: ${MINECRAFT_CONTAINER_NAME:-sl-minecraft-server}
+    restart: unless-stopped
+    ports:
+      - "${MINECRAFT_SERVER_PORT:-25565}:25565"
+      - "${MINECRAFT_RCON_PORT:-25575}:25575"
+    environment:
+      EULA: "${MINECRAFT_EULA:-TRUE}"
+      TYPE: "${MINECRAFT_TYPE:-PAPER}"
+      VERSION: "${MINECRAFT_VERSION:-1.20.4}"
+      MEMORY: "${MINECRAFT_MEMORY:-4G}"
+      ENABLE_RCON: "true"
+      RCON_PORT: "25575"
+      RCON_PASSWORD: "${MINECRAFT_RCON_PASSWORD:-storylegends_rcon_pass}"
+      MOTD: "§6§lStoryLegends §7- §fLegendary Minecraft Experience"
+      ONLINE_MODE: "false"
+      MAX_PLAYERS: 50
+    volumes:
+      - minecraft_data:/data
+
+  # 3. StoryLegends Backend API (Spring Boot)
+  backend:
+    build:
+      context: ../slbackend
+      dockerfile: Dockerfile
+    container_name: sl-backend
+    restart: always
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-storylegends-assets}
+      MINECRAFT_CONTAINER_NAME: ${MINECRAFT_CONTAINER_NAME:-sl-minecraft-server}
+      MINECRAFT_RCON_HOST: minecraft
+      MINECRAFT_RCON_PORT: 25575
+      MINECRAFT_RCON_PASSWORD: ${MINECRAFT_RCON_PASSWORD:-storylegends_rcon_pass}
+    depends_on:
+      - minio
+      - minecraft
+
+  # 4. StoryLegends Frontend (Vite / React)
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sl-frontend
+    restart: always
+    ports:
+      - "${PORT:-5173}:80"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    depends_on:
+      - backend
+
+volumes:
+  minio_data:
+  minecraft_data:
