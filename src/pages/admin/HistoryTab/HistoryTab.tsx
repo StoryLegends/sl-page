@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { History as HistoryIcon, Plus, Edit, Trash2, Save, Eye, ArrowRight, Calendar, Palette, Upload, Map as MapIcon, Image as ImageIcon } from 'lucide-react';
 import { uploadToImgur } from '../../../utils/imgur';
 import { historyApi, type ServerHistory } from '../../../api/history';
@@ -14,6 +14,28 @@ const HistoryTab: React.FC = () => {
     const [editingItem, setEditingItem] = useState<Partial<ServerHistory> | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [previewMode, setPreviewMode] = useState<'SPLIT' | 'EDITOR_ONLY' | 'PREVIEW_ONLY'>('SPLIT');
+
+    // Refs for synchronized scrolling
+    const leftPanelRef = useRef<HTMLDivElement>(null);
+    const rightPanelRef = useRef<HTMLDivElement>(null);
+    const isSyncingScrollRef = useRef(false);
+
+    const handleLeftScroll = () => {
+        if (isSyncingScrollRef.current) return;
+        isSyncingScrollRef.current = true;
+        if (leftPanelRef.current && rightPanelRef.current) {
+            const left = leftPanelRef.current;
+            const right = rightPanelRef.current;
+            const scrollableHeight = left.scrollHeight - left.clientHeight;
+            if (scrollableHeight > 0) {
+                const percentage = left.scrollTop / scrollableHeight;
+                right.scrollTop = percentage * (right.scrollHeight - right.clientHeight);
+            }
+        }
+        requestAnimationFrame(() => {
+            isSyncingScrollRef.current = false;
+        });
+    };
 
     const loadHistory = async () => {
         setLoading(true);
@@ -254,7 +276,7 @@ const HistoryTab: React.FC = () => {
 
                     {/* LEFT PANEL: Editor */}
                     {(previewMode === 'SPLIT' || previewMode === 'EDITOR_ONLY') && (
-                        <div className={`${previewMode === 'EDITOR_ONLY' ? 'lg:col-span-12' : 'lg:col-span-6'} space-y-4 bg-white/5 p-6 rounded-2xl border border-white/10 shadow-xl`}>
+                        <div ref={leftPanelRef} onScroll={handleLeftScroll} className={`${previewMode === 'EDITOR_ONLY' ? 'lg:col-span-12' : 'lg:col-span-7'} space-y-4 bg-white/5 p-6 rounded-2xl border border-white/10 shadow-xl max-h-[85vh] overflow-y-auto`}>
                             <h3 className="text-base font-bold text-white border-b border-white/10 pb-2">Параметры и контент</h3>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -631,13 +653,13 @@ const HistoryTab: React.FC = () => {
 
                     {/* RIGHT PANEL: Live Preview */}
                     {(previewMode === 'SPLIT' || previewMode === 'PREVIEW_ONLY') && (
-                        <div className={`${previewMode === 'PREVIEW_ONLY' ? 'lg:col-span-12' : 'lg:col-span-6'} space-y-6 bg-[#070d18] p-6 rounded-2xl border border-story-gold/30 shadow-2xl sticky top-4 max-h-[85vh] overflow-y-auto`}>
+                        <div ref={rightPanelRef} className={`${previewMode === 'PREVIEW_ONLY' ? 'lg:col-span-12' : 'lg:col-span-5'} space-y-6 bg-[#070d18] p-6 rounded-2xl border border-story-gold/30 shadow-2xl sticky top-4 max-h-[85vh] overflow-y-auto`}>
                             <div className="flex items-center justify-between border-b border-white/10 pb-2">
                                 <h3 className="text-base font-bold text-story-gold flex items-center gap-2">
                                     <Eye className="w-5 h-5" />
                                     Предпросмотр в реальном времени
                                 </h3>
-                                <span className="text-[10px] font-mono text-gray-400">Live Render</span>
+                                
                             </div>
 
                             {/* Live Card Preview */}
