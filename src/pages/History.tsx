@@ -19,13 +19,15 @@ interface HistoryItem {
 }
 
 const History = () => {
-  const { hasFeature } = useAuth();
+  const { hasFeature, loading: authLoading } = useAuth();
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return; // Wait until AuthContext finishes loading token and feature flags!
+
     const fetchHistory = async () => {
+      setLoading(true);
       const useDbFirst = hasFeature('history');
 
       const fetchFromFiles = async (): Promise<HistoryItem[]> => {
@@ -73,20 +75,17 @@ const History = () => {
       } catch (error) {
         console.error('All history fetch strategies failed:', error);
       } finally {
-        setIsExiting(true);
-        setTimeout(() => {
-          setLoading(false);
-        }, 500);
+        setLoading(false);
       }
     };
 
     fetchHistory();
-  }, [hasFeature]);
+  }, [authLoading, hasFeature]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <Layout>
-        <div className={`min-h-screen flex items-center justify-center transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
+        <div className="min-h-screen flex items-center justify-center">
           <Loader />
         </div>
       </Layout>

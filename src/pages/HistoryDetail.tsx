@@ -314,15 +314,18 @@ import { useAuth } from '../context/AuthContext';
 
 const HistoryDetail = () => {
     const { id } = useParams<{ id: string }>();
-    const { hasFeature } = useAuth();
+    const { hasFeature, loading: authLoading } = useAuth();
     const [details, setDetails] = useState<HistoryDetails | null>(null);
     const [loading, setLoading] = useState(true);
-    const [isExiting, setIsExiting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [folderName, setFolderName] = useState<string>('');
 
     useEffect(() => {
+        if (authLoading) return; // Wait until AuthContext finishes loading token and feature flags!
+
         const fetchDetails = async () => {
+            setLoading(true);
+            setError(null);
             try {
                 if (!id) throw new Error('No id');
 
@@ -469,20 +472,17 @@ const HistoryDetail = () => {
                 console.error(err);
                 setError('Failed to load history details.');
             } finally {
-                setIsExiting(true);
-                setTimeout(() => {
-                    setLoading(false);
-                }, 500);
+                setLoading(false);
             }
         };
 
         fetchDetails();
-    }, [id]);
+    }, [id, authLoading, hasFeature]);
 
-    if (loading) {
+    if (loading || authLoading) {
         return (
             <Layout>
-                <div className={`min-h-screen flex items-center justify-center transition-opacity duration-500 ${isExiting ? 'opacity-0' : 'opacity-100'}`}>
+                <div className="min-h-screen flex items-center justify-center">
                     <Loader />
                 </div>
             </Layout>
