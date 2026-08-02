@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { 
     Play, Square, RotateCw, Zap, Terminal, Cpu, HardDrive, Users, Activity, 
-    Upload, Package, Server, Send, RefreshCw, CheckCircle2,
-    Folder, FileText, FileCode, Plus, ChevronRight, ArrowLeft, Trash2, X
+    Upload, Package, Server, Send, RefreshCw, CheckCircle2, Settings as SettingsIcon,
+    Folder, FileText, FileCode, Plus, ChevronRight, ArrowLeft, Trash2, X, Key
 } from 'lucide-react';
 import { 
     minecraftApi, 
@@ -28,7 +28,7 @@ const MinecraftServerTab: React.FC = () => {
         memory: '4G'
     });
 
-    const [activeSubTab, setActiveSubTab] = useState<'console' | 'files' | 'players'>('console');
+    const [activeSubTab, setActiveSubTab] = useState<'console' | 'files' | 'players' | 'settings'>('console');
 
     // Console / Terminal state
     const [logs, setLogs] = useState<string[]>([]);
@@ -45,6 +45,19 @@ const MinecraftServerTab: React.FC = () => {
 
     // Players state
     const [players, setPlayers] = useState<MinecraftPlayer[]>([]);
+
+    // Server & RCON Settings state
+    const [settingsForm, setSettingsForm] = useState({
+        name: '',
+        version: '1.20.4',
+        type: 'PAPER',
+        memory: '4G',
+        rconIp: '202.181.188.45',
+        rconPort: 25826,
+        rconPassword: 'SLdISRA2f8uu22qhyLOH17',
+        rconEnabled: true
+    });
+    const [isSavingSettings, setIsSavingSettings] = useState(false);
 
     const isOnline = status?.status === 'ONLINE';
 
@@ -89,6 +102,23 @@ const MinecraftServerTab: React.FC = () => {
         return () => clearInterval(interval);
     }, [selectedServerId, activeSubTab]);
 
+    // Update settings form when selected server changes
+    useEffect(() => {
+        const cur = servers.find(s => s.id === selectedServerId);
+        if (cur) {
+            setSettingsForm({
+                name: cur.name,
+                version: cur.version || '1.20.4',
+                type: cur.type || 'PAPER',
+                memory: cur.memory || '4G',
+                rconIp: cur.rconIp || '202.181.188.45',
+                rconPort: cur.rconPort || 25826,
+                rconPassword: cur.rconPassword || 'SLdISRA2f8uu22qhyLOH17',
+                rconEnabled: cur.rconEnabled ?? true
+            });
+        }
+    }, [selectedServerId, servers]);
+
     // Auto-scroll terminal
     useEffect(() => {
         if (autoScroll && activeSubTab === 'console') {
@@ -129,6 +159,24 @@ const MinecraftServerTab: React.FC = () => {
             await fetchServers();
         } catch (err) {
             showNotification('Ошибка создания сервера.', 'error');
+        }
+    };
+
+    const handleSaveServerSettings = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSavingSettings(true);
+        try {
+            const res = await minecraftApi.updateServerSettings({
+                serverId: selectedServerId,
+                ...settingsForm
+            });
+            showNotification(res.message || 'Настройки сервера и RCON обновлены!', 'success');
+            await fetchServers();
+            fetchStatus();
+        } catch (err) {
+            showNotification('Ошибка при сохранении настроек сервера.', 'error');
+        } finally {
+            setIsSavingSettings(false);
         }
     };
 
@@ -234,7 +282,7 @@ const MinecraftServerTab: React.FC = () => {
                                     ))}
                                 </select>
 
-                                {/* Clean Solid Status Badge (No Pulsing Animation) */}
+                                {/* Clean Solid Status Badge */}
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
                                     isOnline 
                                         ? 'bg-green-600 text-white border-green-500' 
@@ -249,7 +297,7 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Server Actions & Power Controls (Clean No-Emoji Buttons) */}
+                    {/* Server Actions & Power Controls */}
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setIsCreateServerModalOpen(true)}
@@ -364,6 +412,15 @@ const MinecraftServerTab: React.FC = () => {
                 >
                     <Users className="w-4 h-4" /> Игроки Онлайн
                 </button>
+
+                <button
+                    onClick={() => { setActiveSubTab('settings'); setEditingFile(null); }}
+                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+                        activeSubTab === 'settings' ? 'bg-story-gold text-black shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                    }`}
+                >
+                    <SettingsIcon className="w-4 h-4" /> Настройки сервера и RCON
+                </button>
             </div>
 
             {/* SUB-TAB 1: LIVE CONSOLE & TERMINAL */}
@@ -433,7 +490,6 @@ const MinecraftServerTab: React.FC = () => {
             {/* SUB-TAB 2: CONTAINER FILE MANAGER & MULTI-FILE CODE EDITOR */}
             {activeSubTab === 'files' && (
                 <div className="bg-[#091322] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-6">
-                    {/* EDITING A SPECIFIC FILE */}
                     {editingFile ? (
                         <div className="space-y-4">
                             <div className="flex items-center justify-between border-b border-white/10 pb-4">
@@ -478,7 +534,6 @@ const MinecraftServerTab: React.FC = () => {
                             />
                         </div>
                     ) : (
-                        /* CONTAINER DIRECTORY BROWSER TREE */
                         <div className="space-y-4">
                             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
                                 <div className="flex items-center gap-2 text-xs font-mono text-gray-300">
@@ -518,7 +573,6 @@ const MinecraftServerTab: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Files Table List */}
                             <div className="bg-black/40 border border-white/10 rounded-xl overflow-hidden text-xs">
                                 <div className="grid grid-cols-12 px-4 py-2.5 bg-white/5 border-b border-white/10 text-gray-400 font-bold">
                                     <div className="col-span-6">ИМЯ ФАЙЛА / ПАПКИ</div>
@@ -635,6 +689,135 @@ const MinecraftServerTab: React.FC = () => {
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* SUB-TAB 4: DYNAMIC ENGINE, VERSION & RCON SETTINGS */}
+            {activeSubTab === 'settings' && (
+                <div className="bg-[#091322] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-6">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                        <div>
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                <SettingsIcon className="w-5 h-5 text-story-gold" />
+                                Конфигурация ядра, версии Minecraft и RCON
+                            </h3>
+                            <p className="text-xs text-gray-400 mt-1">Изменение версии игры, движка и параметров подключения к RCON без правки файлов</p>
+                        </div>
+
+                        <button
+                            onClick={handleSaveServerSettings}
+                            disabled={isSavingSettings}
+                            className="px-5 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all shadow-md flex items-center gap-2"
+                        >
+                            <CheckCircle2 className="w-4 h-4" />
+                            {isSavingSettings ? 'Сохранение...' : 'Сохранить настройки и RCON'}
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSaveServerSettings} className="space-y-6 text-xs">
+                        {/* Section 1: Server Engine & Version */}
+                        <div className="space-y-4 bg-white/5 p-5 rounded-xl border border-white/10">
+                            <h4 className="text-sm font-bold text-story-gold flex items-center gap-2">
+                                <Server className="w-4 h-4" /> Движок и Версия Minecraft
+                            </h4>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Название сервера</label>
+                                    <input
+                                        type="text"
+                                        value={settingsForm.name}
+                                        onChange={e => setSettingsForm({ ...settingsForm, name: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Ядро / Движок</label>
+                                    <select
+                                        value={settingsForm.type}
+                                        onChange={e => setSettingsForm({ ...settingsForm, type: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-story-gold font-bold"
+                                    >
+                                        <option value="PAPER">Paper (Рекомендуется)</option>
+                                        <option value="PURPUR">Purpur (High Performance)</option>
+                                        <option value="FABRIC">Fabric (Modded)</option>
+                                        <option value="FORGE">Forge (Modded)</option>
+                                        <option value="SPIGOT">Spigot</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Версия Minecraft</label>
+                                    <select
+                                        value={settingsForm.version}
+                                        onChange={e => setSettingsForm({ ...settingsForm, version: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-story-gold font-bold"
+                                    >
+                                        <option value="1.20.4">1.20.4 (Актуальная)</option>
+                                        <option value="1.20.2">1.20.2</option>
+                                        <option value="1.19.4">1.19.4</option>
+                                        <option value="1.16.5">1.16.5 (Классическая)</option>
+                                        <option value="1.12.2">1.12.2</option>
+                                        <option value="1.8.8">1.8.8 (PvP)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 2: RCON Connection Parameters */}
+                        <div className="space-y-4 bg-white/5 p-5 rounded-xl border border-white/10">
+                            <div className="flex items-center justify-between">
+                                <h4 className="text-sm font-bold text-story-gold flex items-center gap-2">
+                                    <Key className="w-4 h-4" /> Настройки RCON подключения
+                                </h4>
+                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer font-bold">
+                                    <input
+                                        type="checkbox"
+                                        checked={settingsForm.rconEnabled}
+                                        onChange={e => setSettingsForm({ ...settingsForm, rconEnabled: e.target.checked })}
+                                        className="rounded bg-black/50 border-white/20 text-story-gold focus:ring-0"
+                                    />
+                                    RCON Включен
+                                </label>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">RCON IP / Хост</label>
+                                    <input
+                                        type="text"
+                                        value={settingsForm.rconIp}
+                                        onChange={e => setSettingsForm({ ...settingsForm, rconIp: e.target.value })}
+                                        placeholder="202.181.188.45"
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">RCON Порт</label>
+                                    <input
+                                        type="number"
+                                        value={settingsForm.rconPort}
+                                        onChange={e => setSettingsForm({ ...settingsForm, rconPort: parseInt(e.target.value) || 25826 })}
+                                        placeholder="25826"
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">RCON Пароль</label>
+                                    <input
+                                        type="password"
+                                        value={settingsForm.rconPassword}
+                                        onChange={e => setSettingsForm({ ...settingsForm, rconPassword: e.target.value })}
+                                        placeholder="Пароль RCON..."
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             )}
 

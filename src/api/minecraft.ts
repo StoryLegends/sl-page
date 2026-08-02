@@ -9,6 +9,10 @@ export interface MinecraftServerInfo {
     port: number;
     memory: string;
     path: string;
+    rconIp?: string;
+    rconPort?: number;
+    rconPassword?: string;
+    rconEnabled?: boolean;
 }
 
 export interface MinecraftStatus {
@@ -47,6 +51,20 @@ export const minecraftApi = {
     },
     createServer: async (data: { name: string; version: string; type: string; memory: string }) => {
         const res = await apiClient.post('/api/admin/minecraft/servers', data);
+        return res.data;
+    },
+    updateServerSettings: async (data: {
+        serverId: string;
+        name?: string;
+        version?: string;
+        type?: string;
+        memory?: string;
+        rconIp?: string;
+        rconPort?: number;
+        rconPassword?: string;
+        rconEnabled?: boolean;
+    }) => {
+        const res = await apiClient.post('/api/admin/minecraft/server/update', data);
         return res.data;
     },
     getStatus: async (serverId: string = 'server-1'): Promise<MinecraftStatus> => {
