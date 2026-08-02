@@ -336,14 +336,14 @@ const HistoryDetail = () => {
                     let indexData: any[] = [];
                     try {
                         const indexRes = await fetch('/history-index.json');
-                        if (indexRes.ok) indexData = await indexRes.json();
+                        const contentType = indexRes.headers.get('content-type') || '';
+                        if (indexRes.ok && (contentType.includes('application/json') || contentType.includes('text/plain'))) {
+                            indexData = await indexRes.json();
+                        }
                     } catch {}
                     const indexItem = indexData.find((i: any) => i.id === id || i.path === id);
                     return indexItem?.path || id;
                 };
-
-                const resolvedFolder = await getFolderName();
-                setFolderName(resolvedFolder);
 
                 // Helper to fetch rich static details file safely
                 const fetchFileDetails = async (folder: string) => {
@@ -361,26 +361,16 @@ const HistoryDetail = () => {
                 };
 
                 if (useDbFirst) {
-                    // --- FEATURE FLAG ENABLED: DB FIRST -> FALLBACK TO FILES ---
+                    // --- FEATURE FLAG ENABLED: 100% DB ONLY (No static .json requests) ---
                     try {
-                        let serverItem;
-                        try {
-                            serverItem = await historyApi.getHistoryBySlug(id);
-                        } catch (apiErr) {
-                            if (id !== resolvedFolder) {
-                                serverItem = await historyApi.getHistoryBySlug(resolvedFolder);
-                            } else {
-                                throw apiErr;
-                            }
-                        }
-                        
-                        const staticDetails = await fetchFileDetails(serverItem.pathSlug || resolvedFolder);
+                        const serverItem = await historyApi.getHistoryBySlug(id);
+                        setFolderName(serverItem.pathSlug || String(serverItem.id));
 
                         let colors: string[] = [];
                         if (typeof serverItem.colorsJson === 'string') {
                             try { colors = JSON.parse(serverItem.colorsJson); } catch {}
                         }
-                        if (colors.length === 0) colors = staticDetails?.colors || ['#34383b', '#728697'];
+                        if (colors.length === 0) colors = ['#34383b', '#728697'];
 
                         let parsedPhotos: any[] = [];
                         if (typeof serverItem.photosJson === 'string') {
@@ -397,43 +387,6 @@ const HistoryDetail = () => {
                             try { parsedMaps = JSON.parse(serverItem.mapsJson); } catch {}
                         }
 
-                        if (staticDetails) {
-                            // Combine DB item over static details, DB values override static
-                            const seasons = [...(staticDetails.seasons || [])];
-                            if (seasons.length > 0 && typeof seasons[0] === 'object') {
-                                const firstSeason = { ...seasons[0] };
-                                const features = { ...firstSeason.features };
-                                if (serverItem.featureOnline) features.online = serverItem.featureOnline;
-                                if (serverItem.featurePlatform) features.platform = serverItem.featurePlatform;
-                                if (serverItem.featureWorkTime) features.work_time = serverItem.featureWorkTime;
-                                if (serverItem.featureRuntime) features.runtime = serverItem.featureRuntime;
-                                firstSeason.features = features;
-                                if (serverItem.contentHtml) {
-                                    firstSeason.description = serverItem.contentHtml;
-                                }
-                                if (parsedLogo) {
-                                    firstSeason.logo = parsedLogo;
-                                }
-                                if (parsedMaps.length > 0) {
-                                    firstSeason.map = parsedMaps;
-                                }
-                                if (parsedPhotos.length > 0) {
-                                    firstSeason.photos = parsedPhotos;
-                                }
-                                seasons[0] = firstSeason;
-                            }
-
-                            setDetails({
-                                ...staticDetails,
-                                name: serverItem.title || staticDetails.name,
-                                description: serverItem.description || staticDetails.description,
-                                colors,
-                                seasons
-                            });
-                            return;
-                        }
-
-                        // No static details.json, use DB item alone
                         setDetails({
                             id: String(serverItem.id),
                             name: serverItem.title,
@@ -459,7 +412,9 @@ const HistoryDetail = () => {
                         });
                         return;
                     } catch (dbErr) {
-                        console.warn('DB history detail fetch failed, falling back to files:', dbErr);
+                        console.warn('DB history detail fetch failed, trying static fallback:', dbErr);
+                        const resolvedFolder = await getFolderName();
+                        setFolderName(resolvedFolder);
                         const richDetails = await fetchFileDetails(resolvedFolder);
                         if (richDetails) {
                             setDetails(richDetails);
@@ -469,6 +424,8 @@ const HistoryDetail = () => {
                     }
                 } else {
                     // --- FEATURE FLAG DISABLED: FETCH ONLY FROM STATIC FILES, DO NOT TOUCH DB AT ALL! ---
+                    const resolvedFolder = await getFolderName();
+                    setFolderName(resolvedFolder);
                     const richDetails = await fetchFileDetails(resolvedFolder);
                     if (richDetails) {
                         setDetails(richDetails);
