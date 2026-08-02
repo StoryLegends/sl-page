@@ -376,8 +376,18 @@ const HistoryDetail = () => {
                             try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
                         }
 
+                        let parsedLogo: any = null;
+                        if (typeof serverItem.logoJson === 'string') {
+                            try { parsedLogo = JSON.parse(serverItem.logoJson); } catch {}
+                        }
+
+                        let parsedMaps: any[] = [];
+                        if (typeof serverItem.mapsJson === 'string') {
+                            try { parsedMaps = JSON.parse(serverItem.mapsJson); } catch {}
+                        }
+
                         if (staticDetails) {
-                            // Combine DB item over static details
+                            // Combine DB item over static details, DB values override static
                             const seasons = [...(staticDetails.seasons || [])];
                             if (seasons.length > 0 && typeof seasons[0] === 'object') {
                                 const firstSeason = { ...seasons[0] };
@@ -387,6 +397,18 @@ const HistoryDetail = () => {
                                 if (serverItem.featureWorkTime) features.work_time = serverItem.featureWorkTime;
                                 if (serverItem.featureRuntime) features.runtime = serverItem.featureRuntime;
                                 firstSeason.features = features;
+                                if (serverItem.contentHtml) {
+                                    firstSeason.description = serverItem.contentHtml;
+                                }
+                                if (parsedLogo) {
+                                    firstSeason.logo = parsedLogo;
+                                }
+                                if (parsedMaps.length > 0) {
+                                    firstSeason.map = parsedMaps;
+                                }
+                                if (parsedPhotos.length > 0) {
+                                    firstSeason.photos = parsedPhotos;
+                                }
                                 seasons[0] = firstSeason;
                             }
 
@@ -418,6 +440,8 @@ const HistoryDetail = () => {
                                     runtime: serverItem.featureRuntime || '—'
                                 },
                                 description: serverItem.contentHtml || '',
+                                logo: parsedLogo,
+                                map: parsedMaps,
                                 photos: parsedPhotos
                             }],
                             photos: []
@@ -433,86 +457,13 @@ const HistoryDetail = () => {
                         throw dbErr;
                     }
                 } else {
-                    // --- FEATURE FLAG DISABLED: FILES FIRST -> FALLBACK TO DB ---
+                    // --- FEATURE FLAG DISABLED: FETCH ONLY FROM STATIC FILES, DO NOT TOUCH DB AT ALL! ---
                     const richDetails = await fetchFileDetails(resolvedFolder);
-                    let serverItem: any = null;
-                    try {
-                        serverItem = await historyApi.getHistoryBySlug(id);
-                    } catch (err) {
-                        if (id !== resolvedFolder) {
-                            try {
-                                serverItem = await historyApi.getHistoryBySlug(resolvedFolder);
-                            } catch {}
-                        }
-                    }
-
                     if (richDetails) {
-                        let colors = richDetails.colors || [];
-                        if (serverItem && typeof serverItem.colorsJson === 'string') {
-                            try {
-                                const parsedColors = JSON.parse(serverItem.colorsJson);
-                                if (Array.isArray(parsedColors) && parsedColors.length > 0) colors = parsedColors;
-                            } catch {}
-                        }
-
-                        const seasons = [...(richDetails.seasons || [])];
-                        if (serverItem && seasons.length > 0 && typeof seasons[0] === 'object') {
-                            const firstSeason = { ...seasons[0] };
-                            const features = { ...firstSeason.features };
-                            if (serverItem.featureOnline) features.online = serverItem.featureOnline;
-                            if (serverItem.featurePlatform) features.platform = serverItem.featurePlatform;
-                            if (serverItem.featureWorkTime) features.work_time = serverItem.featureWorkTime;
-                            if (serverItem.featureRuntime) features.runtime = serverItem.featureRuntime;
-                            firstSeason.features = features;
-                            seasons[0] = firstSeason;
-                        }
-
-                        setDetails({
-                            ...richDetails,
-                            name: serverItem?.title || richDetails.name,
-                            description: serverItem?.description || richDetails.description,
-                            colors: colors.length > 0 ? colors : ['#34383b', '#728697'],
-                            seasons
-                        });
+                        setDetails(richDetails);
                         return;
                     }
-
-                    if (serverItem) {
-                        let colors: string[] = [];
-                        if (typeof serverItem.colorsJson === 'string') {
-                            try { colors = JSON.parse(serverItem.colorsJson); } catch {}
-                        }
-                        if (colors.length === 0) colors = ['#34383b', '#728697'];
-
-                        let parsedPhotos: any[] = [];
-                        if (typeof serverItem.photosJson === 'string') {
-                            try { parsedPhotos = JSON.parse(serverItem.photosJson); } catch {}
-                        }
-
-                        setDetails({
-                            id: String(serverItem.id),
-                            name: serverItem.title,
-                            date: serverItem.eventDate || '',
-                            description: serverItem.description || '',
-                            colors,
-                            seasons: [{
-                                name: serverItem.title,
-                                date: serverItem.eventDate || '',
-                                s_description: serverItem.description || '',
-                                features: {
-                                    online: serverItem.featureOnline || '—',
-                                    platform: serverItem.featurePlatform || 'Minecraft',
-                                    work_time: serverItem.featureWorkTime || '—',
-                                    runtime: serverItem.featureRuntime || '—'
-                                },
-                                description: serverItem.contentHtml || '',
-                                photos: parsedPhotos
-                            }],
-                            photos: []
-                        });
-                        return;
-                    }
-                    throw new Error('History details not found');
+                    throw new Error('History details not found in static files');
                 }
             } catch (err) {
                 console.error(err);
@@ -715,7 +666,7 @@ const HistoryDetail = () => {
                                                             <div key={logoIndex} className="flex flex-col items-center text-center">
                                                                 <div className="relative w-full">
                                                                     <img
-                                                                        src={`/history/${folderName}/images/${logo.image}`}
+                                                                        src={logo.image && (logo.image.startsWith('http') || logo.image.startsWith('/')) ? logo.image : `/history/${folderName}/images/${logo.image}`}
                                                                         alt={`Season Logo ${logoIndex + 1}`}
                                                                         className="w-full h-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                                                                     />

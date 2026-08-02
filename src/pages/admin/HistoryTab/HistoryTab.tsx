@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { History as HistoryIcon, Plus, Edit, Trash2, Save, Eye, ArrowRight, Calendar, Palette } from 'lucide-react';
+import { History as HistoryIcon, Plus, Edit, Trash2, Save, Eye, ArrowRight, Calendar, Palette, Upload, Map as MapIcon, Image as ImageIcon } from 'lucide-react';
+import { uploadToImgur } from '../../../utils/imgur';
 import { historyApi, type ServerHistory } from '../../../api/history';
 import { useNotification } from '../../../context/NotificationContext';
 import { RichTextEditor } from '../../../components/ui/RichTextEditor';
@@ -67,6 +68,26 @@ const HistoryTab: React.FC = () => {
             }
         } catch {}
 
+        let logoObj = { image: '', description: '', second_description: '' };
+        if (typeof item.logoJson === 'string') {
+            try { logoObj = JSON.parse(item.logoJson); } catch {}
+        }
+
+        let mapsArr: Array<{ description: string; url: string }> = [];
+        if (typeof item.mapsJson === 'string') {
+            try { mapsArr = JSON.parse(item.mapsJson); } catch {}
+        }
+
+        let photosArr: Array<{ id: string; description: string }> = [];
+        if (typeof item.photosJson === 'string') {
+            try {
+                const raw = JSON.parse(item.photosJson);
+                if (Array.isArray(raw)) {
+                    photosArr = raw.map((p: any) => typeof p === 'object' ? p : { id: String(p), description: '' });
+                }
+            } catch {}
+        }
+
         let online = item.featureOnline || '';
         let platform = item.featurePlatform || '';
         let workTime = item.featureWorkTime || '';
@@ -86,6 +107,16 @@ const HistoryTab: React.FC = () => {
                     if (!contentHtml || contentHtml.trim() === '' || contentHtml.includes('Заголовок эпохи')) {
                         contentHtml = details.seasons.map((s: any) => `<h2>${s.name} ${s.s_description ? '— ' + s.s_description : ''}</h2><p>${s.description || ''}</p>`).join('') || details.description || '';
                     }
+                    if (!logoObj.image && s0.logo) {
+                        const l = Array.isArray(s0.logo) ? s0.logo[0] : s0.logo;
+                        if (l) logoObj = { image: l.image || '', description: l.description || '', second_description: l.second_description || '' };
+                    }
+                    if (mapsArr.length === 0 && s0.map) {
+                        mapsArr = Array.isArray(s0.map) ? s0.map : [s0.map];
+                    }
+                    if (photosArr.length === 0 && s0.photos) {
+                        photosArr = s0.photos.map((p: any) => typeof p === 'object' ? p : { id: String(p), description: '' });
+                    }
                 }
             }
         } catch {}
@@ -97,7 +128,10 @@ const HistoryTab: React.FC = () => {
             featureWorkTime: workTime || 'Круглосуточно',
             featureRuntime: runtime || '~ 3 месяца',
             contentHtml: contentHtml || '<h2>Заголовок эпохи</h2><p>Напишите подробный лор и историю этого периода...</p>',
-            colors: parsedColors
+            colors: parsedColors,
+            logoJson: JSON.stringify(logoObj),
+            mapsJson: JSON.stringify(mapsArr),
+            photosJson: JSON.stringify(photosArr)
         });
     };
 
@@ -138,6 +172,27 @@ const HistoryTab: React.FC = () => {
     // If an item is being edited, render Full-Window Editor inside workspace
     if (editingItem) {
         const colors = editingItem.colors || ['#34383b', '#728697'];
+
+        // Parse helpers for logo, maps, and photos
+        let currentLogo = { image: '', description: '', second_description: '' };
+        if (typeof editingItem.logoJson === 'string') {
+            try { currentLogo = JSON.parse(editingItem.logoJson); } catch {}
+        }
+
+        let currentMaps: Array<{ description: string; url: string }> = [];
+        if (typeof editingItem.mapsJson === 'string') {
+            try { currentMaps = JSON.parse(editingItem.mapsJson); } catch {}
+        }
+
+        let currentPhotos: any[] = [];
+        if (typeof editingItem.photosJson === 'string') {
+            try { currentPhotos = JSON.parse(editingItem.photosJson); } catch {}
+        }
+
+        const updateLogo = (patch: Partial<{ image: string; description: string; second_description: string }>) => {
+            const updated = { ...currentLogo, ...patch };
+            setEditingItem({ ...editingItem, logoJson: JSON.stringify(updated) });
+        };
         const cardGradient = `linear-gradient(135deg, ${colors[0] || '#34383b'} 0%, ${colors[1] || '#728697'} 100%)`;
 
         return (
@@ -335,6 +390,228 @@ const HistoryTab: React.FC = () => {
                                             placeholder="+- 3 месяца"
                                         />
                                     </div>
+                                </div>
+                            </div>
+
+                            {/* Card 1: Logo Card Editor */}
+                            <div className="border-t border-white/10 pt-4 space-y-3">
+                                <label className="block text-gray-300 font-bold text-xs flex items-center gap-1.5">
+                                    <ImageIcon className="w-4 h-4 text-purple-400" />
+                                    🖼️ Карточка логотипа сезона
+                                </label>
+                                <div className="space-y-2 text-xs">
+                                    <div>
+                                        <label className="block text-gray-400 mb-1">Ссылка на логотип (URL или файл)</label>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                value={currentLogo.image || ''}
+                                                onChange={e => updateLogo({ image: e.target.value })}
+                                                className="flex-1 bg-black/40 border border-white/10 rounded-xl p-2 text-white text-xs focus:outline-none focus:border-story-gold/50"
+                                                placeholder="https://i.imgur.com/... или logo.png"
+                                            />
+                                            <label className="px-3 py-2 bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/30 text-purple-300 rounded-xl cursor-pointer font-bold flex items-center gap-1 shrink-0">
+                                                <Upload className="w-3.5 h-3.5" />
+                                                Загрузить
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    onChange={async (e) => {
+                                                        const file = e.target.files?.[0];
+                                                        if (!file) return;
+                                                        try {
+                                                            const url = await uploadToImgur(file);
+                                                            updateLogo({ image: url });
+                                                            showNotification('Логотип загружен!', 'success');
+                                                        } catch (err) {
+                                                            showNotification('Ошибка загрузки логотипа', 'error');
+                                                        }
+                                                    }}
+                                                />
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        <div>
+                                            <label className="block text-gray-400 mb-1">Заголовок под лого</label>
+                                            <input
+                                                type="text"
+                                                value={currentLogo.description || ''}
+                                                onChange={e => updateLogo({ description: e.target.value })}
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-white text-xs focus:outline-none focus:border-story-gold/50"
+                                                placeholder="Лого сезона"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-400 mb-1">Подзаголовок под лого</label>
+                                            <input
+                                                type="text"
+                                                value={currentLogo.second_description || ''}
+                                                onChange={e => updateLogo({ second_description: e.target.value })}
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-2 text-white text-xs focus:outline-none focus:border-story-gold/50"
+                                                placeholder="Лого сервера с названием сезона"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Card 2: Season Map Download Links Editor */}
+                            <div className="border-t border-white/10 pt-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-gray-300 font-bold text-xs flex items-center gap-1.5">
+                                        <MapIcon className="w-4 h-4 text-green-400" />
+                                        🗺️ Ссылки на карты сезона
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const updated = [...currentMaps, { description: 'Карта сезона', url: 'https://' }];
+                                            setEditingItem({ ...editingItem, mapsJson: JSON.stringify(updated) });
+                                        }}
+                                        className="px-2.5 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs font-bold flex items-center gap-1"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        Добавить карту
+                                    </button>
+                                </div>
+                                <div className="space-y-2">
+                                    {currentMaps.length === 0 ? (
+                                        <p className="text-gray-500 text-xs italic">Ссылки на скачивание карты пока не добавлены.</p>
+                                    ) : (
+                                        currentMaps.map((m, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 bg-black/30 p-2 rounded-xl border border-white/10">
+                                                <input
+                                                    type="text"
+                                                    value={m.description || ''}
+                                                    onChange={e => {
+                                                        const updated = [...currentMaps];
+                                                        updated[idx] = { ...updated[idx], description: e.target.value };
+                                                        setEditingItem({ ...editingItem, mapsJson: JSON.stringify(updated) });
+                                                    }}
+                                                    className="w-1/3 bg-black/50 border border-white/10 rounded-lg p-1.5 text-white text-xs"
+                                                    placeholder="Название (напр. Финал сезона)"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={m.url || ''}
+                                                    onChange={e => {
+                                                        const updated = [...currentMaps];
+                                                        updated[idx] = { ...updated[idx], url: e.target.value };
+                                                        setEditingItem({ ...editingItem, mapsJson: JSON.stringify(updated) });
+                                                    }}
+                                                    className="flex-1 bg-black/50 border border-white/10 rounded-lg p-1.5 text-white text-xs"
+                                                    placeholder="URL файла карты..."
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updated = currentMaps.filter((_, i) => i !== idx);
+                                                        setEditingItem({ ...editingItem, mapsJson: JSON.stringify(updated) });
+                                                    }}
+                                                    className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                    title="Удалить карту"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Card 3: Screenshot Slideshow / Photo Gallery */}
+                            <div className="border-t border-white/10 pt-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-gray-300 font-bold text-xs flex items-center gap-1.5">
+                                        <ImageIcon className="w-4 h-4 text-blue-400" />
+                                        📸 Фотогалерея и слайдшоу скриншотов
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <label className="px-2.5 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 rounded-lg text-xs font-bold cursor-pointer flex items-center gap-1">
+                                            <Upload className="w-3.5 h-3.5" />
+                                            Загрузить фото
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={async (e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (!file) return;
+                                                    try {
+                                                        const url = await uploadToImgur(file);
+                                                        const updated = [...currentPhotos, { id: url, description: '' }];
+                                                        setEditingItem({ ...editingItem, photosJson: JSON.stringify(updated) });
+                                                        showNotification('Фото добавлено в галерею!', 'success');
+                                                    } catch (err) {
+                                                        showNotification('Ошибка загрузки фото', 'error');
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const updated = [...currentPhotos, { id: '', description: '' }];
+                                                setEditingItem({ ...editingItem, photosJson: JSON.stringify(updated) });
+                                            }}
+                                            className="px-2.5 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 rounded-lg text-xs font-bold flex items-center gap-1"
+                                        >
+                                            <Plus className="w-3.5 h-3.5" />
+                                            URL фото
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    {currentPhotos.length === 0 ? (
+                                        <p className="text-gray-500 text-xs italic">Скриншоты пока не добавлены.</p>
+                                    ) : (
+                                        currentPhotos.map((p, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 bg-black/30 p-2 rounded-xl border border-white/10">
+                                                <input
+                                                    type="text"
+                                                    value={typeof p === 'object' ? p.id : p}
+                                                    onChange={e => {
+                                                        const updated = [...currentPhotos];
+                                                        const photoUrl = e.target.value;
+                                                        if (typeof updated[idx] === 'object') {
+                                                            updated[idx] = { ...updated[idx], id: photoUrl };
+                                                        } else {
+                                                            updated[idx] = photoUrl;
+                                                        }
+                                                        setEditingItem({ ...editingItem, photosJson: JSON.stringify(updated) });
+                                                    }}
+                                                    className="flex-1 bg-black/50 border border-white/10 rounded-lg p-1.5 text-white text-xs font-mono"
+                                                    placeholder="URL изображения..."
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={typeof p === 'object' ? p.description || '' : ''}
+                                                    onChange={e => {
+                                                        const updated = [...currentPhotos];
+                                                        const desc = e.target.value;
+                                                        const currentId = typeof updated[idx] === 'object' ? updated[idx].id : updated[idx];
+                                                        updated[idx] = { id: currentId, description: desc };
+                                                        setEditingItem({ ...editingItem, photosJson: JSON.stringify(updated) });
+                                                    }}
+                                                    className="w-1/3 bg-black/50 border border-white/10 rounded-lg p-1.5 text-white text-xs"
+                                                    placeholder="Подпись к фото..."
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const updated = currentPhotos.filter((_, i) => i !== idx);
+                                                        setEditingItem({ ...editingItem, photosJson: JSON.stringify(updated) });
+                                                    }}
+                                                    className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                    title="Удалить фото"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
 

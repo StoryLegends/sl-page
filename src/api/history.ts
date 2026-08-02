@@ -15,6 +15,8 @@ export interface ServerHistory {
     contentHtml?: string;
     photosJson?: string;
     photos?: any[];
+    logoJson?: string;
+    mapsJson?: string;
     sortOrder?: number;
     published?: boolean;
     createdAt?: string;

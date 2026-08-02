@@ -56,7 +56,7 @@ const History = () => {
 
       try {
         if (useDbFirst) {
-          // Flag ENABLED: DB first -> Fallback to files
+          // Flag ENABLED: Fetch from DB (fallback to files if DB fails)
           try {
             const data = await fetchFromDb();
             setHistoryItems(data);
@@ -66,15 +66,9 @@ const History = () => {
             setHistoryItems(data);
           }
         } else {
-          // Flag DISABLED: Files first -> Fallback to DB
-          try {
-            const data = await fetchFromFiles();
-            setHistoryItems(data);
-          } catch (fileErr) {
-            console.warn('File history fetch failed, falling back to DB:', fileErr);
-            const data = await fetchFromDb();
-            setHistoryItems(data);
-          }
+          // Flag DISABLED: Fetch ONLY from static files, do NOT touch DB at all!
+          const data = await fetchFromFiles();
+          setHistoryItems(data);
         }
       } catch (error) {
         console.error('All history fetch strategies failed:', error);
