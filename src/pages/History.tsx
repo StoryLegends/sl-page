@@ -32,8 +32,14 @@ const History = () => {
 
       const fetchFromFiles = async (): Promise<HistoryItem[]> => {
         const res = await fetch('/history-index.json');
-        if (!res.ok) throw new Error('history-index not found');
-        return await res.json();
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && (contentType.includes('application/json') || contentType.includes('text/plain'))) {
+          const text = await res.text();
+          if (text.trim().startsWith('[')) {
+            return JSON.parse(text);
+          }
+        }
+        throw new Error('history-index not valid json');
       };
 
       const fetchFromDb = async (): Promise<HistoryItem[]> => {

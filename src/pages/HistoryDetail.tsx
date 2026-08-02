@@ -345,10 +345,18 @@ const HistoryDetail = () => {
                 const resolvedFolder = await getFolderName();
                 setFolderName(resolvedFolder);
 
-                // Helper to fetch rich static details file
+                // Helper to fetch rich static details file safely
                 const fetchFileDetails = async (folder: string) => {
-                    const detailsRes = await fetch(`/history/${encodeURIComponent(folder)}/details.json`);
-                    if (detailsRes.ok) return await detailsRes.json();
+                    try {
+                        const detailsRes = await fetch(`/history/${encodeURIComponent(folder)}/details.json`);
+                        const contentType = detailsRes.headers.get('content-type') || '';
+                        if (detailsRes.ok && (contentType.includes('application/json') || contentType.includes('text/plain'))) {
+                            const text = await detailsRes.text();
+                            if (text.trim().startsWith('{') || text.trim().startsWith('[')) {
+                                return JSON.parse(text);
+                            }
+                        }
+                    } catch {}
                     return null;
                 };
 
