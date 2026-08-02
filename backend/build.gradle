@@ -1,0 +1,78 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.2' // Стабильная актуальная версия
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.datapeice'
+version = '0.0.1-SNAPSHOT'
+description = 'slbackend'
+
+java {
+    toolchain {
+        // Переключили на LTS версию
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    runtimeOnly 'org.postgresql:postgresql'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // MinIO for file storage
+    implementation 'io.minio:minio:8.5.7'
+
+    // AWS SDK v2 for S3 presigned URLs (Bucketeer on Heroku)
+    implementation platform('software.amazon.awssdk:bom:2.29.52')
+    implementation 'software.amazon.awssdk:s3'
+
+    // Mailgun for email
+    implementation 'com.mailgun:mailgun-java:1.0.9'
+
+    // Google reCAPTCHA
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // TOTP (2FA)
+    implementation 'dev.samstevens.totp:totp:1.7.1'
+
+    // Rate Limiting
+    implementation 'com.bucket4j:bucket4j-core:8.10.1'
+
+    // Discord JDA Bot
+    implementation 'net.dv8tion:JDA:5.2.1'
+
+    // RCON Client for Minecraft
+    implementation 'xin.vanilla.rcon:rcon:1.2.1'
+
+    // Stripe SDK for sponsorships
+    implementation 'com.stripe:stripe-java:33.1.0'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
