@@ -528,9 +528,10 @@ const HistoryDetail = () => {
                                         <div className="order-1">
                                             <GlassCard className="p-6">
                                                 <h3 className="text-xl font-bold text-white mb-6 border-b border-white/10 pb-4">Описание</h3>
-                                                <div className="text-gray-100 whitespace-pre-line leading-relaxed">
-                                                    {season.description}
-                                                </div>
+                                                <div
+                                                    className="prose prose-invert max-w-none text-gray-100 text-sm leading-relaxed space-y-4"
+                                                    dangerouslySetInnerHTML={{ __html: season.description }}
+                                                />
                                             </GlassCard>
                                         </div>
 
