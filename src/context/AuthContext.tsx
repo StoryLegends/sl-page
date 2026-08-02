@@ -20,16 +20,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [features, setFeatures] = useState<string[]>([]);
+    const [features, setFeatures] = useState<string[]>(() => {
+        try {
+            const saved = localStorage.getItem('sl_feature_flags');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
     const [loading, setLoading] = useState(true);
 
     const loadFeatureFlags = async () => {
         try {
             const active = await usersApi.getActiveFeatureFlags();
             setFeatures(active);
+            localStorage.setItem('sl_feature_flags', JSON.stringify(active));
         } catch (e) {
             console.error('Failed to load active feature flags:', e);
-            setFeatures([]);
         }
     };
 
@@ -105,6 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const logout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('sl_feature_flags');
         setUser(null);
         setFeatures([]);
     };
