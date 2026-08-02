@@ -1,0 +1,1 @@
+web: java -Xmx256m -Xss512k -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=128m -Dspring.profiles.active=prod -Dserver.port=$PORT -Dfile.encoding=UTF-8 -jar build/libs/slbackend-0.0.1-SNAPSHOT.jar

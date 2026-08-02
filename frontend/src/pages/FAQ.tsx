@@ -1,0 +1,290 @@
+
+import Layout from '../components/Layout';
+import { HelpCircle, Info, Link as LinkIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
+
+const FAQ = () => {
+    return (
+        <Layout>
+            <SEO
+                title="FAQ / ЧЗВ"
+                description="Ответы на часто задаваемые вопросы о сервере StoryLegends. Как начать играть, правила, моды и решение проблем."
+            />
+            <div className="pt-24 pb-12 px-4 max-w-4xl mx-auto">
+                {/* Header */}
+                <div className="text-center mb-16 relative">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-story-gold/20 blur-[100px] rounded-full -z-10" />
+                    <HelpCircle className="w-20 h-20 text-story-gold mx-auto mb-6 animate-pulse-slow" />
+                    <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-story-gold via-white to-legends-blue bg-clip-text text-transparent drop-shadow-lg">
+                        FAQ / ЧЗВ
+                    </h1>
+                    <p className="text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                        Ответы на часто задаваемые вопросы
+                    </p>
+                </div>
+
+                {/* FAQ Items */}
+                <div className="space-y-8">
+
+                    {/* Question 1 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Как долго рассматривают заявку / Когда меня примут?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Заявки рассматриваются до 24 часов, бывают случаи, что до 48.
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 2 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Как понять, что меня приняли / не приняли?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Вам придет уведомление от нашего Discord бота, также вы можете следить за статусом заявки в своем профиле на сайте.
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 3 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Где найти айпи / моды / версию?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Вся эта информация хранится в канале <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#ℹ️│информация</span> в категории сервера в дискорд. Пожалуйста, читайте всё внимательно и весь канал. Убедитесь, что у вас есть роль <span className="text-yellow-400 font-mono bg-yellow-400/10 px-1 rounded">@SL</span> и вашу заявку приняли.
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 4 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Где найти мод?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Зависит какой. Если в канале <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#ℹ️│информация</span> сказано, что мод есть в сети, то вы можете найти его на популярных ресурсах по типу Modrinth / CurseForge. Приватные моды публикуются в тот же канал под лицензиями, читайте и соблюдайте их.
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 5 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-red-500/10 to-orange-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Меня не пускает на сервер с причиной … !
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Популярные причины:
+                                <ul className="list-none mt-4 space-y-4">
+                                    <li className="bg-black/20 p-4 pl-6 rounded-r-lg border-y border-r border-white/5 border-l-2 border-l-white/10 hover:border-l-red-500 transition-colors duration-300">
+                                        <p className="text-red-400 font-mono text-sm mb-2">You are not white-listed on this server!</p>
+                                        <p>Причина говорит сама за себя, вас нет в вайт листе, возможно вы не правильно указали ник или зашли не с того ника, проверьте.</p>
+                                    </li>
+                                    <li className="bg-black/20 p-4 pl-6 rounded-r-lg border-y border-r border-white/5 border-l-2 border-l-white/10 hover:border-l-red-500 transition-colors duration-300">
+                                        <p className="text-red-400 font-mono text-sm mb-2">The server requires the mod “SLcompass” installed</p>
+                                        <p>Вы не установили один из наших модов, без него нельзя играть. Установите и ошибка исчезнет. (Ошибка может появится при высоком пинге)</p>
+                                    </li>
+                                    <li className="bg-black/20 p-4 pl-6 rounded-r-lg border-y border-r border-white/5 border-l-2 border-l-white/10 hover:border-l-red-500 transition-colors duration-300">
+                                        <p className="text-red-400 font-mono text-sm mb-2">The following registry entry namespaces may be related: …</p>
+                                        <p>Отсутствие каких либо модов на вашем клиенте. Под ошибкой “...” пишет название модов которых у вас нет, проверьте установили ли вы все моды из канала <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#ℹ️│информация</span>.</p>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 6 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Что можно на сервере?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Читайте правила. <Link to="/rules" className="text-story-gold hover:underline inline-flex items-center gap-1">https://www.storylegends.xyz/rules <LinkIcon className="w-3 h-3" /></Link>. Если чего-то нет в правилах, напишите в поддержку на Discord сервере.
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 7 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Какие механики есть на сервере и как их использовать?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Все механики кратко описаны в <span className="text-indigo-400 font-mono bg-indigo-500/10 px-1 rounded">#ℹ️│информация</span>. Если вам что-то не ясно, то вы всегда можете спросить администрацию. Крафты узнаются на сервере, но если они уже изучены, вы можете спросить игроков.
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 8 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Кто админ сервера / рассматривает заявки?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Весь админ состав описан на странице “О сервере” <Link to="/about" className="text-story-gold hover:underline inline-flex items-center gap-1">(https://www.storylegends.xyz/about) <LinkIcon className="w-3 h-3" /></Link>.
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 9 */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Как поставить скин на сервере?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <div className="space-y-4">
+                                    <p>Если у вас лицензия, то мод на сервере сам считает ваш скин и поставит.</p>
+
+                                    <div>
+                                        <p className="mb-2">Если вы хотите поставить скин по нику другого игрока, то воспользуйтесь:</p>
+                                        <code className="bg-black/30 px-3 py-1.5 rounded-lg text-emerald-400 font-mono text-sm block border border-white/5">
+                                            /skin set mojang LendSpele
+                                        </code>
+                                        <p className="text-xs text-gray-500 mt-1 italic">— где LendSpele будет ником игрока</p>
+                                    </div>
+
+                                    <div>
+                                        <p className="mb-2">Если хотите поставить свой скин, то можно сделать это через фотохостинг (например, imgur или подобные). После вы копируете полную и прямую ссылку на ваш скин (ссылка должна вести непосредственно на файл изображения).</p>
+                                        <p className="mb-2 italic opacity-80">Чтобы поставить:</p>
+                                        <code className="bg-black/30 px-3 py-1.5 rounded-lg text-emerald-400 font-mono text-sm block border border-white/5">
+                                            /skin set web classic "url"
+                                        </code>
+                                        <ul className="list-disc list-inside text-xs text-gray-500 mt-2 space-y-1 ml-2">
+                                            <li><span className="text-gray-400">"url"</span> — прямая ссылка на скин (<span className="text-red-400/80 underline underline-offset-2">кавычки обязательны</span>)</li>
+                                            <li><span className="text-gray-400 font-bold">classic</span> — широкие руки (используйте <span className="text-blue-400">slim</span> для тонких рук)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 10 (Sponsorship FAQ 1) */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Если я получу бан, мне вернут деньги за подписку?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300 space-y-2">
+                                <div className="flex">
+                                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                                    <span>Спонсорство — это в первую очередь поддержка проекта, которая не дает иммунитета перед общими правилами сервера. Все игроки равны, поэтому в случае блокировки за нарушения возврат средств не производится.</span>
+                                </div>
+                                <p className="text-gray-400 pl-6">
+                                    Мы настоятельно рекомендуем соблюдать правила StoryLegends. Если вы считаете бан ошибочным, вы всегда можете подать апелляцию через систему тикетов в Discord.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 11 (Sponsorship FAQ 2) */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Я потерял свои уникальные предметы (снежок/нерушимое оружие). Что делать?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300 space-y-2">
+                                <div className="flex">
+                                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                                    <span>Не паникуйте! Если ваши уникальные предметы (или те, на которых была «нерушимость») были утеряны в лаве или деспавнились, создайте тикет в Discord. Мы восстановим их согласно вашему лимиту: <strong className="text-white">1 раз в месяц для Уровня 2</strong> и <strong className="text-white">2 раза в месяц для Уровня 3</strong> в течение 7 дней с момента обращения. Восстановление невозможно, если предмет утерян вследствие нарушения правил самим игроком.</span>
+                                </div>
+                                <p className="text-gray-450 pl-6 text-xs italic">
+                                    Примечание: обычные переименованные предметы без тега нерушимости восстановлению не подлежат.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 12 (Sponsorship FAQ 3) */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Что будет с подпиской, если сезон закончится раньше срока?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300 space-y-2">
+                                <div className="flex">
+                                    <span className="font-bold text-blue-400 mr-2">О:</span>
+                                    <span>Мы ценим вашу поддержку, поэтому ваши средства не сгорят. На время межсезонья подписка «замораживается». Она автоматически активируется в день официального старта нового сезона.</span>
+                                </div>
+                                <p className="text-[#4DD2FF]/80 pl-6 text-xs">
+                                    Внимание: подписка размораживается в день старта для всех одновременно, независимо от того, зашли вы на сервер в первый день или позже.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Question 13 (Sponsorship FAQ 4) */}
+                    <div className="relative group">
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-story-gold/10 to-legends-blue/10 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                            <h3 className="text-xl font-bold text-white mb-3 flex items-start gap-3">
+                                <span className="text-story-gold">В:</span>
+                                Куда уходят средства?
+                            </h3>
+                            <div className="text-gray-300 pl-8 border-l-2 border-white/10 group-hover:border-story-gold transition-colors duration-300">
+                                <span className="font-bold text-blue-400 mr-2">О:</span>
+                                Все средства со спонсорства идут исключительно на оплату мощного хостинга, поддержание работы сервера и заказ платных плагинов/модов для улучшения геймплея.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                {/* Footer Note */}
+                <div className="mt-16 p-4 md:p-6 rounded-2xl bg-blue-500/10 border border-blue-500/30 backdrop-blur-sm text-center">
+                    <Info className="w-8 h-8 text-blue-400 mx-auto mb-3" />
+                    <p className="text-gray-300">
+                        Не нашли ответ на свой вопрос? Обратитесь к администрации в Discord сервере.
+                    </p>
+                </div>
+
+            </div>
+        </Layout>
+    );
+};
+
+export default FAQ;

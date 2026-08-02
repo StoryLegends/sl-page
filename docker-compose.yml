@@ -1,6 +1,25 @@
 version: '3.8'
 
 services:
+  # 0. Local PostgreSQL Database Service
+  postgres:
+    image: postgres:15-alpine
+    container_name: sl-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: d34gj8i1b0knkt
+      POSTGRES_USER: ud8op8v4fm53g1
+      POSTGRES_PASSWORD: p7bb7ef0c3df8a6e9031249215b1ed754f5c44d99d8f256bba9ad5645bd861723
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ud8op8v4fm53g1 -d d34gj8i1b0knkt"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # 1. MinIO S3 Object Storage Service
   minio:
     image: minio/minio:latest
@@ -43,19 +62,19 @@ services:
     volumes:
       - minecraft_data:/data
 
-  # 3. StoryLegends Backend API (Spring Boot)
+  # 3. StoryLegends Backend API (Spring Boot) - Built from ./backend
   backend:
     build:
-      context: ../slbackend
+      context: ./backend
       dockerfile: Dockerfile
     container_name: sl-backend
     restart: always
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     environment:
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/d34gj8i1b0knkt
+      SPRING_DATASOURCE_USERNAME: ud8op8v4fm53g1
+      SPRING_DATASOURCE_PASSWORD: p7bb7ef0c3df8a6e9031249215b1ed754f5c44d99d8f256bba9ad5645bd861723
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
@@ -65,13 +84,17 @@ services:
       MINECRAFT_RCON_PORT: 25575
       MINECRAFT_RCON_PASSWORD: ${MINECRAFT_RCON_PASSWORD:-storylegends_rcon_pass}
     depends_on:
-      - minio
-      - minecraft
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minecraft:
+        condition: service_started
 
-  # 4. StoryLegends Frontend (Vite / React)
+  # 4. StoryLegends Frontend (Vite / React) - Built from ./frontend
   frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
     container_name: sl-frontend
     restart: always
@@ -83,5 +106,6 @@ services:
       - backend
 
 volumes:
+  postgres_data:
   minio_data:
   minecraft_data:
