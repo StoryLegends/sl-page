@@ -10,8 +10,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
@@ -245,7 +247,7 @@ public class MinecraftServerController {
     }
 
     /**
-     * Power Controls: START, STOP, RESTART, KILL (Clean non-pulsing buttons)
+     * Power Controls: START, STOP, RESTART, KILL (Synchronous bi-directional container execution)
      */
     @PostMapping("/power")
     public ResponseEntity<Map<String, Object>> powerControl(@RequestBody Map<String, String> body) {
@@ -259,37 +261,52 @@ public class MinecraftServerController {
                 .orElse(registeredServers.isEmpty() ? Map.of("containerName", defaultContainerName) : registeredServers.get(0));
 
         String cName = (String) serverInfo.get("containerName");
+        String execOutput = "";
 
         switch (action) {
             case "start":
-                executeDockerCommand("docker start " + cName);
-                result.put("message", "Команда запуск контейнера " + cName + " отправлена.");
+                execOutput = executeDockerCommandWithOutput("docker start " + cName);
+                result.put("message", "Контейнер " + cName + " успешно запущен! Ожидание инициализации сервера...");
+                result.put("status", "STARTING");
                 break;
             case "stop":
                 rconService.sendCommandAndGetResponse("stop");
-                result.put("message", "Команда остановки сервера отправлена.");
+                execOutput = executeDockerCommandWithOutput("docker stop -t 10 " + cName);
+                result.put("message", "Сервер " + cName + " остановлен!");
+                result.put("status", "OFFLINE");
                 break;
             case "restart":
-                rconService.sendCommandAndGetResponse("restart");
-                result.put("message", "Команда перезапуска сервера отправлена.");
+                rconService.sendCommandAndGetResponse("stop");
+                execOutput = executeDockerCommandWithOutput("docker restart -t 5 " + cName);
+                result.put("message", "Сервер " + cName + " перезапускается!");
+                result.put("status", "RESTARTING");
                 break;
             case "kill":
-                executeDockerCommand("docker kill " + cName);
-                result.put("message", "Принудительное выключение контейнера выполнено.");
+                execOutput = executeDockerCommandWithOutput("docker kill " + cName);
+                result.put("message", "Принудительное выключение контейнера " + cName + " (KILL) выполнено.");
+                result.put("status", "OFFLINE");
                 break;
             default:
                 return ResponseEntity.badRequest().body(Map.of("error", "Неизвестное действие питания"));
         }
 
+        String inspectStatus = executeDockerCommandWithOutput("docker inspect -f '{{.State.Status}}' " + cName);
+        if (!inspectStatus.isBlank()) {
+            result.put("containerState", inspectStatus.trim());
+        }
+        result.put("execOutput", execOutput);
+        result.put("serverId", serverId);
+
         return ResponseEntity.ok(result);
     }
 
     /**
-     * Execute RCON command in interactive console
+     * Execute RCON or Docker command in interactive console and return real output
      */
     @PostMapping("/command")
     public ResponseEntity<Map<String, String>> executeCommand(@RequestBody Map<String, String> body) {
         String command = body.getOrDefault("command", "").trim();
+        String serverId = body.getOrDefault("serverId", "server-1");
         if (command.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Команда не может быть пустой"));
         }
@@ -298,31 +315,54 @@ public class MinecraftServerController {
         }
 
         String output = rconService.sendCommandAndGetResponse(command);
-        return ResponseEntity.ok(Map.of("command", command, "output", output != null ? output : "Выполнено"));
+        if (output == null || output.isBlank() || output.contains("Error") || output.contains("disabled")) {
+            Map<String, Object> serverInfo = registeredServers.stream()
+                    .filter(s -> serverId.equals(s.get("id")))
+                    .findFirst()
+                    .orElse(registeredServers.isEmpty() ? Map.of("containerName", defaultContainerName) : registeredServers.get(0));
+            String cName = (String) serverInfo.get("containerName");
+
+            String dockerExecOut = executeDockerCommandWithOutput("docker exec " + cName + " rcon-cli " + command);
+            if (!dockerExecOut.isBlank()) {
+                output = dockerExecOut;
+            }
+        }
+
+        String finalResult = (output != null && !output.isBlank()) ? output.trim() : "[Server]: Команда " + command + " выполнена";
+        return ResponseEntity.ok(Map.of("command", command, "output", finalResult));
     }
 
     /**
-     * Fetch recent console logs
+     * Fetch live container console logs via docker logs
      */
     @GetMapping("/console")
     public ResponseEntity<Map<String, Object>> getConsoleLogs(@RequestParam(defaultValue = "server-1") String serverId) {
-        List<String> lines = new ArrayList<>();
-        Path logPath = Paths.get(defaultServerPath, "logs", "latest.log");
+        Map<String, Object> serverInfo = registeredServers.stream()
+                .filter(s -> serverId.equals(s.get("id")))
+                .findFirst()
+                .orElse(registeredServers.isEmpty() ? Map.of("containerName", defaultContainerName) : registeredServers.get(0));
 
-        if (Files.exists(logPath)) {
-            try {
-                List<String> allLines = Files.readAllLines(logPath, StandardCharsets.UTF_8);
-                int start = Math.max(0, allLines.size() - 200);
-                lines = allLines.subList(start, allLines.size());
-            } catch (Exception e) {
-                logger.error("Failed to read latest.log", e);
+        String cName = (String) serverInfo.get("containerName");
+        List<String> lines = new ArrayList<>();
+
+        String rawDockerLogs = executeDockerCommandWithOutput("docker logs --tail 200 " + cName);
+        if (!rawDockerLogs.isBlank()) {
+            lines = Arrays.asList(rawDockerLogs.split("\r?\n"));
+        } else {
+            Path logPath = Paths.get(defaultServerPath, "logs", "latest.log");
+            if (Files.exists(logPath)) {
+                try {
+                    List<String> allLines = Files.readAllLines(logPath, StandardCharsets.UTF_8);
+                    int start = Math.max(0, allLines.size() - 200);
+                    lines = allLines.subList(start, allLines.size());
+                } catch (Exception e) {
+                    logger.error("Failed to read latest.log", e);
+                }
             }
         }
 
         if (lines.isEmpty()) {
-            lines.add("[00:00:00 INFO]: StoryLegends Minecraft Server Console Initialized.");
-            lines.add("[00:00:01 INFO]: Container " + defaultContainerName + " active.");
-            lines.add("[00:00:02 INFO]: Ready for incoming player connections.");
+            lines.add("[INFO]: Контейнер " + cName + " активен. Ожидание вывода консоли...");
         }
 
         return ResponseEntity.ok(Map.of("logs", lines));
@@ -544,12 +584,27 @@ public class MinecraftServerController {
         return ResponseEntity.ok(players);
     }
 
-    private void executeDockerCommand(String command) {
+    private String executeDockerCommandWithOutput(String command) {
         try {
-            Process process = Runtime.getRuntime().exec(command);
-            process.waitFor();
+            String[] cmd;
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                cmd = new String[]{"cmd.exe", "/c", command};
+            } else {
+                cmd = new String[]{"/bin/sh", "-c", command};
+            }
+            Process process = Runtime.getRuntime().exec(cmd);
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line).append("\n");
+                }
+            }
+            process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+            return sb.toString().trim();
         } catch (Exception e) {
             logger.warn("Docker command execution warning: {}", e.getMessage());
+            return "";
         }
     }
 }

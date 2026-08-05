@@ -111,8 +111,8 @@ export const minecraftApi = {
         const res = await apiClient.post('/api/admin/minecraft/power', { action, serverId });
         return res.data;
     },
-    sendCommand: async (command: string) => {
-        const res = await apiClient.post('/api/admin/minecraft/command', { command });
+    sendCommand: async (command: string, serverId: string = 'server-1') => {
+        const res = await apiClient.post('/api/admin/minecraft/command', { command, serverId });
         return res.data;
     },
     getLogs: async (serverId: string = 'server-1'): Promise<string[]> => {

@@ -269,7 +269,7 @@ const MinecraftServerTab: React.FC = () => {
         setLogs(prev => [...prev, `> ${cmdToRun}`]);
 
         try {
-            const res = await minecraftApi.sendCommand(cmdToRun);
+            const res = await minecraftApi.sendCommand(cmdToRun, selectedServerId || 'server-1');
             if (res.output) {
                 setLogs(prev => [...prev, res.output]);
             }
