@@ -67,6 +67,7 @@ services:
     container_name: sl-backend
     restart: always
     environment:
+      SPRING_SECURITY_KEY: ${SPRING_SECURITY_KEY:-defaultSecretKeyForStoryLegendsProductionAndTesting123456}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/d34gj8i1b0knkt
       SPRING_DATASOURCE_USERNAME: ud8op8v4fm53g1
       SPRING_DATASOURCE_PASSWORD: p7bb7ef0c3df8a6e9031249215b1ed754f5c44d99d8f256bba9ad5645bd861723
