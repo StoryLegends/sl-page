@@ -26,16 +26,35 @@ const HistoryTab: React.FC = () => {
     const rightPanelRef = useRef<HTMLDivElement>(null);
     const isSyncingScrollRef = useRef(false);
 
-    const handleLeftScroll = () => {
+    const handleLeftScroll = (e: React.UIEvent<HTMLDivElement>) => {
         if (isSyncingScrollRef.current) return;
         isSyncingScrollRef.current = true;
-        if (leftPanelRef.current && rightPanelRef.current) {
-            const left = leftPanelRef.current;
+        const left = e.currentTarget;
+        if (rightPanelRef.current) {
             const right = rightPanelRef.current;
-            const scrollableHeight = left.scrollHeight - left.clientHeight;
-            if (scrollableHeight > 0) {
-                const percentage = left.scrollTop / scrollableHeight;
-                right.scrollTop = percentage * (right.scrollHeight - right.clientHeight);
+            const leftMax = left.scrollHeight - left.clientHeight;
+            const rightMax = right.scrollHeight - right.clientHeight;
+            if (leftMax > 0 && rightMax > 0) {
+                const ratio = left.scrollTop / leftMax;
+                right.scrollTop = ratio * rightMax;
+            }
+        }
+        requestAnimationFrame(() => {
+            isSyncingScrollRef.current = false;
+        });
+    };
+
+    const handleRightScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        if (isSyncingScrollRef.current) return;
+        isSyncingScrollRef.current = true;
+        const right = e.currentTarget;
+        if (leftPanelRef.current) {
+            const left = leftPanelRef.current;
+            const leftMax = left.scrollHeight - left.clientHeight;
+            const rightMax = right.scrollHeight - right.clientHeight;
+            if (leftMax > 0 && rightMax > 0) {
+                const ratio = right.scrollTop / rightMax;
+                left.scrollTop = ratio * leftMax;
             }
         }
         requestAnimationFrame(() => {
@@ -819,7 +838,7 @@ const HistoryTab: React.FC = () => {
 
                     {/* RIGHT PANEL: Live Preview (50/50 split) */}
                     {(previewMode === 'SPLIT' || previewMode === 'PREVIEW_ONLY') && (
-                        <div ref={rightPanelRef} className={`${previewMode === 'PREVIEW_ONLY' ? 'lg:col-span-12' : 'lg:col-span-6'} space-y-6 bg-[#070d18] p-6 rounded-2xl border border-story-gold/30 shadow-2xl sticky top-4 max-h-[85vh] overflow-y-auto`}>
+                        <div ref={rightPanelRef} onScroll={handleRightScroll} className={`${previewMode === 'PREVIEW_ONLY' ? 'lg:col-span-12' : 'lg:col-span-6'} space-y-6 bg-[#070d18] p-6 rounded-2xl border border-story-gold/30 shadow-2xl sticky top-4 max-h-[85vh] overflow-y-auto`}>
                             <div className="flex items-center justify-between border-b border-white/10 pb-2">
                                 <h3 className="text-base font-bold text-story-gold flex items-center gap-2">
                                     <Eye className="w-5 h-5" />

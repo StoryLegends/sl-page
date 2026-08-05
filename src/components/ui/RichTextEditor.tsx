@@ -4,7 +4,7 @@ import {
     AlignLeft, AlignCenter, AlignRight,
     List, ListOrdered, Link as LinkIcon,
     Code, Eye, Upload, Minus,
-    Puzzle, Columns, ChevronDown, AlertTriangle, Info, CheckCircle, MousePointerClick, EyeOff
+    Puzzle, Columns, ChevronDown, AlertTriangle, Info, CheckCircle, MousePointerClick, EyeOff, Sparkles
 } from 'lucide-react';
 import { uploadToImgur } from '../../utils/imgur';
 import { useNotification } from '../../context/NotificationContext';
@@ -15,13 +15,78 @@ interface RichTextEditorProps {
     minHeight?: string;
 }
 
+/**
+ * Utility to format/beautify HTML code with proper indentation and line breaks
+ */
+export const formatHtmlCode = (html: string): string => {
+    if (!html) return '';
+
+    // Remove internal Chrome contentEditable noise attributes
+    let cleaned = html
+        .replace(/ data-path-to-node="[^"]*"/g, '')
+        .replace(/ data-index-in-node="[^"]*"/g, '')
+        .replace(/ contenteditable="[^"]*"/g, '');
+
+    // Insert newlines between tags
+    const tokens = cleaned
+        .replace(/>\s*</g, '><')
+        .replace(/</g, '\n<')
+        .split('\n')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+    let formatted = '';
+    let indentLevel = 0;
+    const indentStr = '  ';
+
+    const inlineTags = new Set([
+        'b', 'i', 'u', 's', 'strong', 'em', 'span', 'a', 'font', 'code', 'small', 'sub', 'sup'
+    ]);
+
+    const selfClosing = new Set(['br', 'hr', 'img', 'input', 'meta', 'link']);
+
+    tokens.forEach(token => {
+        if (!token.startsWith('<')) {
+            formatted += token;
+            return;
+        }
+
+        const isClosing = token.startsWith('</');
+        const tagMatch = token.match(/<\/?([a-zA-Z0-9-]+)/);
+        const tagName = tagMatch ? tagMatch[1].toLowerCase() : '';
+        const isSelfClosing = token.endsWith('/>') || selfClosing.has(tagName);
+        const isInline = inlineTags.has(tagName);
+
+        if (isClosing) {
+            if (!isInline) {
+                indentLevel = Math.max(0, indentLevel - 1);
+                formatted += '\n' + indentStr.repeat(indentLevel) + token;
+            } else {
+                formatted += token;
+            }
+        } else {
+            if (!isInline) {
+                formatted += '\n' + indentStr.repeat(indentLevel) + token;
+                if (!isSelfClosing && !token.startsWith('<!')) {
+                    indentLevel++;
+                }
+            } else {
+                formatted += token;
+            }
+        }
+    });
+
+    return formatted.trim();
+};
+
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     value,
     onChange,
-    minHeight = '700px'
+    minHeight = '650px'
 }) => {
     const { showNotification } = useNotification();
     const editorRef = useRef<HTMLDivElement>(null);
+    const codeTextAreaRef = useRef<HTMLTextAreaElement>(null);
     const [mode, setMode] = useState<'VISUAL' | 'CODE'>('VISUAL');
     const [uploading, setUploading] = useState(false);
     const [colorPickerOpen, setColorPickerOpen] = useState(false);
@@ -42,21 +107,61 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         }
     };
 
-    const exec = (command: string, value: string | undefined = undefined) => {
-        document.execCommand(command, false, value);
+    const exec = (command: string, val: string | undefined = undefined) => {
+        document.execCommand(command, false, val);
         if (editorRef.current) {
             onChange(editorRef.current.innerHTML);
         }
     };
 
-    const handleFormatBlock = (tag: string) => {
-        if (!tag) return;
-        if (tag === 'callout') {
-            const calloutHtml = `<div class="p-4 my-4 bg-white/5 border-l-4 border-amber-500 rounded-r-xl text-gray-200 text-sm shadow-md"><strong>💡 Обратите внимание:</strong> Напишите важную деталь или анонс...</div>`;
+    const handleFormatBlock = (blockValue: string) => {
+        if (!blockValue) return;
+
+        if (blockValue === 'callout') {
+            const calloutHtml = `<div class="p-4 my-4 bg-white/5 border-l-4 border-amber-500 rounded-r-xl text-gray-200 text-sm shadow-md"><strong>💡 Обратите внимание:</strong> Напишите важную деталь или анонс...</div><p><br></p>`;
             exec('insertHTML', calloutHtml);
             return;
         }
-        exec('formatBlock', tag);
+
+        const cleanTag = blockValue.replace(/[<>]/g, '').toLowerCase();
+
+        if (mode === 'VISUAL') {
+            try {
+                document.execCommand('formatBlock', false, cleanTag);
+            } catch (err) {
+                try {
+                    document.execCommand('formatBlock', false, `<${cleanTag}>`);
+                } catch (e2) {}
+            }
+            if (editorRef.current) {
+                onChange(editorRef.current.innerHTML);
+            }
+        } else {
+            const textarea = codeTextAreaRef.current;
+            if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = textarea.value.substring(start, end);
+                const replacement = `<${cleanTag}>${selectedText || 'Текст заголовка'}</${cleanTag}>`;
+                const newValue = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+                onChange(newValue);
+            }
+        }
+    };
+
+    const handleFormatCodeClick = () => {
+        const formatted = formatHtmlCode(value);
+        onChange(formatted);
+        showNotification('HTML код отформатирован!', 'success');
+    };
+
+    const handleSwitchMode = (newMode: 'VISUAL' | 'CODE') => {
+        if (newMode === 'CODE' && mode === 'VISUAL') {
+            // Auto-prettify HTML when switching to CODE mode
+            const formatted = formatHtmlCode(value);
+            onChange(formatted);
+        }
+        setMode(newMode);
     };
 
     const handleInsertLink = () => {
@@ -149,16 +254,19 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
                     {/* Format Selector Dropdown */}
                     <select
-                        onChange={(e) => handleFormatBlock(e.target.value)}
+                        onChange={(e) => {
+                            handleFormatBlock(e.target.value);
+                            e.target.value = '';
+                        }}
                         defaultValue=""
                         className="bg-black/50 border border-white/15 rounded-lg px-2.5 py-1 text-xs text-gray-200 font-semibold focus:outline-none focus:border-story-gold/50 cursor-pointer"
                     >
                         <option value="" disabled>Стиль текста...</option>
-                        <option value="<p>">Обычный абзац (P)</option>
-                        <option value="<h2>">Заголовок 2 (H2)</option>
-                        <option value="<h3>">Заголовок 3 (H3)</option>
-                        <option value="<h4>">Заголовок 4 (H4)</option>
-                        <option value="<blockquote>">Цитата (Blockquote)</option>
+                        <option value="p">Обычный абзац (P)</option>
+                        <option value="h2">Заголовок 2 (H2)</option>
+                        <option value="h3">Заголовок 3 (H3)</option>
+                        <option value="h4">Заголовок 4 (H4)</option>
+                        <option value="blockquote">Цитата (Blockquote)</option>
                         <option value="callout">💡 Блок-заметка (Callout)</option>
                     </select>
 
@@ -346,24 +454,38 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     </div>
                 </div>
 
-                {/* Right Controls Group: View Mode Switcher */}
-                <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 text-xs font-bold">
-                    <button
-                        type="button"
-                        onClick={() => setMode('VISUAL')}
-                        className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all ${mode === 'VISUAL' ? 'bg-story-gold text-black shadow-md' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        <Eye className="w-3.5 h-3.5" />
-                        Визуальный
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setMode('CODE')}
-                        className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all ${mode === 'CODE' ? 'bg-story-gold text-black shadow-md' : 'text-gray-400 hover:text-white'}`}
-                    >
-                        <Code className="w-3.5 h-3.5" />
-                        HTML Код
-                    </button>
+                {/* Right Controls Group: View Mode Switcher & HTML Prettifier */}
+                <div className="flex items-center gap-2">
+                    {mode === 'CODE' && (
+                        <button
+                            type="button"
+                            onClick={handleFormatCodeClick}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                            title="Авто-форматирование и отступы HTML кода"
+                        >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Форматировать HTML
+                        </button>
+                    )}
+
+                    <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10 text-xs font-bold">
+                        <button
+                            type="button"
+                            onClick={() => handleSwitchMode('VISUAL')}
+                            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all ${mode === 'VISUAL' ? 'bg-story-gold text-black shadow-md' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            <Eye className="w-3.5 h-3.5" />
+                            Визуальный
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleSwitchMode('CODE')}
+                            className={`px-2.5 py-1 rounded-lg flex items-center gap-1.5 transition-all ${mode === 'CODE' ? 'bg-story-gold text-black shadow-md' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            <Code className="w-3.5 h-3.5" />
+                            HTML Код
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -375,14 +497,15 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                         contentEditable
                         onInput={handleInput}
                         style={{ minHeight }}
-                        className="w-full p-8 text-gray-100 text-sm leading-relaxed focus:outline-none overflow-y-auto prose prose-invert max-w-none focus:ring-0"
+                        className="w-full p-8 text-gray-100 text-sm leading-relaxed focus:outline-none prose prose-invert max-w-none focus:ring-0"
                     />
                 ) : (
                     <textarea
+                        ref={codeTextAreaRef}
                         value={value}
                         onChange={(e) => onChange(e.target.value)}
                         style={{ minHeight }}
-                        className="w-full p-8 bg-black/90 text-emerald-400 font-mono text-xs leading-relaxed focus:outline-none overflow-y-auto border-none resize-y"
+                        className="w-full p-8 bg-black/95 text-emerald-400 font-mono text-xs leading-relaxed focus:outline-none border-none resize-y whitespace-pre tab-size-2"
                         placeholder="<h2>Заголовок...</h2>"
                     />
                 )}
@@ -390,7 +513,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
             {/* Editor Footer Status Bar */}
             <div className="px-4 py-1.5 bg-[#0d131f] border-t border-white/10 text-[11px] text-gray-400 flex items-center justify-between font-mono select-none">
-                <span>{mode === 'VISUAL' ? '✏️ Режим редактирования' : '💻 Режим HTML'}</span>
+                <span>{mode === 'VISUAL' ? '✏️ Режим редактирования' : '💻 Режим HTML (С авто-форматированием)'}</span>
                 <span>Символов: {value ? value.length : 0}</span>
             </div>
         </div>
