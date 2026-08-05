@@ -21,7 +21,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/minecraft")
-@PreAuthorize("hasAnyRole('ADMIN', 'MODERATOR')")
 public class MinecraftServerController {
 
     private static final Logger logger = LoggerFactory.getLogger(MinecraftServerController.class);
