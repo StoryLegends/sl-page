@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
 import { Client } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import type { MinecraftStatus } from '../api/minecraft';
 
 export function useMinecraftWebSocket(serverId: string = 'server-1') {
@@ -12,12 +11,13 @@ export function useMinecraftWebSocket(serverId: string = 'server-1') {
     useEffect(() => {
         if (!serverId) return;
 
-        const baseUrl = import.meta.env.VITE_API_URL || '';
-        const wsEndpoint = baseUrl ? `${baseUrl}/ws/admin` : '/ws/admin';
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const brokerURL = `${protocol}//${host}/api/ws/admin/websocket`;
 
         const client = new Client({
-            webSocketFactory: () => new SockJS(wsEndpoint),
-            reconnectDelay: 3000,
+            brokerURL,
+            reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,
             onConnect: () => {

@@ -187,7 +187,7 @@ public class MinecraftServerController {
     }
 
     /**
-     * Real-time server status, CPU, RAM, TPS, and online player counters
+     * Real-time server status, CPU, RAM, TPS, and online player counters directly from Docker
      */
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus(@RequestParam(defaultValue = "server-1") String serverId) {
@@ -213,46 +213,59 @@ public class MinecraftServerController {
                 .findFirst()
                 .orElse(registeredServers.get(0));
 
+        String cName = String.valueOf(serverInfo.getOrDefault("containerName", "sl-minecraft-server-1"));
         Map<String, Object> response = new HashMap<>();
 
-        // Test RCON connection to determine if server is online
-        String rconTest = rconService.sendCommandAndGetResponse("list");
-        boolean isOnline = rconTest != null && !rconTest.contains("Error") && !rconTest.contains("disabled") && !rconTest.contains("Failed");
+        // 1. Inspect container running status via Docker CLI
+        String containerState = executeDockerCommandWithOutput("docker inspect -f '{{.State.Status}}' " + cName).trim().toLowerCase();
+        boolean isRunning = "running".equals(containerState);
+
+        // 2. Read container logs to check if Java server is fully booted (ONLINE) or in startup phase (STARTING)
+        String serverStatus = "OFFLINE";
+        if (isRunning) {
+            String lastLogs = executeDockerCommandWithOutput("docker logs --tail 30 " + cName);
+            if (lastLogs.contains("Done (") || lastLogs.contains("For help, type") || lastLogs.contains("RCON running on")) {
+                serverStatus = "ONLINE";
+            } else {
+                serverStatus = "STARTING";
+            }
+        }
+
+        // 3. Fetch real CPU & RAM stats from docker stats
+        Map<String, Object> stats = isRunning ? getContainerStats(cName) : Map.of("cpu", 0.0, "memUsedMb", 0, "memMaxMb", 4096);
 
         response.put("serverId", serverInfo.get("id"));
         response.put("serverName", serverInfo.get("name"));
-        response.put("status", isOnline ? "ONLINE" : "OFFLINE");
-        response.put("containerName", serverInfo.get("containerName"));
+        response.put("status", serverStatus);
+        response.put("containerName", cName);
         response.put("version", serverInfo.get("type") + " " + serverInfo.get("version"));
-        response.put("motd", "StoryLegends Minecraft Server (" + serverInfo.get("version") + ")");
-        response.put("tps", isOnline ? 20.0 : 0.0);
+        response.put("motd", serverInfo.getOrDefault("motd", "StoryLegends Minecraft Server"));
+        response.put("tps", "ONLINE".equals(serverStatus) ? 20.0 : 0.0);
 
         int onlinePlayers = 0;
         int maxPlayers = 50;
-        if (isOnline && rconTest.contains("players online")) {
-            try {
-                String[] parts = rconTest.split(" ");
-                for (int i = 0; i < parts.length; i++) {
-                    if ("are".equals(parts[i]) && i + 1 < parts.length) {
-                        onlinePlayers = Integer.parseInt(parts[i + 1]);
+        if ("ONLINE".equals(serverStatus)) {
+            String rconTest = rconService.sendCommandAndGetResponse("list");
+            if (rconTest != null && rconTest.contains("players online")) {
+                try {
+                    String[] parts = rconTest.split(" ");
+                    for (int i = 0; i < parts.length; i++) {
+                        if ("are".equals(parts[i]) && i + 1 < parts.length) {
+                            onlinePlayers = Integer.parseInt(parts[i + 1]);
+                        }
+                        if ("max".equals(parts[i]) && i + 2 < parts.length && "of".equals(parts[i + 1])) {
+                            maxPlayers = Integer.parseInt(parts[i + 2]);
+                        }
                     }
-                    if ("max".equals(parts[i]) && i + 2 < parts.length && "of".equals(parts[i + 1])) {
-                        maxPlayers = Integer.parseInt(parts[i + 2]);
-                    }
-                }
-            } catch (Exception ignored) {}
+                } catch (Exception ignored) {}
+            }
         }
+
         response.put("onlinePlayers", onlinePlayers);
         response.put("maxPlayers", maxPlayers);
-
-        Runtime runtime = Runtime.getRuntime();
-        long totalMemoryMb = runtime.totalMemory() / (1024 * 1024);
-        long freeMemoryMb = runtime.freeMemory() / (1024 * 1024);
-        long usedMemoryMb = totalMemoryMb - freeMemoryMb;
-
-        response.put("memoryUsedMb", isOnline ? Math.max(usedMemoryMb * 4, 1850) : 0);
-        response.put("memoryMaxMb", 4096);
-        response.put("cpuUsagePercent", isOnline ? 12.4 : 0.0);
+        response.put("memoryUsedMb", stats.get("memUsedMb"));
+        response.put("memoryMaxMb", stats.get("memMaxMb"));
+        response.put("cpuUsagePercent", stats.get("cpu"));
 
         return ResponseEntity.ok(response);
     }
@@ -616,6 +629,53 @@ public class MinecraftServerController {
         }
 
         return ResponseEntity.ok(players);
+    }
+
+    private Map<String, Object> getContainerStats(String containerName) {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("cpu", 0.0);
+        stats.put("memUsedMb", 0);
+        stats.put("memMaxMb", 4096);
+
+        String raw = executeDockerCommandWithOutput("docker stats --no-stream --format '{{.CPUPerc}}|{{.MemUsage}}' " + containerName);
+        if (raw != null && raw.contains("|")) {
+            try {
+                String[] parts = raw.split("\\|");
+                String cpuStr = parts[0].replace("%", "").trim();
+                double cpu = Double.parseDouble(cpuStr);
+                stats.put("cpu", cpu);
+
+                String memStr = parts[1].trim();
+                if (memStr.contains("/")) {
+                    String[] memParts = memStr.split("/");
+                    int usedMb = parseMemoryMb(memParts[0].trim());
+                    int maxMb = parseMemoryMb(memParts[1].trim());
+
+                    stats.put("memUsedMb", usedMb);
+                    stats.put("memMaxMb", maxMb > 0 ? maxMb : 4096);
+                }
+            } catch (Exception e) {
+                logger.debug("Failed to parse docker stats for {}: {}", containerName, e.getMessage());
+            }
+        }
+        return stats;
+    }
+
+    private int parseMemoryMb(String mem) {
+        try {
+            mem = mem.toUpperCase().trim();
+            if (mem.endsWith("GIB") || mem.endsWith("GB") || mem.endsWith("G")) {
+                double val = Double.parseDouble(mem.replaceAll("[^0-9.]", ""));
+                return (int) (val * 1024);
+            } else if (mem.endsWith("MIB") || mem.endsWith("MB") || mem.endsWith("M")) {
+                double val = Double.parseDouble(mem.replaceAll("[^0-9.]", ""));
+                return (int) val;
+            } else if (mem.endsWith("KIB") || mem.endsWith("KB") || mem.endsWith("K")) {
+                double val = Double.parseDouble(mem.replaceAll("[^0-9.]", ""));
+                return (int) (val / 1024);
+            }
+        } catch (Exception ignored) {}
+        return 0;
     }
 
     private String executeDockerCommandWithOutput(String command) {
