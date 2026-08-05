@@ -8,6 +8,14 @@ export interface MinecraftServerInfo {
     type: string;
     port: number;
     memory: string;
+    javaVersion?: string;
+    cpuLimit?: number;
+    swapMemory?: string;
+    diskSpace?: string;
+    motd?: string;
+    onlineMode?: boolean;
+    maxPlayers?: number;
+    autoRestart?: string;
     path: string;
     rconIp?: string;
     rconPort?: number;
@@ -49,11 +57,23 @@ export const minecraftApi = {
         const res = await apiClient.get('/api/admin/minecraft/servers');
         return res.data;
     },
+    deleteServer: async (id: string) => {
+        const res = await apiClient.delete(`/api/admin/minecraft/servers/${id}`);
+        return res.data;
+    },
     createServer: async (data: { 
         name: string; 
         version: string; 
         type: string; 
         memory: string;
+        javaVersion?: string;
+        cpuLimit?: number;
+        swapMemory?: string;
+        diskSpace?: string;
+        motd?: string;
+        onlineMode?: boolean;
+        maxPlayers?: number;
+        autoRestart?: string;
         port?: number;
         rconPort?: number;
         rconPassword?: string;
@@ -67,6 +87,14 @@ export const minecraftApi = {
         version?: string;
         type?: string;
         memory?: string;
+        javaVersion?: string;
+        cpuLimit?: number;
+        swapMemory?: string;
+        diskSpace?: string;
+        motd?: string;
+        onlineMode?: boolean;
+        maxPlayers?: number;
+        autoRestart?: string;
         rconIp?: string;
         rconPort?: number;
         rconPassword?: string;

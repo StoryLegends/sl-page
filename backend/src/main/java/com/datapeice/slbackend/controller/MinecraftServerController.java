@@ -49,6 +49,14 @@ public class MinecraftServerController {
         server1.put("type", "PAPER");
         server1.put("port", 25565);
         server1.put("memory", "4G");
+        server1.put("javaVersion", "JAVA_21");
+        server1.put("cpuLimit", 100);
+        server1.put("swapMemory", "1024M");
+        server1.put("diskSpace", "25G");
+        server1.put("motd", "§6§lStoryLegends §7- §fLegendary Minecraft Experience");
+        server1.put("onlineMode", false);
+        server1.put("maxPlayers", 50);
+        server1.put("autoRestart", "always");
         server1.put("path", "./docker/minecraft_data");
         server1.put("rconIp", "202.181.188.45");
         server1.put("rconPort", 25826);
@@ -66,6 +74,19 @@ public class MinecraftServerController {
     }
 
     /**
+     * Delete a Minecraft server configuration
+     */
+    @DeleteMapping("/servers/{id}")
+    public ResponseEntity<Map<String, Object>> deleteServer(@PathVariable String id) {
+        boolean removed = registeredServers.removeIf(s -> id.equals(s.get("id")));
+        if (removed) {
+            logger.info("Deleted Minecraft server ID={}", id);
+            return ResponseEntity.ok(Map.of("message", "Сервер успешно удален из списка!"));
+        }
+        return ResponseEntity.badRequest().body(Map.of("error", "Сервер не найден"));
+    }
+
+    /**
      * Create a new Minecraft server with chosen version, engine, port, memory limits, and RCON
      */
     @PostMapping("/servers")
@@ -74,6 +95,16 @@ public class MinecraftServerController {
         String version = String.valueOf(body.getOrDefault("version", "1.20.4")).trim();
         String type = String.valueOf(body.getOrDefault("type", "PAPER")).toUpperCase().trim();
         String memory = String.valueOf(body.getOrDefault("memory", "4G")).trim();
+        String javaVersion = String.valueOf(body.getOrDefault("javaVersion", "JAVA_21")).trim();
+        int cpuLimit = 100;
+        try { cpuLimit = Integer.parseInt(String.valueOf(body.getOrDefault("cpuLimit", 100))); } catch (Exception e) {}
+        String swapMemory = String.valueOf(body.getOrDefault("swapMemory", "1024M")).trim();
+        String diskSpace = String.valueOf(body.getOrDefault("diskSpace", "25G")).trim();
+        String motd = String.valueOf(body.getOrDefault("motd", "§6§lStoryLegends §7- §fMinecraft Server")).trim();
+        boolean onlineMode = Boolean.parseBoolean(String.valueOf(body.getOrDefault("onlineMode", false)));
+        int maxPlayers = 50;
+        try { maxPlayers = Integer.parseInt(String.valueOf(body.getOrDefault("maxPlayers", 50))); } catch (Exception e) {}
+        String autoRestart = String.valueOf(body.getOrDefault("autoRestart", "always")).trim();
         
         int port = 25565 + registeredServers.size();
         if (body.containsKey("port") && body.get("port") != null) {
@@ -99,6 +130,14 @@ public class MinecraftServerController {
         newServer.put("type", type);
         newServer.put("port", port);
         newServer.put("memory", memory);
+        newServer.put("javaVersion", javaVersion);
+        newServer.put("cpuLimit", cpuLimit);
+        newServer.put("swapMemory", swapMemory);
+        newServer.put("diskSpace", diskSpace);
+        newServer.put("motd", motd);
+        newServer.put("onlineMode", onlineMode);
+        newServer.put("maxPlayers", maxPlayers);
+        newServer.put("autoRestart", autoRestart);
         newServer.put("path", path);
         newServer.put("rconIp", "localhost");
         newServer.put("rconPort", rconPort);
@@ -116,7 +155,7 @@ public class MinecraftServerController {
     }
 
     /**
-     * Update existing server settings (Engine, Version, Memory, RCON IP/Port/Password)
+     * Update existing server settings (Engine, Version, Memory, RCON IP/Port/Password, Pterodactyl Limits)
      */
     @PostMapping("/server/update")
     public ResponseEntity<Map<String, Object>> updateServerSettings(@RequestBody Map<String, Object> body) {
@@ -135,6 +174,14 @@ public class MinecraftServerController {
         if (body.containsKey("version")) serverInfo.put("version", body.get("version"));
         if (body.containsKey("type")) serverInfo.put("type", ((String) body.get("type")).toUpperCase());
         if (body.containsKey("memory")) serverInfo.put("memory", body.get("memory"));
+        if (body.containsKey("javaVersion")) serverInfo.put("javaVersion", body.get("javaVersion"));
+        if (body.containsKey("cpuLimit")) serverInfo.put("cpuLimit", body.get("cpuLimit"));
+        if (body.containsKey("swapMemory")) serverInfo.put("swapMemory", body.get("swapMemory"));
+        if (body.containsKey("diskSpace")) serverInfo.put("diskSpace", body.get("diskSpace"));
+        if (body.containsKey("motd")) serverInfo.put("motd", body.get("motd"));
+        if (body.containsKey("onlineMode")) serverInfo.put("onlineMode", body.get("onlineMode"));
+        if (body.containsKey("maxPlayers")) serverInfo.put("maxPlayers", body.get("maxPlayers"));
+        if (body.containsKey("autoRestart")) serverInfo.put("autoRestart", body.get("autoRestart"));
         if (body.containsKey("rconIp")) serverInfo.put("rconIp", body.get("rconIp"));
         if (body.containsKey("rconPort")) serverInfo.put("rconPort", body.get("rconPort"));
         if (body.containsKey("rconPassword")) serverInfo.put("rconPassword", body.get("rconPassword"));

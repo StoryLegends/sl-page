@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { 
     Play, Square, RotateCw, Zap, Terminal, Cpu, HardDrive, Users, Activity, 
     Upload, Package, Server, Send, RefreshCw, CheckCircle2, Settings as SettingsIcon,
-    Folder, FileText, FileCode, Plus, ChevronRight, ArrowLeft, Trash2, X, Key
+    Folder, FileText, FileCode, Plus, ChevronRight, ArrowLeft, Trash2, X, Key, Globe
 } from 'lucide-react';
 import { 
     minecraftApi, 
@@ -16,18 +16,28 @@ import { useNotification } from '../../../context/NotificationContext';
 const MinecraftServerTab: React.FC = () => {
     const { showNotification } = useNotification();
     
-    // Server Selector State
+    // Pterodactyl Server Selector State (null = Servers List View)
     const [servers, setServers] = useState<MinecraftServerInfo[]>([]);
-    const [selectedServerId, setSelectedServerId] = useState<string>('server-1');
+    const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
     const [status, setStatus] = useState<MinecraftStatus | null>(null);
     const [isCreateServerModalOpen, setIsCreateServerModalOpen] = useState(false);
+    
+    // New Server Form State
     const [newServerForm, setNewServerForm] = useState({
         name: '',
         version: '1.20.4',
         type: 'PAPER',
         memory: '4G',
-        port: 25566,
-        rconPort: 25576,
+        javaVersion: 'JAVA_21',
+        cpuLimit: 100,
+        swapMemory: '1024M',
+        diskSpace: '25G',
+        motd: '§6§lStoryLegends §7- §fMinecraft Server',
+        onlineMode: false,
+        maxPlayers: 50,
+        autoRestart: 'always',
+        port: 25565,
+        rconPort: 25575,
         rconPassword: 'storylegends_rcon_pass'
     });
 
@@ -56,6 +66,14 @@ const MinecraftServerTab: React.FC = () => {
         version: '1.20.4',
         type: 'PAPER',
         memory: '4G',
+        javaVersion: 'JAVA_21',
+        cpuLimit: 100,
+        swapMemory: '1024M',
+        diskSpace: '25G',
+        motd: '§6§lStoryLegends §7- §fMinecraft Server',
+        onlineMode: false,
+        maxPlayers: 50,
+        autoRestart: 'always',
         rconIp: '202.181.188.45',
         rconPort: 25826,
         rconPassword: 'SLdISRA2f8uu22qhyLOH17',
@@ -70,9 +88,6 @@ const MinecraftServerTab: React.FC = () => {
         try {
             const list = await minecraftApi.getServers();
             setServers(list);
-            if (list.length > 0 && !selectedServerId) {
-                setSelectedServerId(list[0].id);
-            }
         } catch (err) {}
     };
 
@@ -99,17 +114,20 @@ const MinecraftServerTab: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        fetchStatus();
-        fetchLogs();
-        const interval = setInterval(() => {
+        if (selectedServerId) {
             fetchStatus();
-            if (activeSubTab === 'console') fetchLogs();
-        }, 4000);
-        return () => clearInterval(interval);
+            fetchLogs();
+            const interval = setInterval(() => {
+                fetchStatus();
+                if (activeSubTab === 'console') fetchLogs();
+            }, 4000);
+            return () => clearInterval(interval);
+        }
     }, [selectedServerId, activeSubTab]);
 
     // Update settings form when selected server changes
     useEffect(() => {
+        if (!selectedServerId) return;
         const cur = servers.find(s => s.id === selectedServerId);
         if (cur) {
             setSettingsForm({
@@ -117,6 +135,14 @@ const MinecraftServerTab: React.FC = () => {
                 version: cur.version || '1.20.4',
                 type: cur.type || 'PAPER',
                 memory: cur.memory || '4G',
+                javaVersion: cur.javaVersion || 'JAVA_21',
+                cpuLimit: cur.cpuLimit || 100,
+                swapMemory: cur.swapMemory || '1024M',
+                diskSpace: cur.diskSpace || '25G',
+                motd: cur.motd || '§6§lStoryLegends §7- §fMinecraft Server',
+                onlineMode: cur.onlineMode ?? false,
+                maxPlayers: cur.maxPlayers || 50,
+                autoRestart: cur.autoRestart || 'always',
                 rconIp: cur.rconIp || '202.181.188.45',
                 rconPort: cur.rconPort || 25826,
                 rconPassword: cur.rconPassword || 'SLdISRA2f8uu22qhyLOH17',
@@ -127,13 +153,14 @@ const MinecraftServerTab: React.FC = () => {
 
     // Auto-scroll terminal when autoScroll is enabled
     useEffect(() => {
-        if (autoScroll && activeSubTab === 'console' && terminalEndRef.current) {
+        if (autoScroll && activeSubTab === 'console' && terminalEndRef.current && selectedServerId) {
             terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [logs, autoScroll, activeSubTab]);
+    }, [logs, autoScroll, activeSubTab, selectedServerId]);
 
     // Load File Manager directory
     const loadFiles = async (path: string = currentPath) => {
+        if (!selectedServerId) return;
         try {
             const files = await minecraftApi.listFiles(selectedServerId, path);
             setContainerFiles(files);
@@ -144,9 +171,9 @@ const MinecraftServerTab: React.FC = () => {
     };
 
     useEffect(() => {
-        if (activeSubTab === 'files' && !editingFile && selectedServerId) {
+        if (selectedServerId && activeSubTab === 'files' && !editingFile) {
             loadFiles(currentPath);
-        } else if (activeSubTab === 'players' && selectedServerId) {
+        } else if (selectedServerId && activeSubTab === 'players') {
             minecraftApi.getPlayers().then(setPlayers).catch(console.error);
         }
     }, [activeSubTab, selectedServerId, currentPath]);
@@ -161,30 +188,58 @@ const MinecraftServerTab: React.FC = () => {
             const res = await minecraftApi.createServer(newServerForm);
             showNotification(res.message || 'Сервер создан!', 'success');
             setIsCreateServerModalOpen(false);
+            const nextPort = 25565 + servers.length + 1;
             setNewServerForm({
                 name: '',
                 version: '1.20.4',
                 type: 'PAPER',
                 memory: '4G',
-                port: 25565 + servers.length + 1,
-                rconPort: 25575 + servers.length + 1,
+                javaVersion: 'JAVA_21',
+                cpuLimit: 100,
+                swapMemory: '1024M',
+                diskSpace: '25G',
+                motd: '§6§lStoryLegends §7- §fMinecraft Server',
+                onlineMode: false,
+                maxPlayers: 50,
+                autoRestart: 'always',
+                port: nextPort,
+                rconPort: nextPort + 10,
                 rconPassword: 'storylegends_rcon_pass'
             });
             await fetchServers();
+            if (res.server && res.server.id) {
+                setSelectedServerId(res.server.id);
+            }
         } catch (err) {
             showNotification('Ошибка создания сервера.', 'error');
         }
     };
 
+    const handleDeleteServer = async (serverId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!window.confirm('Вы действительно хотите удалить этот сервер из панели?')) return;
+        try {
+            const res = await minecraftApi.deleteServer(serverId);
+            showNotification(res.message || 'Сервер удален', 'info');
+            if (selectedServerId === serverId) {
+                setSelectedServerId(null);
+            }
+            await fetchServers();
+        } catch (err) {
+            showNotification('Ошибка при удалении сервера', 'error');
+        }
+    };
+
     const handleSaveServerSettings = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!selectedServerId) return;
         setIsSavingSettings(true);
         try {
             const res = await minecraftApi.updateServerSettings({
                 serverId: selectedServerId,
                 ...settingsForm
             });
-            showNotification(res.message || 'Настройки сервера и RCON обновлены!', 'success');
+            showNotification(res.message || 'Настройки Pterodactyl и RCON сохранены!', 'success');
             await fetchServers();
             fetchStatus();
         } catch (err) {
@@ -194,10 +249,11 @@ const MinecraftServerTab: React.FC = () => {
         }
     };
 
-    const handlePowerAction = async (action: 'start' | 'stop' | 'restart' | 'kill') => {
+    const handlePowerAction = async (action: 'start' | 'stop' | 'restart' | 'kill', serverId: string = selectedServerId || 'server-1', e?: React.MouseEvent) => {
+        if (e) e.stopPropagation();
         try {
-            const res = await minecraftApi.powerAction(action, selectedServerId);
-            showNotification(res.message || 'Команда отправлена', 'success');
+            const res = await minecraftApi.powerAction(action, serverId);
+            showNotification(res.message || 'Команда питания отправлена', 'success');
             fetchStatus();
         } catch (err) {
             showNotification('Ошибка выполнения действия питания.', 'error');
@@ -223,6 +279,7 @@ const MinecraftServerTab: React.FC = () => {
     };
 
     const handleOpenFile = async (filePath: string) => {
+        if (!selectedServerId) return;
         try {
             const content = await minecraftApi.readFile(selectedServerId, filePath);
             setEditingFile({ path: filePath, content });
@@ -270,10 +327,166 @@ const MinecraftServerTab: React.FC = () => {
         }
     };
 
-    const currentServer = servers.find(s => s.id === selectedServerId) || servers[0];
+    const currentServer = servers.find(s => s.id === selectedServerId);
 
+    // LEVEL 1: PTERODACTYL SERVERS GRID / TILES OVERVIEW (When no server selected)
+    if (!selectedServerId) {
+        return (
+            <div className="space-y-6 w-full animate-fadeIn">
+                {/* Header Title Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-4 p-6 rounded-2xl bg-[#091322] border border-white/10 shadow-2xl">
+                    <div>
+                        <h2 className="text-xl font-bold text-white flex items-center gap-3">
+                            <Server className="w-6 h-6 text-story-gold" />
+                            Серверы Minecraft (Pterodactyl Node)
+                        </h2>
+                        <p className="text-xs text-gray-400 mt-1">Управление всеми игровыми экземплярами, ядрами, Docker-контейнерами и портами</p>
+                    </div>
+
+                    <button
+                        onClick={() => setIsCreateServerModalOpen(true)}
+                        className="px-5 py-2.5 bg-story-gold text-black hover:bg-story-gold-light font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+                    >
+                        <Plus className="w-4 h-4" /> Настроить новый сервер
+                    </button>
+                </div>
+
+                {/* Empty State when zero servers configured */}
+                {servers.length === 0 ? (
+                    <div 
+                        onClick={() => setIsCreateServerModalOpen(true)}
+                        className="p-16 border-2 border-dashed border-white/20 hover:border-story-gold/60 rounded-2xl bg-[#091322]/60 hover:bg-[#091322] text-center cursor-pointer transition-all space-y-4 group"
+                    >
+                        <div className="w-16 h-16 rounded-full bg-story-gold/10 border border-story-gold/30 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                            <Plus className="w-8 h-8 text-story-gold" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-white">Список серверов пуст</h3>
+                            <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1">
+                                Нет ни одного настроенного сервера Minecraft. Нажмите сюда, чтобы создать ваш первый сервер.
+                            </p>
+                        </div>
+                        <button className="px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs shadow-md">
+                            + Создать первый сервер
+                        </button>
+                    </div>
+                ) : (
+                    /* Pterodactyl Servers Grid (Tiles) */
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {servers.map((srv) => (
+                            <div 
+                                key={srv.id}
+                                onClick={() => setSelectedServerId(srv.id)}
+                                className="p-6 rounded-2xl bg-[#091322] border border-white/10 hover:border-story-gold/50 shadow-2xl transition-all hover:scale-[1.01] cursor-pointer space-y-5 flex flex-col justify-between group"
+                            >
+                                <div className="space-y-4">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <span className="text-[10px] font-bold tracking-widest text-story-gold uppercase font-mono">{srv.type} {srv.version}</span>
+                                            <h3 className="text-base font-bold text-white group-hover:text-story-gold transition-colors">{srv.name}</h3>
+                                            <p className="text-xs font-mono text-gray-400">Порт: :{srv.port} • RAM: {srv.memory}</p>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-500/20 text-green-400 border border-green-500/30">
+                                                АКТИВЕН
+                                            </span>
+                                            <button
+                                                onClick={(e) => handleDeleteServer(srv.id, e)}
+                                                className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                title="Удалить сервер"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Mini Metrics Meters */}
+                                    <div className="grid grid-cols-2 gap-3 pt-2 text-xs font-mono">
+                                        <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-1">
+                                            <div className="text-gray-400 flex items-center gap-1.5"><Cpu className="w-3.5 h-3.5 text-blue-400" /> CPU</div>
+                                            <div className="text-white font-bold">0.0%</div>
+                                        </div>
+
+                                        <div className="bg-black/40 p-3 rounded-xl border border-white/5 space-y-1">
+                                            <div className="text-gray-400 flex items-center gap-1.5"><HardDrive className="w-3.5 h-3.5 text-purple-400" /> RAM</div>
+                                            <div className="text-white font-bold">0.0 / {srv.memory}</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Server Footer Actions */}
+                                <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1">
+                                        <button
+                                            onClick={(e) => handlePowerAction('start', srv.id, e)}
+                                            className="p-2 bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white rounded-lg transition-all"
+                                            title="Запустить"
+                                        >
+                                            <Play className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => handlePowerAction('restart', srv.id, e)}
+                                            className="p-2 bg-yellow-600/20 hover:bg-yellow-600 text-yellow-400 hover:text-white rounded-lg transition-all"
+                                            title="Перезапустить"
+                                        >
+                                            <RotateCw className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => handlePowerAction('stop', srv.id, e)}
+                                            className="p-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-all"
+                                            title="Остановить"
+                                        >
+                                            <Square className="w-4 h-4" />
+                                        </button>
+                                    </div>
+
+                                    <button 
+                                        onClick={() => setSelectedServerId(srv.id)}
+                                        className="px-4 py-2 bg-white/10 hover:bg-story-gold text-white hover:text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
+                                    >
+                                        Управление <ChevronRight className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Add Server Card Tile */}
+                        <div 
+                            onClick={() => setIsCreateServerModalOpen(true)}
+                            className="p-6 rounded-2xl border-2 border-dashed border-white/15 hover:border-story-gold/60 bg-[#091322]/40 hover:bg-[#091322] transition-all cursor-pointer flex flex-col items-center justify-center text-center space-y-3 min-h-[220px] group"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-story-gold/10 border border-story-gold/30 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Plus className="w-6 h-6 text-story-gold" />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-bold text-white">Добавить новый сервер</h4>
+                                <p className="text-xs text-gray-400">Paper, Purpur, Fabric, Forge</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // LEVEL 2: DETAILED SERVER MANAGEMENT DASHBOARD (Console, Files, Players, Extended Settings)
     return (
         <div className="space-y-6 w-full animate-fadeIn">
+            {/* Top Navigation Bar back to Servers List */}
+            <div className="flex items-center justify-between">
+                <button
+                    onClick={() => setSelectedServerId(null)}
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2"
+                >
+                    <ArrowLeft className="w-4 h-4" /> ← К списку серверов
+                </button>
+
+                <span className="text-xs font-mono text-gray-400">
+                    ID Сервера: <code className="text-story-gold">{currentServer?.id}</code>
+                </span>
+            </div>
+
             {/* SERVER SELECTOR & DOCKER HEADER */}
             <div className="p-6 rounded-2xl bg-[#091322] border border-white/10 shadow-2xl space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
@@ -283,22 +496,7 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                         <div>
                             <div className="flex items-center gap-3">
-                                {servers.length > 0 ? (
-                                    <select
-                                        value={selectedServerId}
-                                        onChange={e => setSelectedServerId(e.target.value)}
-                                        className="bg-black/60 border border-story-gold/40 text-white font-bold text-base px-3 py-1.5 rounded-xl focus:outline-none cursor-pointer"
-                                    >
-                                        {servers.map(s => (
-                                            <option key={s.id} value={s.id} className="bg-[#091322] text-white">
-                                                {s.name} ({s.type} {s.version}:{s.port})
-                                            </option>
-                                        ))}
-                                    </select>
-                                ) : (
-                                    <span className="text-white font-bold text-base">Нет активных серверов</span>
-                                )}
-
+                                <h2 className="text-lg font-bold text-white">{currentServer?.name}</h2>
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
                                     isOnline 
                                         ? 'bg-green-600 text-white border-green-500' 
@@ -308,23 +506,16 @@ const MinecraftServerTab: React.FC = () => {
                                 </span>
                             </div>
                             <p className="text-xs text-gray-400 mt-1">
-                                Контейнер: <code className="text-story-gold font-mono">{currentServer?.containerName || 'sl-minecraft-server'}</code> • Версия: {currentServer?.type || 'PAPER'} {currentServer?.version || '1.20.4'} • Порт: {currentServer?.port || 25565}
+                                Контейнер: <code className="text-story-gold font-mono">{currentServer?.containerName}</code> • Ядро: {currentServer?.type} {currentServer?.version} • Порт: {currentServer?.port}
                             </p>
                         </div>
                     </div>
 
-                    {/* Server Actions & Power Controls */}
+                    {/* Server Power Control Buttons */}
                     <div className="flex items-center gap-2">
                         <button
-                            onClick={() => setIsCreateServerModalOpen(true)}
-                            className="px-3.5 py-2 bg-story-gold/20 hover:bg-story-gold/30 text-story-gold border border-story-gold/40 font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 mr-2"
-                        >
-                            <Plus className="w-4 h-4" /> Новый сервер
-                        </button>
-
-                        <button
                             onClick={() => handlePowerAction('start')}
-                            disabled={isOnline || !selectedServerId}
+                            disabled={isOnline}
                             className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                         >
                             <Play className="w-3.5 h-3.5" /> Запустить
@@ -332,7 +523,7 @@ const MinecraftServerTab: React.FC = () => {
 
                         <button
                             onClick={() => handlePowerAction('restart')}
-                            disabled={!isOnline || !selectedServerId}
+                            disabled={!isOnline}
                             className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                         >
                             <RotateCw className="w-3.5 h-3.5" /> Перезапустить
@@ -340,7 +531,7 @@ const MinecraftServerTab: React.FC = () => {
 
                         <button
                             onClick={() => handlePowerAction('stop')}
-                            disabled={!isOnline || !selectedServerId}
+                            disabled={!isOnline}
                             className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                         >
                             <Square className="w-3.5 h-3.5" /> Остановить
@@ -348,8 +539,7 @@ const MinecraftServerTab: React.FC = () => {
 
                         <button
                             onClick={() => handlePowerAction('kill')}
-                            disabled={!selectedServerId}
-                            className="px-3.5 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                            className="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                             title="Принудительно выключить контейнер"
                         >
                             <Zap className="w-3.5 h-3.5" /> Выключить
@@ -372,10 +562,10 @@ const MinecraftServerTab: React.FC = () => {
                     <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-2">
                         <div className="flex items-center justify-between text-gray-400">
                             <span className="flex items-center gap-1.5 font-bold"><HardDrive className="w-4 h-4 text-purple-400" /> RAM Память</span>
-                            <span className="font-mono text-white font-bold">{((status?.memoryUsedMb || 0) / 1024).toFixed(2)} / {((status?.memoryMaxMb || 4096) / 1024).toFixed(1)} GB</span>
+                            <span className="font-mono text-white font-bold">{((status?.memoryUsedMb || 0) / 1024).toFixed(2)} / {currentServer?.memory || '4G'}</span>
                         </div>
                         <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${Math.min(((status?.memoryUsedMb || 0) / (status?.memoryMaxMb || 4096)) * 100, 100)}%` }} />
+                            <div className="h-full bg-purple-500 transition-all duration-500" style={{ width: `${Math.min(((status?.memoryUsedMb || 0) / 4096) * 100, 100)}%` }} />
                         </div>
                     </div>
 
@@ -392,10 +582,10 @@ const MinecraftServerTab: React.FC = () => {
                     <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-2">
                         <div className="flex items-center justify-between text-gray-400">
                             <span className="flex items-center gap-1.5 font-bold"><Users className="w-4 h-4 text-story-gold" /> Игроков Онлайн</span>
-                            <span className="font-mono text-story-gold font-bold">{status?.onlinePlayers || 0} / {status?.maxPlayers || 50}</span>
+                            <span className="font-mono text-story-gold font-bold">{status?.onlinePlayers || 0} / {currentServer?.maxPlayers || 50}</span>
                         </div>
                         <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                            <div className="h-full bg-story-gold transition-all duration-500" style={{ width: `${Math.min(((status?.onlinePlayers || 0) / (status?.maxPlayers || 50)) * 100, 100)}%` }} />
+                            <div className="h-full bg-story-gold transition-all duration-500" style={{ width: `${Math.min(((status?.onlinePlayers || 0) / (currentServer?.maxPlayers || 50)) * 100, 100)}%` }} />
                         </div>
                     </div>
                 </div>
@@ -436,7 +626,7 @@ const MinecraftServerTab: React.FC = () => {
                         activeSubTab === 'settings' ? 'bg-story-gold text-black shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'
                     }`}
                 >
-                    <SettingsIcon className="w-4 h-4" /> Настройки сервера и RCON
+                    <SettingsIcon className="w-4 h-4" /> Конфигурация Pterodactyl & RCON
                 </button>
             </div>
 
@@ -446,7 +636,7 @@ const MinecraftServerTab: React.FC = () => {
                     <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs">
                         <span className="font-mono text-gray-400 flex items-center gap-2">
                             <Terminal className="w-4 h-4 text-story-gold" />
-                            Live RCON Console Stream ({currentServer?.name || 'Не выбран'})
+                            Live RCON Console Stream ({currentServer?.name})
                         </span>
                         <div className="flex items-center gap-4">
                             <label className="flex items-center gap-2 text-gray-400 cursor-pointer">
@@ -663,7 +853,7 @@ const MinecraftServerTab: React.FC = () => {
                     <div className="flex items-center justify-between border-b border-white/10 pb-4">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
                             <Users className="w-5 h-5 text-story-gold" />
-                            Игроки на сервере ({currentServer?.name || 'Не выбран'})
+                            Игроки на сервере ({currentServer?.name})
                         </h3>
                     </div>
 
@@ -712,16 +902,16 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
             )}
 
-            {/* SUB-TAB 4: DYNAMIC ENGINE, VERSION & RCON SETTINGS */}
+            {/* SUB-TAB 4: PTERODACTYL ENGINE, LIMITS & RCON CONFIGURATION */}
             {activeSubTab === 'settings' && (
                 <div className="bg-[#091322] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-6">
                     <div className="flex items-center justify-between border-b border-white/10 pb-4">
                         <div>
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
                                 <SettingsIcon className="w-5 h-5 text-story-gold" />
-                                Конфигурация ядра, версии Minecraft и RCON
+                                Полная конфигурация Pterodactyl & RCON
                             </h3>
-                            <p className="text-xs text-gray-400 mt-1">Изменение версии игры, движка и параметров подключения к RCON без правки файлов</p>
+                            <p className="text-xs text-gray-400 mt-1">Лимиты ресурсов (RAM, CPU, Swap, Disk), версия Java, EULA, MOTD и параметры подключения</p>
                         </div>
 
                         <button
@@ -730,15 +920,15 @@ const MinecraftServerTab: React.FC = () => {
                             className="px-5 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all shadow-md flex items-center gap-2"
                         >
                             <CheckCircle2 className="w-4 h-4" />
-                            {isSavingSettings ? 'Сохранение...' : 'Сохранить настройки и RCON'}
+                            {isSavingSettings ? 'Сохранение...' : 'Сохранить настройки Pterodactyl'}
                         </button>
                     </div>
 
                     <form onSubmit={handleSaveServerSettings} className="space-y-6 text-xs">
-                        {/* Section 1: Server Engine & Version */}
+                        {/* Section 1: Main Server Identity & Engine */}
                         <div className="space-y-4 bg-white/5 p-5 rounded-xl border border-white/10">
                             <h4 className="text-sm font-bold text-story-gold flex items-center gap-2">
-                                <Server className="w-4 h-4" /> Движок и Версия Minecraft
+                                <Server className="w-4 h-4" /> Ядро и Версия Minecraft
                             </h4>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -785,7 +975,121 @@ const MinecraftServerTab: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Section 2: RCON Connection Parameters */}
+                        {/* Section 2: Resource Limits & Java Container Settings */}
+                        <div className="space-y-4 bg-white/5 p-5 rounded-xl border border-white/10">
+                            <h4 className="text-sm font-bold text-story-gold flex items-center gap-2">
+                                <Cpu className="w-4 h-4" /> Лимиты ресурсов Pterodactyl и Java Runtime
+                            </h4>
+
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Версия Java Runtime</label>
+                                    <select
+                                        value={settingsForm.javaVersion}
+                                        onChange={e => setSettingsForm({ ...settingsForm, javaVersion: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
+                                    >
+                                        <option value="JAVA_21">Java 21 LTS (LATEST)</option>
+                                        <option value="JAVA_17">Java 17 LTS</option>
+                                        <option value="JAVA_11">Java 11</option>
+                                        <option value="JAVA_8">Java 8 (Legacy 1.12/1.8)</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Выделение RAM Памяти</label>
+                                    <select
+                                        value={settingsForm.memory}
+                                        onChange={e => setSettingsForm({ ...settingsForm, memory: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
+                                    >
+                                        <option value="2G">2 GB RAM</option>
+                                        <option value="4G">4 GB RAM</option>
+                                        <option value="8G">8 GB RAM</option>
+                                        <option value="16G">16 GB RAM</option>
+                                        <option value="32G">32 GB RAM</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Лимит CPU (%)</label>
+                                    <input
+                                        type="number"
+                                        value={settingsForm.cpuLimit}
+                                        onChange={e => setSettingsForm({ ...settingsForm, cpuLimit: parseInt(e.target.value) || 100 })}
+                                        placeholder="100"
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Память Swap (MB)</label>
+                                    <input
+                                        type="text"
+                                        value={settingsForm.swapMemory}
+                                        onChange={e => setSettingsForm({ ...settingsForm, swapMemory: e.target.value })}
+                                        placeholder="1024M"
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 3: Server Configuration & MOTD */}
+                        <div className="space-y-4 bg-white/5 p-5 rounded-xl border border-white/10">
+                            <h4 className="text-sm font-bold text-story-gold flex items-center gap-2">
+                                <Globe className="w-4 h-4" /> MOTD, Лимит игроков и режим авторизации
+                            </h4>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="md:col-span-2">
+                                    <label className="block text-gray-300 font-bold mb-1">MOTD Описание сервера</label>
+                                    <input
+                                        type="text"
+                                        value={settingsForm.motd}
+                                        onChange={e => setSettingsForm({ ...settingsForm, motd: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Макс. Игроков (Слоты)</label>
+                                    <input
+                                        type="number"
+                                        value={settingsForm.maxPlayers}
+                                        onChange={e => setSettingsForm({ ...settingsForm, maxPlayers: parseInt(e.target.value) || 50 })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+                                <label className="flex items-center gap-2 text-gray-300 cursor-pointer font-bold">
+                                    <input
+                                        type="checkbox"
+                                        checked={settingsForm.onlineMode}
+                                        onChange={e => setSettingsForm({ ...settingsForm, onlineMode: e.target.checked })}
+                                        className="rounded bg-black/50 border-white/20 text-story-gold focus:ring-0"
+                                    />
+                                    Online Mode (Проверка лицензии Mojang)
+                                </label>
+
+                                <div className="flex items-center gap-3">
+                                    <label className="text-gray-300 font-bold">Авто-перезапуск при сбое:</label>
+                                    <select
+                                        value={settingsForm.autoRestart}
+                                        onChange={e => setSettingsForm({ ...settingsForm, autoRestart: e.target.value })}
+                                        className="bg-black/50 border border-white/15 rounded-xl p-2 text-white font-mono text-xs focus:outline-none"
+                                    >
+                                        <option value="always">Всегда (Always)</option>
+                                        <option value="on-failure">При сбое (On Failure)</option>
+                                        <option value="unless-stopped">Пока не остановлен вручную</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Section 4: RCON Connection Parameters */}
                         <div className="space-y-4 bg-white/5 p-5 rounded-xl border border-white/10">
                             <div className="flex items-center justify-between">
                                 <h4 className="text-sm font-bold text-story-gold flex items-center gap-2">
@@ -841,14 +1145,14 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
             )}
 
-            {/* CREATE NEW SERVER MODAL WITH EXTENDED FIELDS */}
+            {/* CREATE NEW SERVER MODAL WITH FULL PTERODACTYL FIELDS */}
             {isCreateServerModalOpen && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-[#091322] border border-story-gold/40 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-6">
+                    <div className="bg-[#091322] border border-story-gold/40 rounded-2xl p-6 w-full max-w-xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between border-b border-white/10 pb-4">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
                                 <Plus className="w-5 h-5 text-story-gold" />
-                                Создание нового Minecraft сервера
+                                Настройка нового сервера Minecraft (Pterodactyl)
                             </h3>
                             <button onClick={() => setIsCreateServerModalOpen(false)} className="text-gray-400 hover:text-white">
                                 <X className="w-5 h-5" />
@@ -862,7 +1166,7 @@ const MinecraftServerTab: React.FC = () => {
                                     type="text"
                                     value={newServerForm.name}
                                     onChange={e => setNewServerForm({ ...newServerForm, name: e.target.value })}
-                                    placeholder="например: Ивент / Анархия 1.16.5"
+                                    placeholder="например: Анархия #1 1.16.5"
                                     className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-story-gold"
                                     required
                                 />
@@ -903,16 +1207,6 @@ const MinecraftServerTab: React.FC = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-gray-300 font-bold mb-1">Игровой порт сервера</label>
-                                    <input
-                                        type="number"
-                                        value={newServerForm.port}
-                                        onChange={e => setNewServerForm({ ...newServerForm, port: parseInt(e.target.value) || 25565 })}
-                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
-                                    />
-                                </div>
-
-                                <div>
                                     <label className="block text-gray-300 font-bold mb-1">Выделяемая RAM Память</label>
                                     <select
                                         value={newServerForm.memory}
@@ -926,9 +1220,33 @@ const MinecraftServerTab: React.FC = () => {
                                         <option value="32G">32 GB RAM</option>
                                     </select>
                                 </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Версия Java</label>
+                                    <select
+                                        value={newServerForm.javaVersion}
+                                        onChange={e => setNewServerForm({ ...newServerForm, javaVersion: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
+                                    >
+                                        <option value="JAVA_21">Java 21 LTS</option>
+                                        <option value="JAVA_17">Java 17 LTS</option>
+                                        <option value="JAVA_11">Java 11</option>
+                                        <option value="JAVA_8">Java 8</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Игровой порт сервера</label>
+                                    <input
+                                        type="number"
+                                        value={newServerForm.port}
+                                        onChange={e => setNewServerForm({ ...newServerForm, port: parseInt(e.target.value) || 25565 })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+
                                 <div>
                                     <label className="block text-gray-300 font-bold mb-1">RCON Порт</label>
                                     <input
@@ -938,16 +1256,16 @@ const MinecraftServerTab: React.FC = () => {
                                         className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
                                     />
                                 </div>
+                            </div>
 
-                                <div>
-                                    <label className="block text-gray-300 font-bold mb-1">RCON Пароль</label>
-                                    <input
-                                        type="password"
-                                        value={newServerForm.rconPassword}
-                                        onChange={e => setNewServerForm({ ...newServerForm, rconPassword: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
-                                    />
-                                </div>
+                            <div>
+                                <label className="block text-gray-300 font-bold mb-1">MOTD Описание</label>
+                                <input
+                                    type="text"
+                                    value={newServerForm.motd}
+                                    onChange={e => setNewServerForm({ ...newServerForm, motd: e.target.value })}
+                                    className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                />
                             </div>
 
                             <div className="pt-4 flex justify-end gap-3 border-t border-white/10">
