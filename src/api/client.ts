@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type AxiosError } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://slbackend-7a8596651d0c.herokuapp.com' : 'http://localhost:8080');
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -44,18 +44,10 @@ apiClient.interceptors.response.use(
     (response) => response,
     (error: AxiosError) => {
         if (error.response?.status === 401) {
-            // Token invalid - logout
-            // Prevent redirect loop if already on login page or intended public page? 
-            // User instruction says "window.location.href = '/login'".
-            // But we should verify if we are not already there.
             if (window.location.pathname !== '/login') {
                 localStorage.removeItem('token');
                 localStorage.removeItem('emailVerified');
                 localStorage.removeItem('username');
-                // Optional: window.location.href = '/login'; 
-                // Better to let the app handle auth state, but force logout here implies simple redirect.
-                // Implementing as requested:
-                // window.location.href = '/login';
             }
         }
         return Promise.reject(error);

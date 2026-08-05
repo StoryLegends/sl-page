@@ -20,7 +20,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # 1. MinIO S3 Object Storage Service
+  # 1. Private MinIO S3 Object Storage Service (No exposed ports to public)
   minio:
     image: minio/minio:latest
     container_name: sl-minio
@@ -29,9 +29,6 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
-    ports:
-      - "9005:9000"
-      - "9006:9001"
     volumes:
       - minio_data:/data
     healthcheck:
@@ -62,20 +59,18 @@ services:
     volumes:
       - minecraft_data:/data
 
-  # 3. StoryLegends Backend API (Spring Boot) - Built from ./backend
+  # 3. StoryLegends Backend API (Private Container - Proxied via Nginx)
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: sl-backend
     restart: always
-    ports:
-      - "8085:8080"
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/d34gj8i1b0knkt
       SPRING_DATASOURCE_USERNAME: ud8op8v4fm53g1
       SPRING_DATASOURCE_PASSWORD: p7bb7ef0c3df8a6e9031249215b1ed754f5c44d99d8f256bba9ad5645bd861723
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:5174,http://localhost:8085,https://storylegends.xyz,https://www.storylegends.xyz,https://api.storylegends.xyz}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://test.storylegends.xyz,https://test.storylegends.xyz,http://localhost:5173,http://localhost:5174}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
@@ -92,7 +87,7 @@ services:
       minecraft:
         condition: service_started
 
-  # 4. StoryLegends Frontend (Vite / React) - Built from ./frontend
+  # 4. StoryLegends Frontend (Single Domain Nginx Web Server + API Proxy)
   frontend:
     build:
       context: ./frontend
@@ -102,7 +97,7 @@ services:
     ports:
       - "5174:80"
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8085}
+      VITE_API_URL: ${VITE_API_URL:-}
     depends_on:
       - backend
 
