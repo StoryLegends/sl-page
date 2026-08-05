@@ -14,6 +14,7 @@ import com.datapeice.slbackend.repository.ApplicationRepository;
 import com.datapeice.slbackend.repository.WarningRepository;
 import com.datapeice.slbackend.repository.AnticheatSnapshotRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +28,7 @@ import org.springframework.web.util.HtmlUtils;
 @Service
 public class UserService {
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final DiscordService discordService;
     private final GeoIpService geoIpService;
@@ -48,7 +49,7 @@ public class UserService {
             SiteSettingsService siteSettingsService,
             ModerationService moderationService,
             GeoIpService geoIpService,
-            BCryptPasswordEncoder passwordEncoder,
+            PasswordEncoder passwordEncoder,
             ApplicationRepository applicationRepository,
             WarningRepository warningRepository,
             RconService rconService,
