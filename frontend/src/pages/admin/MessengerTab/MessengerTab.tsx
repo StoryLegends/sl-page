@@ -335,7 +335,7 @@ const MessengerTab: React.FC = () => {
         (c.user.discordNickname && c.user.discordNickname.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
-    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://slbackend-7a8596651d0c.herokuapp.com' : 'http://localhost:8080');
+    const API_URL = import.meta.env.VITE_API_URL || '';
 
     const resolveMediaUrl = (url: string): string => {
         if (!url) return url;
