@@ -1,27 +1,27 @@
 import React, { useEffect, useState, useRef } from 'react';
-import {
-    Play, Square, RotateCw, Zap, Terminal, Cpu, HardDrive, Users, Activity,
+import { 
+    Play, Square, RotateCw, Zap, Terminal, Cpu, HardDrive, Users, Activity, 
     Upload, Package, Server, Send, RefreshCw, CheckCircle2, Settings as SettingsIcon,
     Folder, FileText, FileCode, Plus, ChevronRight, ArrowLeft, Trash2, X, Key, Globe
 } from 'lucide-react';
-import {
-    minecraftApi,
-    type MinecraftStatus,
-    type MinecraftPlayer,
-    type MinecraftServerInfo,
-    type ContainerFileItem
+import { 
+    minecraftApi, 
+    type MinecraftStatus, 
+    type MinecraftPlayer, 
+    type MinecraftServerInfo, 
+    type ContainerFileItem 
 } from '../../../api/minecraft';
 import { useNotification } from '../../../context/NotificationContext';
 
 const MinecraftServerTab: React.FC = () => {
     const { showNotification } = useNotification();
-
-    // Pterodactyl Server Selector State (null = Servers List View)
+    
+    // Server Selector State (Default: 'server-1' for active minecraft container)
     const [servers, setServers] = useState<MinecraftServerInfo[]>([]);
-    const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
+    const [selectedServerId, setSelectedServerId] = useState<string | null>('server-1');
     const [status, setStatus] = useState<MinecraftStatus | null>(null);
     const [isCreateServerModalOpen, setIsCreateServerModalOpen] = useState(false);
-
+    
     // New Server Form State
     const [newServerForm, setNewServerForm] = useState({
         name: '',
@@ -88,6 +88,9 @@ const MinecraftServerTab: React.FC = () => {
         try {
             const list = await minecraftApi.getServers();
             setServers(list);
+            if (list.length > 0 && !selectedServerId) {
+                setSelectedServerId(list[0].id);
+            }
         } catch (err) {}
     };
 
@@ -239,7 +242,7 @@ const MinecraftServerTab: React.FC = () => {
                 serverId: selectedServerId,
                 ...settingsForm
             });
-            showNotification(res.message || 'Настройки Pterodactyl и RCON сохранены!', 'success');
+            showNotification(res.message || 'Настройки сервера и RCON сохранены!', 'success');
             await fetchServers();
             fetchStatus();
         } catch (err) {
@@ -327,9 +330,20 @@ const MinecraftServerTab: React.FC = () => {
         }
     };
 
-    const currentServer = servers.find(s => s.id === selectedServerId);
+    const currentServer = servers.find(s => s.id === selectedServerId) || {
+        id: 'server-1',
+        name: 'Основной Сервер #1 (StoryLegends)',
+        containerName: 'sl-minecraft-server',
+        version: '1.20.4',
+        type: 'PAPER',
+        port: 25565,
+        memory: '4G',
+        javaVersion: 'JAVA_21',
+        maxPlayers: 50,
+        motd: '§6§lStoryLegends §7- §fLegendary Minecraft Experience'
+    };
 
-    // LEVEL 1: PTERODACTYL SERVERS GRID / TILES OVERVIEW (When no server selected)
+    // LEVEL 1: SERVERS GRID / TILES OVERVIEW (When no server selected)
     if (!selectedServerId) {
         return (
             <div className="relative z-10 space-y-6 w-full animate-fadeIn">
@@ -344,8 +358,12 @@ const MinecraftServerTab: React.FC = () => {
                     </div>
 
                     <button
-                        onClick={() => setIsCreateServerModalOpen(true)}
-                        className="px-5 py-2.5 bg-story-gold text-black hover:bg-story-gold-light font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2"
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsCreateServerModalOpen(true);
+                        }}
+                        className="px-5 py-2.5 bg-story-gold text-black hover:bg-story-gold-light font-bold text-xs rounded-xl shadow-lg transition-all flex items-center gap-2 cursor-pointer relative z-20"
                     >
                         <Plus className="w-4 h-4" /> Настроить новый сервер
                     </button>
@@ -353,17 +371,14 @@ const MinecraftServerTab: React.FC = () => {
 
                 {/* Empty State when zero servers configured */}
                 {servers.length === 0 ? (
-                    <div
-                        onClick={() => setIsCreateServerModalOpen(true)}
-                        className="relative z-10 p-16 border-2 border-dashed border-white/20 hover:border-story-gold/60 rounded-2xl bg-[#091322]/60 hover:bg-[#091322] text-center cursor-pointer transition-all space-y-4 group"
-                    >
-                        <div className="w-16 h-16 rounded-full bg-story-gold/10 border border-story-gold/30 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                    <div className="relative z-10 p-16 border-2 border-dashed border-white/20 rounded-2xl bg-[#091322]/60 text-center space-y-4">
+                        <div className="w-16 h-16 rounded-full bg-story-gold/10 border border-story-gold/30 flex items-center justify-center mx-auto">
                             <Plus className="w-8 h-8 text-story-gold" />
                         </div>
                         <div>
                             <h3 className="text-lg font-bold text-white">Список серверов пуст</h3>
                             <p className="text-xs text-gray-400 max-w-sm mx-auto mt-1">
-                                Нет ни одного настроенного сервера Minecraft. Нажмите сюда, чтобы создать ваш первый сервер.
+                                Нажмите кнопку ниже, чтобы создать и настроить ваш сервер Minecraft.
                             </p>
                         </div>
                         <button
@@ -372,16 +387,16 @@ const MinecraftServerTab: React.FC = () => {
                                 e.stopPropagation();
                                 setIsCreateServerModalOpen(true);
                             }}
-                            className="relative z-20 px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs shadow-md hover:bg-story-gold-light transition-all cursor-pointer"
+                            className="relative z-20 px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs shadow-md hover:bg-story-gold-light transition-all cursor-pointer inline-flex items-center gap-2"
                         >
-                            + Создать первый сервер
+                            <Plus className="w-4 h-4" /> Создать первый сервер
                         </button>
                     </div>
                 ) : (
-                    /* Pterodactyl Servers Grid (Tiles) */
+                    /* Servers Grid (Tiles) */
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {servers.map((srv) => (
-                            <div
+                            <div 
                                 key={srv.id}
                                 onClick={() => setSelectedServerId(srv.id)}
                                 className="p-6 rounded-2xl bg-[#091322] border border-white/10 hover:border-story-gold/50 shadow-2xl transition-all hover:scale-[1.01] cursor-pointer space-y-5 flex flex-col justify-between group"
@@ -393,14 +408,15 @@ const MinecraftServerTab: React.FC = () => {
                                             <h3 className="text-base font-bold text-white group-hover:text-story-gold transition-colors">{srv.name}</h3>
                                             <p className="text-xs font-mono text-gray-400">Порт: :{srv.port} • RAM: {srv.memory}</p>
                                         </div>
-
+                                        
                                         <div className="flex items-center gap-2">
                                             <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-500/20 text-green-400 border border-green-500/30">
                                                 АКТИВЕН
                                             </span>
                                             <button
+                                                type="button"
                                                 onClick={(e) => handleDeleteServer(srv.id, e)}
-                                                className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                                                 title="Удалить сервер"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -426,31 +442,35 @@ const MinecraftServerTab: React.FC = () => {
                                 <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-2">
                                     <div className="flex items-center gap-1">
                                         <button
+                                            type="button"
                                             onClick={(e) => handlePowerAction('start', srv.id, e)}
-                                            className="p-2 bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white rounded-lg transition-all"
+                                            className="p-2 bg-green-600/20 hover:bg-green-600 text-green-400 hover:text-white rounded-lg transition-all cursor-pointer"
                                             title="Запустить"
                                         >
                                             <Play className="w-4 h-4" />
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={(e) => handlePowerAction('restart', srv.id, e)}
-                                            className="p-2 bg-yellow-600/20 hover:bg-yellow-600 text-yellow-400 hover:text-white rounded-lg transition-all"
+                                            className="p-2 bg-yellow-600/20 hover:bg-yellow-600 text-yellow-400 hover:text-white rounded-lg transition-all cursor-pointer"
                                             title="Перезапустить"
                                         >
                                             <RotateCw className="w-4 h-4" />
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={(e) => handlePowerAction('stop', srv.id, e)}
-                                            className="p-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-all"
+                                            className="p-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-all cursor-pointer"
                                             title="Остановить"
                                         >
                                             <Square className="w-4 h-4" />
                                         </button>
                                     </div>
 
-                                    <button
+                                    <button 
+                                        type="button"
                                         onClick={() => setSelectedServerId(srv.id)}
-                                        className="px-4 py-2 bg-white/10 hover:bg-story-gold text-white hover:text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
+                                        className="px-4 py-2 bg-white/10 hover:bg-story-gold text-white hover:text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
                                     >
                                         Управление <ChevronRight className="w-4 h-4" />
                                     </button>
@@ -459,7 +479,7 @@ const MinecraftServerTab: React.FC = () => {
                         ))}
 
                         {/* Add Server Card Tile */}
-                        <div
+                        <div 
                             onClick={() => setIsCreateServerModalOpen(true)}
                             className="p-6 rounded-2xl border-2 border-dashed border-white/15 hover:border-story-gold/60 bg-[#091322]/40 hover:bg-[#091322] transition-all cursor-pointer flex flex-col items-center justify-center text-center space-y-3 min-h-[220px] group"
                         >
@@ -479,12 +499,13 @@ const MinecraftServerTab: React.FC = () => {
 
     // LEVEL 2: DETAILED SERVER MANAGEMENT DASHBOARD (Console, Files, Players, Extended Settings)
     return (
-        <div className="relative z-10 space-y-6 w-full animate-fadeIn">
+        <div className="space-y-6 w-full animate-fadeIn">
             {/* Top Navigation Bar back to Servers List */}
             <div className="flex items-center justify-between">
                 <button
+                    type="button"
                     onClick={() => setSelectedServerId(null)}
-                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2"
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-2 cursor-pointer"
                 >
                     <ArrowLeft className="w-4 h-4" /> ← К списку серверов
                 </button>
@@ -505,8 +526,8 @@ const MinecraftServerTab: React.FC = () => {
                             <div className="flex items-center gap-3">
                                 <h2 className="text-lg font-bold text-white">{currentServer?.name}</h2>
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
-                                    isOnline
-                                        ? 'bg-green-600 text-white border-green-500'
+                                    isOnline 
+                                        ? 'bg-green-600 text-white border-green-500' 
                                         : 'bg-red-600 text-white border-red-500'
                                 }`}>
                                     {isOnline ? 'ОНЛАЙН' : 'ВЫКЛЮЧЕН'}
@@ -521,32 +542,36 @@ const MinecraftServerTab: React.FC = () => {
                     {/* Server Power Control Buttons */}
                     <div className="flex items-center gap-2">
                         <button
+                            type="button"
                             onClick={() => handlePowerAction('start')}
                             disabled={isOnline}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                            className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                             <Play className="w-3.5 h-3.5" /> Запустить
                         </button>
 
                         <button
+                            type="button"
                             onClick={() => handlePowerAction('restart')}
                             disabled={!isOnline}
-                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                             <RotateCw className="w-3.5 h-3.5" /> Перезапустить
                         </button>
 
                         <button
+                            type="button"
                             onClick={() => handlePowerAction('stop')}
                             disabled={!isOnline}
-                            className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                            className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                             <Square className="w-3.5 h-3.5" /> Остановить
                         </button>
 
                         <button
+                            type="button"
                             onClick={() => handlePowerAction('kill')}
-                            className="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                            className="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                             title="Принудительно выключить контейнер"
                         >
                             <Zap className="w-3.5 h-3.5" /> Выключить
@@ -598,11 +623,12 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
             </div>
 
-            {/* PTERODACTYL SUB-TABS NAVIGATION */}
+            {/* SUB-TABS NAVIGATION */}
             <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3 text-xs font-bold">
                 <button
+                    type="button"
                     onClick={() => { setActiveSubTab('console'); setEditingFile(null); }}
-                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                         activeSubTab === 'console' ? 'bg-story-gold text-black shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'
                     }`}
                 >
@@ -610,8 +636,9 @@ const MinecraftServerTab: React.FC = () => {
                 </button>
 
                 <button
+                    type="button"
                     onClick={() => { setActiveSubTab('files'); setEditingFile(null); }}
-                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                         activeSubTab === 'files' ? 'bg-story-gold text-black shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'
                     }`}
                 >
@@ -619,8 +646,9 @@ const MinecraftServerTab: React.FC = () => {
                 </button>
 
                 <button
+                    type="button"
                     onClick={() => { setActiveSubTab('players'); setEditingFile(null); }}
-                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                         activeSubTab === 'players' ? 'bg-story-gold text-black shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'
                     }`}
                 >
@@ -628,12 +656,13 @@ const MinecraftServerTab: React.FC = () => {
                 </button>
 
                 <button
+                    type="button"
                     onClick={() => { setActiveSubTab('settings'); setEditingFile(null); }}
-                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
+                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer ${
                         activeSubTab === 'settings' ? 'bg-story-gold text-black shadow-md' : 'bg-white/5 text-gray-300 hover:bg-white/10'
                     }`}
                 >
-                    <SettingsIcon className="w-4 h-4" /> Конфигурация Pterodactyl & RCON
+                    <SettingsIcon className="w-4 h-4" /> Конфигурация & RCON
                 </button>
             </div>
 
@@ -656,15 +685,16 @@ const MinecraftServerTab: React.FC = () => {
                                 Авто-скролл
                             </label>
                             <button
+                                type="button"
                                 onClick={fetchLogs}
-                                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center gap-1 font-mono text-[11px]"
+                                className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors flex items-center gap-1 font-mono text-[11px] cursor-pointer"
                             >
                                 <RefreshCw className="w-3 h-3" /> Обновить
                             </button>
                         </div>
                     </div>
 
-                    <div
+                    <div 
                         ref={terminalContainerRef}
                         className="bg-black/90 p-4 rounded-xl font-mono text-xs text-green-400 h-[450px] overflow-y-auto space-y-1.5 border border-white/10 shadow-inner select-text"
                     >
@@ -673,8 +703,8 @@ const MinecraftServerTab: React.FC = () => {
                                 <span className="text-gray-500 mr-2">[{idx + 1}]</span>
                                 <span className={
                                     line.includes('ERROR') || line.includes('WARN') ? 'text-red-400 font-bold' :
-                                        line.includes('>') ? 'text-yellow-300 font-bold' :
-                                            line.includes('joined') || line.includes('left') ? 'text-blue-300' : 'text-gray-200'
+                                    line.includes('>') ? 'text-yellow-300 font-bold' :
+                                    line.includes('joined') || line.includes('left') ? 'text-blue-300' : 'text-gray-200'
                                 }>
                                     {line}
                                 </span>
@@ -696,7 +726,7 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                         <button
                             type="submit"
-                            className="px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all flex items-center gap-2 shrink-0 shadow-md"
+                            className="px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all flex items-center gap-2 shrink-0 shadow-md cursor-pointer"
                         >
                             <Send className="w-4 h-4" /> Отправить
                         </button>
@@ -712,8 +742,9 @@ const MinecraftServerTab: React.FC = () => {
                             <div className="flex items-center justify-between border-b border-white/10 pb-4">
                                 <div className="flex items-center gap-3">
                                     <button
+                                        type="button"
                                         onClick={() => setEditingFile(null)}
-                                        className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors"
+                                        className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors cursor-pointer"
                                         title="Назад к файлам"
                                     >
                                         <ArrowLeft className="w-4 h-4" />
@@ -728,16 +759,18 @@ const MinecraftServerTab: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
+                                        type="button"
                                         onClick={handleSaveEditingFile}
                                         disabled={isSavingFile}
-                                        className="px-5 py-2 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all flex items-center gap-2 shadow-md"
+                                        className="px-5 py-2 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all flex items-center gap-2 shadow-md cursor-pointer"
                                     >
                                         <CheckCircle2 className="w-4 h-4" />
                                         {isSavingFile ? 'Сохранение...' : 'Сохранить файл'}
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() => setEditingFile(null)}
-                                        className="p-2 text-gray-400 hover:text-white"
+                                        className="p-2 text-gray-400 hover:text-white cursor-pointer"
                                     >
                                         <X className="w-5 h-5" />
                                     </button>
@@ -755,8 +788,9 @@ const MinecraftServerTab: React.FC = () => {
                             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
                                 <div className="flex items-center gap-2 text-xs font-mono text-gray-300">
                                     <button
+                                        type="button"
                                         onClick={() => loadFiles('')}
-                                        className="hover:text-story-gold font-bold flex items-center gap-1"
+                                        className="hover:text-story-gold font-bold flex items-center gap-1 cursor-pointer"
                                     >
                                         /data
                                     </button>
@@ -766,8 +800,9 @@ const MinecraftServerTab: React.FC = () => {
                                             <React.Fragment key={subPath}>
                                                 <ChevronRight className="w-3 h-3 text-gray-500" />
                                                 <button
+                                                    type="button"
                                                     onClick={() => loadFiles(subPath)}
-                                                    className="hover:text-story-gold font-bold"
+                                                    className="hover:text-story-gold font-bold cursor-pointer"
                                                 >
                                                     {part}
                                                 </button>
@@ -810,15 +845,17 @@ const MinecraftServerTab: React.FC = () => {
 
                                             {fileItem.isDir ? (
                                                 <button
+                                                    type="button"
                                                     onClick={() => loadFiles(fileItem.relativePath)}
-                                                    className="font-bold hover:text-story-gold text-left truncate"
+                                                    className="font-bold hover:text-story-gold text-left truncate cursor-pointer"
                                                 >
                                                     {fileItem.name}
                                                 </button>
                                             ) : (
                                                 <button
+                                                    type="button"
                                                     onClick={() => handleOpenFile(fileItem.relativePath)}
-                                                    className="hover:text-blue-300 font-mono text-left truncate"
+                                                    className="hover:text-blue-300 font-mono text-left truncate cursor-pointer"
                                                 >
                                                     {fileItem.name}
                                                 </button>
@@ -832,15 +869,17 @@ const MinecraftServerTab: React.FC = () => {
                                         <div className="col-span-3 flex items-center justify-end gap-2">
                                             {!fileItem.isDir && (
                                                 <button
+                                                    type="button"
                                                     onClick={() => handleOpenFile(fileItem.relativePath)}
-                                                    className="px-2.5 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 rounded-lg font-bold text-[11px]"
+                                                    className="px-2.5 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 rounded-lg font-bold text-[11px] cursor-pointer"
                                                 >
                                                     Редактировать
                                                 </button>
                                             )}
                                             <button
+                                                type="button"
                                                 onClick={() => handleDeleteContainerFile(fileItem.relativePath)}
-                                                className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                className="p-1.5 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors cursor-pointer"
                                                 title="Удалить файл"
                                             >
                                                 <Trash2 className="w-3.5 h-3.5" />
@@ -882,22 +921,24 @@ const MinecraftServerTab: React.FC = () => {
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <button
+                                            type="button"
                                             onClick={async () => {
                                                 await minecraftApi.sendCommand(`op ${player.name}`);
                                                 showNotification(`Выданы права OP игроку ${player.name}`, 'success');
                                             }}
-                                            className="px-2.5 py-1 bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 rounded-lg text-xs font-bold border border-yellow-500/30"
+                                            className="px-2.5 py-1 bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30 rounded-lg text-xs font-bold border border-yellow-500/30 cursor-pointer"
                                         >
                                             OP
                                         </button>
                                         <button
+                                            type="button"
                                             onClick={async () => {
                                                 await minecraftApi.sendCommand(`kick ${player.name}`);
                                                 showNotification(`Игрок ${player.name} кикнут`, 'info');
                                                 const updated = await minecraftApi.getPlayers();
                                                 setPlayers(updated);
                                             }}
-                                            className="px-2.5 py-1 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded-lg text-xs font-bold border border-red-500/30"
+                                            className="px-2.5 py-1 bg-red-500/20 text-red-300 hover:bg-red-500/30 rounded-lg text-xs font-bold border border-red-500/30 cursor-pointer"
                                         >
                                             Кик
                                         </button>
@@ -909,25 +950,26 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
             )}
 
-            {/* SUB-TAB 4: PTERODACTYL ENGINE, LIMITS & RCON CONFIGURATION */}
+            {/* SUB-TAB 4: ENGINE, LIMITS & RCON CONFIGURATION */}
             {activeSubTab === 'settings' && (
                 <div className="bg-[#091322] border border-white/10 rounded-2xl p-6 shadow-2xl space-y-6">
                     <div className="flex items-center justify-between border-b border-white/10 pb-4">
                         <div>
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
                                 <SettingsIcon className="w-5 h-5 text-story-gold" />
-                                Полная конфигурация Pterodactyl & RCON
+                                Полная конфигурация сервера & RCON
                             </h3>
-                            <p className="text-xs text-gray-400 mt-1">Лимиты ресурсов (RAM, CPU, Swap, Disk), версия Java, EULA, MOTD и параметры подключения</p>
+                            <p className="text-xs text-gray-400 mt-1">Лимиты ресурсов (RAM, CPU, Swap, Disk), версия Java, MOTD и параметры RCON</p>
                         </div>
 
                         <button
+                            type="button"
                             onClick={handleSaveServerSettings}
                             disabled={isSavingSettings}
-                            className="px-5 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all shadow-md flex items-center gap-2"
+                            className="px-5 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs hover:bg-story-gold-light transition-all shadow-md flex items-center gap-2 cursor-pointer"
                         >
                             <CheckCircle2 className="w-4 h-4" />
-                            {isSavingSettings ? 'Сохранение...' : 'Сохранить настройки Pterodactyl'}
+                            {isSavingSettings ? 'Сохранение...' : 'Сохранить настройки'}
                         </button>
                     </div>
 
@@ -985,7 +1027,7 @@ const MinecraftServerTab: React.FC = () => {
                         {/* Section 2: Resource Limits & Java Container Settings */}
                         <div className="space-y-4 bg-white/5 p-5 rounded-xl border border-white/10">
                             <h4 className="text-sm font-bold text-story-gold flex items-center gap-2">
-                                <Cpu className="w-4 h-4" /> Лимиты ресурсов Pterodactyl и Java Runtime
+                                <Cpu className="w-4 h-4" /> Лимиты ресурсов и Java Runtime
                             </h4>
 
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -1152,16 +1194,20 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
             )}
 
-            {/* CREATE NEW SERVER MODAL WITH FULL PTERODACTYL FIELDS */}
+            {/* CREATE NEW SERVER MODAL */}
             {isCreateServerModalOpen && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-[#091322] border border-story-gold/40 rounded-2xl p-6 w-full max-w-xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+                    <div className="bg-[#091322] border border-story-gold/40 rounded-2xl p-6 w-full max-w-xl shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto relative z-[10000]">
                         <div className="flex items-center justify-between border-b border-white/10 pb-4">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
                                 <Plus className="w-5 h-5 text-story-gold" />
-                                Настройка нового сервера Minecraft (Pterodactyl)
+                                Настройка нового сервера Minecraft
                             </h3>
-                            <button onClick={() => setIsCreateServerModalOpen(false)} className="text-gray-400 hover:text-white">
+                            <button 
+                                type="button" 
+                                onClick={() => setIsCreateServerModalOpen(false)} 
+                                className="text-gray-400 hover:text-white cursor-pointer"
+                            >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
@@ -1279,13 +1325,13 @@ const MinecraftServerTab: React.FC = () => {
                                 <button
                                     type="button"
                                     onClick={() => setIsCreateServerModalOpen(false)}
-                                    className="px-4 py-2 bg-white/10 text-gray-300 rounded-xl font-bold hover:bg-white/20"
+                                    className="px-4 py-2 bg-white/10 text-gray-300 rounded-xl font-bold hover:bg-white/20 cursor-pointer"
                                 >
                                     Отмена
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-5 py-2 bg-story-gold text-black rounded-xl font-bold hover:bg-story-gold-light shadow-md"
+                                    className="px-5 py-2 bg-story-gold text-black rounded-xl font-bold hover:bg-story-gold-light shadow-md cursor-pointer"
                                 >
                                     Создать сервер
                                 </button>
