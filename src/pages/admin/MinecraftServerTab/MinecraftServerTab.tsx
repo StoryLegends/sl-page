@@ -1,27 +1,27 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { 
-    Play, Square, RotateCw, Zap, Terminal, Cpu, HardDrive, Users, Activity, 
+import {
+    Play, Square, RotateCw, Zap, Terminal, Cpu, HardDrive, Users, Activity,
     Upload, Package, Server, Send, RefreshCw, CheckCircle2, Settings as SettingsIcon,
     Folder, FileText, FileCode, Plus, ChevronRight, ArrowLeft, Trash2, X, Key, Globe
 } from 'lucide-react';
-import { 
-    minecraftApi, 
-    type MinecraftStatus, 
-    type MinecraftPlayer, 
-    type MinecraftServerInfo, 
-    type ContainerFileItem 
+import {
+    minecraftApi,
+    type MinecraftStatus,
+    type MinecraftPlayer,
+    type MinecraftServerInfo,
+    type ContainerFileItem
 } from '../../../api/minecraft';
 import { useNotification } from '../../../context/NotificationContext';
 
 const MinecraftServerTab: React.FC = () => {
     const { showNotification } = useNotification();
-    
+
     // Pterodactyl Server Selector State (null = Servers List View)
     const [servers, setServers] = useState<MinecraftServerInfo[]>([]);
     const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
     const [status, setStatus] = useState<MinecraftStatus | null>(null);
     const [isCreateServerModalOpen, setIsCreateServerModalOpen] = useState(false);
-    
+
     // New Server Form State
     const [newServerForm, setNewServerForm] = useState({
         name: '',
@@ -332,7 +332,7 @@ const MinecraftServerTab: React.FC = () => {
     // LEVEL 1: PTERODACTYL SERVERS GRID / TILES OVERVIEW (When no server selected)
     if (!selectedServerId) {
         return (
-            <div className="space-y-6 w-full animate-fadeIn relative z-10">
+            <div className="relative z-10 space-y-6 w-full animate-fadeIn">
                 {/* Header Title Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-4 p-6 rounded-2xl bg-[#091322] border border-white/10 shadow-2xl">
                     <div>
@@ -352,11 +352,10 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
 
                 {/* Empty State when zero servers configured */}
-                {/* Empty State */}
                 {servers.length === 0 ? (
                     <div
                         onClick={() => setIsCreateServerModalOpen(true)}
-                        className="p-16 border-2 border-dashed border-white/20 hover:border-story-gold/60 rounded-2xl bg-[#091322]/60 hover:bg-[#091322] text-center cursor-pointer transition-all space-y-4 group relative z-10"
+                        className="relative z-10 p-16 border-2 border-dashed border-white/20 hover:border-story-gold/60 rounded-2xl bg-[#091322]/60 hover:bg-[#091322] text-center cursor-pointer transition-all space-y-4 group"
                     >
                         <div className="w-16 h-16 rounded-full bg-story-gold/10 border border-story-gold/30 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
                             <Plus className="w-8 h-8 text-story-gold" />
@@ -373,7 +372,7 @@ const MinecraftServerTab: React.FC = () => {
                                 e.stopPropagation();
                                 setIsCreateServerModalOpen(true);
                             }}
-                            className="px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs shadow-md hover:bg-story-gold-light transition-all cursor-pointer relative z-20"
+                            className="relative z-20 px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs shadow-md hover:bg-story-gold-light transition-all cursor-pointer"
                         >
                             + Создать первый сервер
                         </button>
@@ -382,7 +381,7 @@ const MinecraftServerTab: React.FC = () => {
                     /* Pterodactyl Servers Grid (Tiles) */
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {servers.map((srv) => (
-                            <div 
+                            <div
                                 key={srv.id}
                                 onClick={() => setSelectedServerId(srv.id)}
                                 className="p-6 rounded-2xl bg-[#091322] border border-white/10 hover:border-story-gold/50 shadow-2xl transition-all hover:scale-[1.01] cursor-pointer space-y-5 flex flex-col justify-between group"
@@ -394,7 +393,7 @@ const MinecraftServerTab: React.FC = () => {
                                             <h3 className="text-base font-bold text-white group-hover:text-story-gold transition-colors">{srv.name}</h3>
                                             <p className="text-xs font-mono text-gray-400">Порт: :{srv.port} • RAM: {srv.memory}</p>
                                         </div>
-                                        
+
                                         <div className="flex items-center gap-2">
                                             <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-500/20 text-green-400 border border-green-500/30">
                                                 АКТИВЕН
@@ -449,7 +448,7 @@ const MinecraftServerTab: React.FC = () => {
                                         </button>
                                     </div>
 
-                                    <button 
+                                    <button
                                         onClick={() => setSelectedServerId(srv.id)}
                                         className="px-4 py-2 bg-white/10 hover:bg-story-gold text-white hover:text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
                                     >
@@ -460,7 +459,7 @@ const MinecraftServerTab: React.FC = () => {
                         ))}
 
                         {/* Add Server Card Tile */}
-                        <div 
+                        <div
                             onClick={() => setIsCreateServerModalOpen(true)}
                             className="p-6 rounded-2xl border-2 border-dashed border-white/15 hover:border-story-gold/60 bg-[#091322]/40 hover:bg-[#091322] transition-all cursor-pointer flex flex-col items-center justify-center text-center space-y-3 min-h-[220px] group"
                         >
@@ -480,7 +479,7 @@ const MinecraftServerTab: React.FC = () => {
 
     // LEVEL 2: DETAILED SERVER MANAGEMENT DASHBOARD (Console, Files, Players, Extended Settings)
     return (
-        <div className="space-y-6 w-full animate-fadeIn">
+        <div className="relative z-10 space-y-6 w-full animate-fadeIn">
             {/* Top Navigation Bar back to Servers List */}
             <div className="flex items-center justify-between">
                 <button
@@ -506,8 +505,8 @@ const MinecraftServerTab: React.FC = () => {
                             <div className="flex items-center gap-3">
                                 <h2 className="text-lg font-bold text-white">{currentServer?.name}</h2>
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
-                                    isOnline 
-                                        ? 'bg-green-600 text-white border-green-500' 
+                                    isOnline
+                                        ? 'bg-green-600 text-white border-green-500'
                                         : 'bg-red-600 text-white border-red-500'
                                 }`}>
                                     {isOnline ? 'ОНЛАЙН' : 'ВЫКЛЮЧЕН'}
@@ -665,7 +664,7 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                     </div>
 
-                    <div 
+                    <div
                         ref={terminalContainerRef}
                         className="bg-black/90 p-4 rounded-xl font-mono text-xs text-green-400 h-[450px] overflow-y-auto space-y-1.5 border border-white/10 shadow-inner select-text"
                     >
@@ -674,8 +673,8 @@ const MinecraftServerTab: React.FC = () => {
                                 <span className="text-gray-500 mr-2">[{idx + 1}]</span>
                                 <span className={
                                     line.includes('ERROR') || line.includes('WARN') ? 'text-red-400 font-bold' :
-                                    line.includes('>') ? 'text-yellow-300 font-bold' :
-                                    line.includes('joined') || line.includes('left') ? 'text-blue-300' : 'text-gray-200'
+                                        line.includes('>') ? 'text-yellow-300 font-bold' :
+                                            line.includes('joined') || line.includes('left') ? 'text-blue-300' : 'text-gray-200'
                                 }>
                                     {line}
                                 </span>
