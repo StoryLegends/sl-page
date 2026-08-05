@@ -28,7 +28,7 @@ public class EmailService {
     @Value("${mailgun.base-url:https://api.mailgun.net}")
     private String baseUrl;
 
-    @Value("${frontend.url}")
+    @Value("${frontend.url:${app.frontend-url:https://test.storylegends.xyz}}")
     private String frontendUrl;
 
     @Value("${app.email.enabled:true}")
