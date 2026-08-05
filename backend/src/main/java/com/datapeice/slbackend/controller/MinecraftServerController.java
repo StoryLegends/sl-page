@@ -39,34 +39,7 @@ public class MinecraftServerController {
     public MinecraftServerController(RconService rconService, FileStorageService fileStorageService) {
         this.rconService = rconService;
         this.fileStorageService = fileStorageService;
-        ensureDefaultServerExists();
-    }
-
-    private synchronized void ensureDefaultServerExists() {
-        if (registeredServers.isEmpty()) {
-            Map<String, Object> server1 = new HashMap<>();
-            server1.put("id", "server-1");
-            server1.put("name", "Основной Сервер #1 (StoryLegends)");
-            server1.put("containerName", "sl-minecraft-server");
-            server1.put("version", "1.20.4");
-            server1.put("type", "PAPER");
-            server1.put("port", 25565);
-            server1.put("memory", "4G");
-            server1.put("javaVersion", "JAVA_21");
-            server1.put("cpuLimit", 100);
-            server1.put("swapMemory", "1024M");
-            server1.put("diskSpace", "25G");
-            server1.put("motd", "§6§lStoryLegends §7- §fLegendary Minecraft Experience");
-            server1.put("onlineMode", false);
-            server1.put("maxPlayers", 50);
-            server1.put("autoRestart", "always");
-            server1.put("path", "./docker/minecraft_data");
-            server1.put("rconIp", "202.181.188.45");
-            server1.put("rconPort", 25826);
-            server1.put("rconPassword", "SLdISRA2f8uu22qhyLOH17");
-            server1.put("rconEnabled", true);
-            registeredServers.add(server1);
-        }
+        // Start with empty server list (servers are added via UI or persistency)
     }
 
     /**
@@ -74,7 +47,6 @@ public class MinecraftServerController {
      */
     @GetMapping("/servers")
     public ResponseEntity<List<Map<String, Object>>> getServers() {
-        ensureDefaultServerExists();
         return ResponseEntity.ok(registeredServers);
     }
 
@@ -206,7 +178,23 @@ public class MinecraftServerController {
      */
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus(@RequestParam(defaultValue = "server-1") String serverId) {
-        ensureDefaultServerExists();
+        if (registeredServers.isEmpty()) {
+            Map<String, Object> emptyResp = new HashMap<>();
+            emptyResp.put("serverId", serverId);
+            emptyResp.put("serverName", "—");
+            emptyResp.put("status", "OFFLINE");
+            emptyResp.put("containerName", "none");
+            emptyResp.put("version", "—");
+            emptyResp.put("motd", "—");
+            emptyResp.put("tps", 0.0);
+            emptyResp.put("onlinePlayers", 0);
+            emptyResp.put("maxPlayers", 50);
+            emptyResp.put("memoryUsedMb", 0);
+            emptyResp.put("memoryMaxMb", 4096);
+            emptyResp.put("cpuUsagePercent", 0.0);
+            return ResponseEntity.ok(emptyResp);
+        }
+
         Map<String, Object> serverInfo = registeredServers.stream()
                 .filter(s -> serverId.equals(s.get("id")))
                 .findFirst()
@@ -268,7 +256,7 @@ public class MinecraftServerController {
         Map<String, Object> serverInfo = registeredServers.stream()
                 .filter(s -> serverId.equals(s.get("id")))
                 .findFirst()
-                .orElse(registeredServers.get(0));
+                .orElse(registeredServers.isEmpty() ? Map.of("containerName", defaultContainerName) : registeredServers.get(0));
 
         String cName = (String) serverInfo.get("containerName");
 
