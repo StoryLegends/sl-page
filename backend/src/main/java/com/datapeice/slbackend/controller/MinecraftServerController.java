@@ -53,14 +53,22 @@ public class MinecraftServerController {
     }
 
     /**
-     * Delete a Minecraft server configuration
+     * Delete a Minecraft server configuration and stop its node container
      */
     @DeleteMapping("/servers/{id}")
     public ResponseEntity<Map<String, Object>> deleteServer(@PathVariable String id) {
-        boolean removed = registeredServers.removeIf(s -> id.equals(s.get("id")));
-        if (removed) {
-            logger.info("Deleted Minecraft server ID={}", id);
-            return ResponseEntity.ok(Map.of("message", "Сервер успешно удален из списка!"));
+        Optional<Map<String, Object>> target = registeredServers.stream()
+                .filter(s -> id.equals(s.get("id")))
+                .findFirst();
+
+        if (target.isPresent()) {
+            Map<String, Object> serverInfo = target.get();
+            String cName = String.valueOf(serverInfo.getOrDefault("containerName", "sl-minecraft-server-" + id));
+            executeDockerCommandWithOutput("docker stop -t 5 " + cName);
+            executeDockerCommandWithOutput("docker rm -f " + cName);
+            registeredServers.remove(serverInfo);
+            logger.info("Deleted Minecraft server ID={}, container={}", id, cName);
+            return ResponseEntity.ok(Map.of("message", "Сервер и его контейнер успешно удалены!"));
         }
         return ResponseEntity.badRequest().body(Map.of("error", "Сервер не найден"));
     }
@@ -265,9 +273,32 @@ public class MinecraftServerController {
 
         switch (action) {
             case "start":
-                execOutput = executeDockerCommandWithOutput("docker start " + cName);
-                result.put("message", "Контейнер " + cName + " успешно запущен! Ожидание инициализации сервера...");
-                result.put("status", "STARTING");
+                String inspectCheck = executeDockerCommandWithOutput("docker inspect -f '{{.State.Status}}' " + cName);
+                if ("running".equalsIgnoreCase(inspectCheck.trim())) {
+                    result.put("message", "Сервер " + cName + " уже запущен и работает!");
+                    result.put("status", "ONLINE");
+                } else if (!inspectCheck.isBlank() && !"running".equalsIgnoreCase(inspectCheck.trim())) {
+                    execOutput = executeDockerCommandWithOutput("docker start " + cName);
+                    result.put("message", "Нода сервера " + cName + " успешно запущена!");
+                    result.put("status", "STARTING");
+                } else {
+                    // Create and start container dynamically on demand
+                    String port = String.valueOf(serverInfo.getOrDefault("port", "25565"));
+                    String rconPort = String.valueOf(serverInfo.getOrDefault("rconPort", "25575"));
+                    String type = String.valueOf(serverInfo.getOrDefault("type", "PAPER")).toUpperCase();
+                    String version = String.valueOf(serverInfo.getOrDefault("version", "1.20.4"));
+                    String memory = String.valueOf(serverInfo.getOrDefault("memory", "4G"));
+                    String rconPassword = String.valueOf(serverInfo.getOrDefault("rconPassword", "storylegends_rcon_pass"));
+                    String nodeVolume = "minecraft_node_data_" + serverId;
+
+                    String runCmd = String.format(
+                        "docker run -d --name %s -p %s:25565 -p %s:25575 -e EULA=TRUE -e TYPE=%s -e VERSION=%s -e MEMORY=%s -e RCON_PORT=25575 -e RCON_PASSWORD=%s -v %s:/data itzg/minecraft-server:latest",
+                        cName, port, rconPort, type, version, memory, rconPassword, nodeVolume
+                    );
+                    execOutput = executeDockerCommandWithOutput(runCmd);
+                    result.put("message", "Изолированный контейнер для " + cName + " создан и запущен!");
+                    result.put("status", "STARTING");
+                }
                 break;
             case "stop":
                 rconService.sendCommandAndGetResponse("stop");
