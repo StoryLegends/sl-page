@@ -75,6 +75,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/d34gj8i1b0knkt
       SPRING_DATASOURCE_USERNAME: ud8op8v4fm53g1
       SPRING_DATASOURCE_PASSWORD: p7bb7ef0c3df8a6e9031249215b1ed754f5c44d99d8f256bba9ad5645bd861723
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:5174,http://localhost:8085,https://storylegends.xyz,https://www.storylegends.xyz,https://api.storylegends.xyz}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}

@@ -5,6 +5,7 @@ import com.datapeice.slbackend.security.MaintenanceFilter;
 import com.datapeice.slbackend.service.CustomUserDetailsService;
 import com.datapeice.slbackend.security.CustomAccessDeniedHandler;
 import com.datapeice.slbackend.security.CustomAuthenticationEntryPoint;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,39 +24,43 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
+
+        @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:5174,https://www.storylegends.xyz,https://storylegends.xyz}")
+        private String allowedOrigins;
+
+        private final CustomUserDetailsService userDetailsService;
         private final JwtRequestFilter jwtRequestFilter;
         private final MaintenanceFilter maintenanceFilter;
-        private final CustomUserDetailsService userDetailsService;
+        private final BCryptPasswordEncoder passwordEncoder;
         private final CustomAccessDeniedHandler customAccessDeniedHandler;
         private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-        SecurityConfig(JwtRequestFilter jwtRequestFilter,
+        public SecurityConfig(CustomUserDetailsService userDetailsService,
+                        JwtRequestFilter jwtRequestFilter,
                         MaintenanceFilter maintenanceFilter,
-                        CustomUserDetailsService userDetailsService,
+                        BCryptPasswordEncoder passwordEncoder,
                         CustomAccessDeniedHandler customAccessDeniedHandler,
                         CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+                this.userDetailsService = userDetailsService;
                 this.jwtRequestFilter = jwtRequestFilter;
                 this.maintenanceFilter = maintenanceFilter;
-                this.userDetailsService = userDetailsService;
+                this.passwordEncoder = passwordEncoder;
                 this.customAccessDeniedHandler = customAccessDeniedHandler;
                 this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
-        }
-
-        @Bean
-        public BCryptPasswordEncoder bCryptPasswordEncoder() {
-                return new BCryptPasswordEncoder();
         }
 
         @Bean
         public DaoAuthenticationProvider authenticationProvider() {
                 DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
                 authProvider.setUserDetailsService(userDetailsService);
-                authProvider.setPasswordEncoder(bCryptPasswordEncoder());
+                authProvider.setPasswordEncoder(passwordEncoder);
                 return authProvider;
         }
 
@@ -64,59 +69,21 @@ public class SecurityConfig {
                 http
                                 .csrf(csrf -> csrf.disable())
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                                .exceptionHandling(exceptionHandling -> exceptionHandling
-                                                .accessDeniedHandler(customAccessDeniedHandler)
-                                                .authenticationEntryPoint(customAuthenticationEntryPoint))
-                                .authenticationProvider(authenticationProvider()) // Explicitly set provider
-                                .sessionManagement(sessionManagement -> sessionManagement
+                                .exceptionHandling(exceptions -> exceptions
+                                                .authenticationEntryPoint(customAuthenticationEntryPoint)
+                                                .accessDeniedHandler(customAccessDeniedHandler))
+                                .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
-                                                // Discord OAuth2 callback - Discord redirects here without Origin
-                                                // header
-                                                .requestMatchers(HttpMethod.GET, "/api/auth/discord/callback")
-                                                .permitAll()
-                                                .requestMatchers(request -> request.getRequestURI()
-                                                                .startsWith("/api/auth/") &&
-                                                                request.getHeader("Origin") != null &&
-                                                                java.util.Arrays.asList(
-                                                                                "http://localhost:5173",
-                                                                                "https://www.storylegends.xyz",
-                                                                                "https://storylegends.xyz",
-                                                                                "https://test.storylegends.xyz")
-                                                                                .contains(request.getHeader("Origin")))
-                                                .permitAll()
-                                                .requestMatchers(request -> request.getMethod().equals("GET") &&
-                                                                request.getRequestURI().equals("/api/users") &&
-                                                                request.getHeader("Origin") != null &&
-                                                                java.util.Arrays.asList(
-                                                                                "http://localhost:5173",
-                                                                                "https://www.storylegends.xyz",
-                                                                                "https://storylegends.xyz",
-                                                                                "https://test.storylegends.xyz")
-                                                                                .contains(request.getHeader("Origin")))
-                                                .permitAll()
-                                                .requestMatchers(request -> request.getMethod().equals("GET") &&
-                                                                request.getRequestURI().startsWith("/api/pages/") &&
-                                                                request.getHeader("Origin") != null &&
-                                                                java.util.Arrays.asList(
-                                                                                "http://localhost:5173",
-                                                                                "https://www.storylegends.xyz",
-                                                                                "https://storylegends.xyz",
-                                                                                "https://test.storylegends.xyz")
-                                                                                .contains(request.getHeader("Origin")))
-                                                .permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/anticheat").permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/sponsorship/plans").permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/sponsorship/webhook").permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/sponsorship/session/**").permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/reviews/public").permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/reviews/history/**").permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/glorylist").permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/history/**").permitAll()
-                                                .requestMatchers("/uploads/**").permitAll()
-                                                .requestMatchers("/ws/**").permitAll()
-                                                .requestMatchers("/error").permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/settings/public").permitAll()
+                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                                .requestMatchers("/api/auth/**", "/api/auth/verify", "/api/history/**", "/api/seasons/**").permitAll()
+                                                .requestMatchers("/api/custom-pages/slug/**").permitAll()
+                                                .requestMatchers("/api/glorylist/**", "/api/reviews/public/**").permitAll()
+                                                .requestMatchers("/api/sponsorship-plans/public/**").permitAll()
+                                                .requestMatchers("/api/totp/verify", "/api/totp/qr").permitAll()
+                                                .requestMatchers("/api/anticheat/snapshot").permitAll()
+                                                .requestMatchers("/api/files/view/**").permitAll()
+                                                .requestMatchers("/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                                                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "MODERATOR")
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class)
@@ -128,8 +95,18 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
-                configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "https://www.storylegends.xyz",
-                                "https://storylegends.xyz", "https://test.storylegends.xyz"));
+
+                List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                                .map(String::trim)
+                                .filter(s -> !s.isEmpty())
+                                .collect(Collectors.toList());
+
+                if (origins.contains("*") || origins.isEmpty()) {
+                        configuration.addAllowedOriginPattern("*");
+                } else {
+                        configuration.setAllowedOrigins(origins);
+                }
+
                 configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
                 configuration.setAllowedHeaders(Arrays.asList("*"));
                 configuration.setAllowCredentials(true);
