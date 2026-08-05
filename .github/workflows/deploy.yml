@@ -10,6 +10,7 @@ jobs:
   deploy:
     name: Deploy StoryLegends Stack via SSH
     runs-on: ubuntu-latest
+    environment: prod
 
     steps:
       - name: Checkout Repository
@@ -18,10 +19,11 @@ jobs:
       - name: Execute Remote SSH Commands on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.VPS_HOST }} # e.g. 144.31.16.217
-          username: ${{ secrets.VPS_USER }} # e.g. datapeice
-          key: ${{ secrets.VPS_SSH_KEY }} # SSH Private Key
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd ~/dockers/sl-page
+            git checkout feature/docker-minecraft-panel || git checkout main
             git pull origin feature/docker-minecraft-panel || git pull origin main
             docker compose up -d --build
