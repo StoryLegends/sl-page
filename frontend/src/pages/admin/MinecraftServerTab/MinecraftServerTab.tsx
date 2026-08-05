@@ -244,7 +244,7 @@ const MinecraftServerTab: React.FC = () => {
             fetchStatus();
         } catch (err) {
             showNotification('Ошибка при сохранении настроек сервера.', 'error');
-        } fontally {
+        } finally {
             setIsSavingSettings(false);
         }
     };
