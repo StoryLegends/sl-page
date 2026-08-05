@@ -50,19 +50,11 @@ public class MinecraftServerController {
         server1.put("port", 25565);
         server1.put("memory", "4G");
         server1.put("path", "./docker/minecraft_data");
+        server1.put("rconIp", "202.181.188.45");
+        server1.put("rconPort", 25826);
+        server1.put("rconPassword", "SLdISRA2f8uu22qhyLOH17");
+        server1.put("rconEnabled", true);
         registeredServers.add(server1);
-
-        // Server #2 (Demo secondary server)
-        Map<String, Object> server2 = new HashMap<>();
-        server2.put("id", "server-2");
-        server2.put("name", "Анархия / Ивент Сервер #2");
-        server2.put("containerName", "sl-minecraft-server-2");
-        server2.put("version", "1.16.5");
-        server2.put("type", "PURPUR");
-        server2.put("port", 25566);
-        server2.put("memory", "2G");
-        server2.put("path", "./docker/minecraft_data_2");
-        registeredServers.add(server2);
     }
 
     /**
@@ -74,17 +66,28 @@ public class MinecraftServerController {
     }
 
     /**
-     * Create a new Minecraft server with chosen version (1.20.4, 1.19.4, 1.16.5, etc.) and engine
+     * Create a new Minecraft server with chosen version, engine, port, memory limits, and RCON
      */
     @PostMapping("/servers")
-    public ResponseEntity<Map<String, Object>> createServer(@RequestBody Map<String, String> body) {
-        String name = body.getOrDefault("name", "Новый Сервер").trim();
-        String version = body.getOrDefault("version", "1.20.4").trim();
-        String type = body.getOrDefault("type", "PAPER").toUpperCase().trim();
-        String memory = body.getOrDefault("memory", "4G").trim();
+    public ResponseEntity<Map<String, Object>> createServer(@RequestBody Map<String, Object> body) {
+        String name = String.valueOf(body.getOrDefault("name", "Новый Сервер")).trim();
+        String version = String.valueOf(body.getOrDefault("version", "1.20.4")).trim();
+        String type = String.valueOf(body.getOrDefault("type", "PAPER")).toUpperCase().trim();
+        String memory = String.valueOf(body.getOrDefault("memory", "4G")).trim();
+        
+        int port = 25565 + registeredServers.size();
+        if (body.containsKey("port") && body.get("port") != null) {
+            try { port = Integer.parseInt(String.valueOf(body.get("port"))); } catch (Exception e) {}
+        }
+
+        int rconPort = 25575 + registeredServers.size();
+        if (body.containsKey("rconPort") && body.get("rconPort") != null) {
+            try { rconPort = Integer.parseInt(String.valueOf(body.get("rconPort"))); } catch (Exception e) {}
+        }
+
+        String rconPassword = String.valueOf(body.getOrDefault("rconPassword", "storylegends_rcon_pass")).trim();
 
         String serverId = "server-" + (registeredServers.size() + 1);
-        int port = 25565 + registeredServers.size();
         String containerName = "sl-minecraft-server-" + (registeredServers.size() + 1);
         String path = "./docker/minecraft_data_" + (registeredServers.size() + 1);
 
@@ -97,12 +100,17 @@ public class MinecraftServerController {
         newServer.put("port", port);
         newServer.put("memory", memory);
         newServer.put("path", path);
+        newServer.put("rconIp", "localhost");
+        newServer.put("rconPort", rconPort);
+        newServer.put("rconPassword", rconPassword);
+        newServer.put("rconEnabled", true);
 
         registeredServers.add(newServer);
-        logger.info("New Minecraft server created: ID={}, Name={}, Version={}, Type={}", serverId, name, version, type);
+        logger.info("New Minecraft server created: ID={}, Name={}, Version={}, Type={}, Port={}, Memory={}", 
+                serverId, name, version, type, port, memory);
 
         return ResponseEntity.ok(Map.of(
-            "message", "Сервер " + name + " (Paper/Purpur " + version + ") успешно создан!",
+            "message", "Сервер " + name + " (" + type + " " + version + ", RAM: " + memory + ", Port: " + port + ") успешно создан!",
             "server", newServer
         ));
     }

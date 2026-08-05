@@ -49,7 +49,15 @@ export const minecraftApi = {
         const res = await apiClient.get('/api/admin/minecraft/servers');
         return res.data;
     },
-    createServer: async (data: { name: string; version: string; type: string; memory: string }) => {
+    createServer: async (data: { 
+        name: string; 
+        version: string; 
+        type: string; 
+        memory: string;
+        port?: number;
+        rconPort?: number;
+        rconPassword?: string;
+    }) => {
         const res = await apiClient.post('/api/admin/minecraft/servers', data);
         return res.data;
     },

@@ -25,7 +25,10 @@ const MinecraftServerTab: React.FC = () => {
         name: '',
         version: '1.20.4',
         type: 'PAPER',
-        memory: '4G'
+        memory: '4G',
+        port: 25566,
+        rconPort: 25576,
+        rconPassword: 'storylegends_rcon_pass'
     });
 
     const [activeSubTab, setActiveSubTab] = useState<'console' | 'files' | 'players' | 'settings'>('console');
@@ -35,6 +38,7 @@ const MinecraftServerTab: React.FC = () => {
     const [command, setCommand] = useState('');
     const [autoScroll, setAutoScroll] = useState(true);
     const terminalEndRef = useRef<HTMLDivElement>(null);
+    const terminalContainerRef = useRef<HTMLDivElement>(null);
 
     // Container File Manager state
     const [currentPath, setCurrentPath] = useState('');
@@ -74,6 +78,7 @@ const MinecraftServerTab: React.FC = () => {
 
     // Refresh server status
     const fetchStatus = async () => {
+        if (!selectedServerId) return;
         try {
             const data = await minecraftApi.getStatus(selectedServerId);
             setStatus(data);
@@ -82,6 +87,7 @@ const MinecraftServerTab: React.FC = () => {
 
     // Refresh console logs
     const fetchLogs = async () => {
+        if (!selectedServerId) return;
         try {
             const logLines = await minecraftApi.getLogs(selectedServerId);
             setLogs(logLines);
@@ -119,10 +125,10 @@ const MinecraftServerTab: React.FC = () => {
         }
     }, [selectedServerId, servers]);
 
-    // Auto-scroll terminal
+    // Auto-scroll terminal when autoScroll is enabled
     useEffect(() => {
-        if (autoScroll && activeSubTab === 'console') {
-            terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (autoScroll && activeSubTab === 'console' && terminalEndRef.current) {
+            terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [logs, autoScroll, activeSubTab]);
 
@@ -138,9 +144,9 @@ const MinecraftServerTab: React.FC = () => {
     };
 
     useEffect(() => {
-        if (activeSubTab === 'files' && !editingFile) {
+        if (activeSubTab === 'files' && !editingFile && selectedServerId) {
             loadFiles(currentPath);
-        } else if (activeSubTab === 'players') {
+        } else if (activeSubTab === 'players' && selectedServerId) {
             minecraftApi.getPlayers().then(setPlayers).catch(console.error);
         }
     }, [activeSubTab, selectedServerId, currentPath]);
@@ -155,7 +161,15 @@ const MinecraftServerTab: React.FC = () => {
             const res = await minecraftApi.createServer(newServerForm);
             showNotification(res.message || 'Сервер создан!', 'success');
             setIsCreateServerModalOpen(false);
-            setNewServerForm({ name: '', version: '1.20.4', type: 'PAPER', memory: '4G' });
+            setNewServerForm({
+                name: '',
+                version: '1.20.4',
+                type: 'PAPER',
+                memory: '4G',
+                port: 25565 + servers.length + 1,
+                rconPort: 25575 + servers.length + 1,
+                rconPassword: 'storylegends_rcon_pass'
+            });
             await fetchServers();
         } catch (err) {
             showNotification('Ошибка создания сервера.', 'error');
@@ -269,20 +283,22 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                         <div>
                             <div className="flex items-center gap-3">
-                                {/* Server Select Dropdown */}
-                                <select
-                                    value={selectedServerId}
-                                    onChange={e => setSelectedServerId(e.target.value)}
-                                    className="bg-black/60 border border-story-gold/40 text-white font-bold text-base px-3 py-1.5 rounded-xl focus:outline-none"
-                                >
-                                    {servers.map(s => (
-                                        <option key={s.id} value={s.id} className="bg-[#091322] text-white">
-                                            {s.name} ({s.type} {s.version}:{s.port})
-                                        </option>
-                                    ))}
-                                </select>
+                                {servers.length > 0 ? (
+                                    <select
+                                        value={selectedServerId}
+                                        onChange={e => setSelectedServerId(e.target.value)}
+                                        className="bg-black/60 border border-story-gold/40 text-white font-bold text-base px-3 py-1.5 rounded-xl focus:outline-none cursor-pointer"
+                                    >
+                                        {servers.map(s => (
+                                            <option key={s.id} value={s.id} className="bg-[#091322] text-white">
+                                                {s.name} ({s.type} {s.version}:{s.port})
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    <span className="text-white font-bold text-base">Нет активных серверов</span>
+                                )}
 
-                                {/* Clean Solid Status Badge */}
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border shadow-sm ${
                                     isOnline 
                                         ? 'bg-green-600 text-white border-green-500' 
@@ -308,7 +324,7 @@ const MinecraftServerTab: React.FC = () => {
 
                         <button
                             onClick={() => handlePowerAction('start')}
-                            disabled={isOnline}
+                            disabled={isOnline || !selectedServerId}
                             className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                         >
                             <Play className="w-3.5 h-3.5" /> Запустить
@@ -316,7 +332,7 @@ const MinecraftServerTab: React.FC = () => {
 
                         <button
                             onClick={() => handlePowerAction('restart')}
-                            disabled={!isOnline}
+                            disabled={!isOnline || !selectedServerId}
                             className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                         >
                             <RotateCw className="w-3.5 h-3.5" /> Перезапустить
@@ -324,7 +340,7 @@ const MinecraftServerTab: React.FC = () => {
 
                         <button
                             onClick={() => handlePowerAction('stop')}
-                            disabled={!isOnline}
+                            disabled={!isOnline || !selectedServerId}
                             className="px-4 py-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                         >
                             <Square className="w-3.5 h-3.5" /> Остановить
@@ -332,7 +348,8 @@ const MinecraftServerTab: React.FC = () => {
 
                         <button
                             onClick={() => handlePowerAction('kill')}
-                            className="px-3.5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                            disabled={!selectedServerId}
+                            className="px-3.5 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5"
                             title="Принудительно выключить контейнер"
                         >
                             <Zap className="w-3.5 h-3.5" /> Выключить
@@ -429,7 +446,7 @@ const MinecraftServerTab: React.FC = () => {
                     <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs">
                         <span className="font-mono text-gray-400 flex items-center gap-2">
                             <Terminal className="w-4 h-4 text-story-gold" />
-                            Live RCON Console Stream ({currentServer?.name})
+                            Live RCON Console Stream ({currentServer?.name || 'Не выбран'})
                         </span>
                         <div className="flex items-center gap-4">
                             <label className="flex items-center gap-2 text-gray-400 cursor-pointer">
@@ -450,7 +467,10 @@ const MinecraftServerTab: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-black/90 p-4 rounded-xl font-mono text-xs text-green-400 h-[450px] overflow-y-auto space-y-1.5 border border-white/10 shadow-inner select-text">
+                    <div 
+                        ref={terminalContainerRef}
+                        className="bg-black/90 p-4 rounded-xl font-mono text-xs text-green-400 h-[450px] overflow-y-auto space-y-1.5 border border-white/10 shadow-inner select-text"
+                    >
                         {logs.map((line, idx) => (
                             <div key={idx} className="leading-relaxed break-all font-mono">
                                 <span className="text-gray-500 mr-2">[{idx + 1}]</span>
@@ -643,7 +663,7 @@ const MinecraftServerTab: React.FC = () => {
                     <div className="flex items-center justify-between border-b border-white/10 pb-4">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
                             <Users className="w-5 h-5 text-story-gold" />
-                            Игроки на сервере ({currentServer?.name})
+                            Игроки на сервере ({currentServer?.name || 'Не выбран'})
                         </h3>
                     </div>
 
@@ -821,10 +841,10 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
             )}
 
-            {/* CREATE NEW SERVER MODAL */}
+            {/* CREATE NEW SERVER MODAL WITH EXTENDED FIELDS */}
             {isCreateServerModalOpen && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-[#091322] border border-story-gold/40 rounded-2xl p-6 w-full max-w-md shadow-2xl space-y-6">
+                    <div className="bg-[#091322] border border-story-gold/40 rounded-2xl p-6 w-full max-w-lg shadow-2xl space-y-6">
                         <div className="flex items-center justify-between border-b border-white/10 pb-4">
                             <h3 className="text-lg font-bold text-white flex items-center gap-2">
                                 <Plus className="w-5 h-5 text-story-gold" />
@@ -837,12 +857,12 @@ const MinecraftServerTab: React.FC = () => {
 
                         <form onSubmit={handleCreateServer} className="space-y-4 text-xs">
                             <div>
-                                <label className="block text-gray-300 font-bold mb-1">Название сервера</label>
+                                <label className="block text-gray-300 font-bold mb-1">Название сервера *</label>
                                 <input
                                     type="text"
                                     value={newServerForm.name}
                                     onChange={e => setNewServerForm({ ...newServerForm, name: e.target.value })}
-                                    placeholder="например: Анархия 1.16.5"
+                                    placeholder="например: Ивент / Анархия 1.16.5"
                                     className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-story-gold"
                                     required
                                 />
@@ -854,12 +874,12 @@ const MinecraftServerTab: React.FC = () => {
                                     <select
                                         value={newServerForm.type}
                                         onChange={e => setNewServerForm({ ...newServerForm, type: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none"
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
                                     >
-                                        <option value="PAPER">Paper</option>
-                                        <option value="PURPUR">Purpur</option>
-                                        <option value="FABRIC">Fabric</option>
-                                        <option value="FORGE">Forge</option>
+                                        <option value="PAPER">Paper (Рекомендуется)</option>
+                                        <option value="PURPUR">Purpur (High Performance)</option>
+                                        <option value="FABRIC">Fabric (Modded)</option>
+                                        <option value="FORGE">Forge (Modded)</option>
                                         <option value="SPIGOT">Spigot</option>
                                     </select>
                                 </div>
@@ -869,7 +889,7 @@ const MinecraftServerTab: React.FC = () => {
                                     <select
                                         value={newServerForm.version}
                                         onChange={e => setNewServerForm({ ...newServerForm, version: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none"
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
                                     >
                                         <option value="1.20.4">1.20.4</option>
                                         <option value="1.20.2">1.20.2</option>
@@ -881,17 +901,53 @@ const MinecraftServerTab: React.FC = () => {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-gray-300 font-bold mb-1">Выделяемая RAM Память</label>
-                                <select
-                                    value={newServerForm.memory}
-                                    onChange={e => setNewServerForm({ ...newServerForm, memory: e.target.value })}
-                                    className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none"
-                                >
-                                    <option value="2G">2 GB RAM</option>
-                                    <option value="4G">4 GB RAM</option>
-                                    <option value="8G">8 GB RAM</option>
-                                </select>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Игровой порт сервера</label>
+                                    <input
+                                        type="number"
+                                        value={newServerForm.port}
+                                        onChange={e => setNewServerForm({ ...newServerForm, port: parseInt(e.target.value) || 25565 })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">Выделяемая RAM Память</label>
+                                    <select
+                                        value={newServerForm.memory}
+                                        onChange={e => setNewServerForm({ ...newServerForm, memory: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
+                                    >
+                                        <option value="2G">2 GB RAM</option>
+                                        <option value="4G">4 GB RAM</option>
+                                        <option value="8G">8 GB RAM</option>
+                                        <option value="16G">16 GB RAM</option>
+                                        <option value="32G">32 GB RAM</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">RCON Порт</label>
+                                    <input
+                                        type="number"
+                                        value={newServerForm.rconPort}
+                                        onChange={e => setNewServerForm({ ...newServerForm, rconPort: parseInt(e.target.value) || 25575 })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-gray-300 font-bold mb-1">RCON Пароль</label>
+                                    <input
+                                        type="password"
+                                        value={newServerForm.rconPassword}
+                                        onChange={e => setNewServerForm({ ...newServerForm, rconPassword: e.target.value })}
+                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                    />
+                                </div>
                             </div>
 
                             <div className="pt-4 flex justify-end gap-3 border-t border-white/10">
