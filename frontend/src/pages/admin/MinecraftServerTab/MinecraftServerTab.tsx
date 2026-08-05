@@ -13,6 +13,8 @@ import {
 } from '../../../api/minecraft';
 import { useNotification } from '../../../context/NotificationContext';
 
+import { useMinecraftWebSocket } from '../../../hooks/useMinecraftWebSocket';
+
 const MinecraftServerTab: React.FC = () => {
     const { showNotification } = useNotification();
     
@@ -21,6 +23,21 @@ const MinecraftServerTab: React.FC = () => {
     const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
     const [status, setStatus] = useState<MinecraftStatus | null>(null);
     const [isCreateServerModalOpen, setIsCreateServerModalOpen] = useState(false);
+    
+    // WebSocket Real-time Stream Hook (Replaces HTTP Polling)
+    const { status: wsStatus, logs: wsLogs } = useMinecraftWebSocket(selectedServerId || 'server-1');
+
+    useEffect(() => {
+        if (wsStatus) {
+            setStatus(wsStatus);
+        }
+    }, [wsStatus]);
+
+    useEffect(() => {
+        if (wsLogs && wsLogs.length > 0) {
+            setLogs(wsLogs);
+        }
+    }, [wsLogs]);
     
     // New Server Form State
     const [newServerForm, setNewServerForm] = useState({
@@ -117,13 +134,8 @@ const MinecraftServerTab: React.FC = () => {
         if (selectedServerId) {
             fetchStatus();
             fetchLogs();
-            const interval = setInterval(() => {
-                fetchStatus();
-                if (activeSubTab === 'console') fetchLogs();
-            }, 4000);
-            return () => clearInterval(interval);
         }
-    }, [selectedServerId, activeSubTab]);
+    }, [selectedServerId]);
 
     // Update settings form when selected server changes
     useEffect(() => {

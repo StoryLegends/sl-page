@@ -52,6 +52,10 @@ public class MinecraftServerController {
         return ResponseEntity.ok(registeredServers);
     }
 
+    public List<Map<String, Object>> getRegisteredServersList() {
+        return registeredServers;
+    }
+
     /**
      * Delete a Minecraft server configuration and stop its node container
      */
