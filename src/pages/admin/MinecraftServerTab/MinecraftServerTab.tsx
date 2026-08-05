@@ -332,13 +332,13 @@ const MinecraftServerTab: React.FC = () => {
     // LEVEL 1: PTERODACTYL SERVERS GRID / TILES OVERVIEW (When no server selected)
     if (!selectedServerId) {
         return (
-            <div className="space-y-6 w-full animate-fadeIn">
+            <div className="space-y-6 w-full animate-fadeIn relative z-10">
                 {/* Header Title Bar */}
                 <div className="flex flex-wrap items-center justify-between gap-4 p-6 rounded-2xl bg-[#091322] border border-white/10 shadow-2xl">
                     <div>
                         <h2 className="text-xl font-bold text-white flex items-center gap-3">
                             <Server className="w-6 h-6 text-story-gold" />
-                            Серверы Minecraft (Pterodactyl Node)
+                            Серверы Minecraft
                         </h2>
                         <p className="text-xs text-gray-400 mt-1">Управление всеми игровыми экземплярами, ядрами, Docker-контейнерами и портами</p>
                     </div>
@@ -352,10 +352,11 @@ const MinecraftServerTab: React.FC = () => {
                 </div>
 
                 {/* Empty State when zero servers configured */}
+                {/* Empty State */}
                 {servers.length === 0 ? (
-                    <div 
+                    <div
                         onClick={() => setIsCreateServerModalOpen(true)}
-                        className="p-16 border-2 border-dashed border-white/20 hover:border-story-gold/60 rounded-2xl bg-[#091322]/60 hover:bg-[#091322] text-center cursor-pointer transition-all space-y-4 group"
+                        className="p-16 border-2 border-dashed border-white/20 hover:border-story-gold/60 rounded-2xl bg-[#091322]/60 hover:bg-[#091322] text-center cursor-pointer transition-all space-y-4 group relative z-10"
                     >
                         <div className="w-16 h-16 rounded-full bg-story-gold/10 border border-story-gold/30 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
                             <Plus className="w-8 h-8 text-story-gold" />
@@ -366,7 +367,14 @@ const MinecraftServerTab: React.FC = () => {
                                 Нет ни одного настроенного сервера Minecraft. Нажмите сюда, чтобы создать ваш первый сервер.
                             </p>
                         </div>
-                        <button className="px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs shadow-md">
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsCreateServerModalOpen(true);
+                            }}
+                            className="px-6 py-2.5 bg-story-gold text-black rounded-xl font-bold text-xs shadow-md hover:bg-story-gold-light transition-all cursor-pointer relative z-20"
+                        >
                             + Создать первый сервер
                         </button>
                     </div>
