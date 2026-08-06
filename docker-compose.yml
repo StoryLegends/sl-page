@@ -67,8 +67,8 @@ services:
   # 4. StoryLegends Frontend (Single Domain Nginx Web Server + API Proxy)
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     container_name: sl-frontend
     restart: always
     ports:
