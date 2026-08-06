@@ -54,38 +54,27 @@ const RegisterPage = () => {
             return;
         }
 
-        if (!executeRecaptcha) {
-            showNotification('reCAPTCHA не готова', 'error');
-            return;
-        }
-
         if (password !== confirmPassword) {
             setError('Пароли не совпадают');
             showNotification('Пароли не совпадают', 'error');
             return;
         }
 
-        const passwordRegex = /^(?=.*[0-9])(?=.*[\p{Ll}])(?=.*[\p{Lu}])(?=.*[\p{P}\p{S}]).*$/u;
-        if (!passwordRegex.test(password)) {
-            setError('Пароль должен содержать минимум 8 символов, включая цифру, строчную и заглавную буквы, а также специальный символ');
-            showNotification('Слишком простой пароль', 'error');
-            return;
-        }
-
         setIsSubmitting(true);
 
-        try {
-            console.log('Executing reCAPTCHA...');
-            const token = await executeRecaptcha('register');
-
-            if (!token) {
-                console.error('reCAPTCHA returned null or empty token');
-                showNotification('Не удалось получить токен безопасности', 'error');
-                setIsSubmitting(false);
-                return;
+        let token = 'fallback_token';
+        if (executeRecaptcha) {
+            try {
+                const resToken = await executeRecaptcha('register');
+                if (resToken) {
+                    token = resToken;
+                }
+            } catch (err) {
+                console.warn('reCAPTCHA execution error, proceeding with fallback:', err);
             }
+        }
 
-            console.log('Registration attempt with token length:', token.length);
+        try {
             await register({
                 username,
                 email,

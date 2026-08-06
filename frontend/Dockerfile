@@ -1,6 +1,11 @@
 # Build stage
 FROM node:20-alpine AS build
 WORKDIR /app
+ARG VITE_RECAPTCHA_SITE_KEY
+ARG VITE_API_URL
+ENV VITE_RECAPTCHA_SITE_KEY=$VITE_RECAPTCHA_SITE_KEY
+ENV VITE_API_URL=$VITE_API_URL
+
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps
 COPY . .
