@@ -89,9 +89,12 @@ public class FileStorageService {
                     extension = originalFilename.substring(originalFilename.lastIndexOf("."));
                 }
                 String filename = folder + "/" + UUID.randomUUID() + extension;
-                File dest = new File("uploads/" + filename);
+                File dest = new File("uploads/" + filename).getAbsoluteFile();
+                if (dest.getParentFile() != null) {
+                    dest.getParentFile().mkdirs();
+                }
                 file.transferTo(dest);
-                return "/uploads/" + filename;
+                return filename;
             } catch (Exception e) {
                 logger.error("Error saving file to local disk: {}", e.getMessage(), e);
                 return folder + "/disabled-" + UUID.randomUUID();
@@ -287,17 +290,26 @@ public class FileStorageService {
      * Retrieves an InputStream for an object stored in MinIO for secure backend proxying
      */
     public InputStream getObjectInputStream(String objectName) {
-        if (minioClient == null) return null;
-        try {
-            return minioClient.getObject(
-                GetObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(objectName)
-                    .build()
-            );
-        } catch (Exception e) {
-            logger.error("Error fetching MinIO object input stream: {}", objectName, e);
-            return null;
+        if (minioClient != null) {
+            try {
+                return minioClient.getObject(
+                    GetObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .build()
+                );
+            } catch (Exception e) {
+                logger.error("Error fetching MinIO object input stream: {}", objectName, e);
+            }
         }
+        try {
+            File localFile = new File("uploads/" + objectName).getAbsoluteFile();
+            if (localFile.exists()) {
+                return new java.io.FileInputStream(localFile);
+            }
+        } catch (Exception e) {
+            logger.error("Error reading local object file: {}", objectName, e);
+        }
+        return null;
     }
 }
