@@ -29,5 +29,8 @@ public class SiteSettingsRequest {
     private Integer topDonatorAmount2;
     private String topDonatorName3;
     private Integer topDonatorAmount3;
+    private Boolean announcementEnabled;
+    private String announcementText;
+    private String announcementType;
 }
 

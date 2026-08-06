@@ -46,6 +46,9 @@ export interface SiteSettings {
     topDonatorAmount2: number;
     topDonatorName3: string;
     topDonatorAmount3: number;
+    announcementEnabled: boolean;
+    announcementText: string;
+    announcementType: string;
 }
 
 export interface FeatureFlag {

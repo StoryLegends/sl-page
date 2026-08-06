@@ -84,9 +84,10 @@ const MinecraftServerTab: React.FC = () => {
         onlineMode: false,
         maxPlayers: 50,
         autoRestart: 'always',
-        rconIp: '202.181.188.45',
-        rconPort: 25826,
-        rconPassword: 'SLdISRA2f8uu22qhyLOH17',
+        port: 25565,
+        rconIp: 'localhost',
+        rconPort: 25575,
+        rconPassword: 'storylegends_rcon_pass',
         rconEnabled: true
     });
     const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -149,9 +150,10 @@ const MinecraftServerTab: React.FC = () => {
                 onlineMode: cur.onlineMode ?? false,
                 maxPlayers: cur.maxPlayers || 50,
                 autoRestart: cur.autoRestart || 'always',
-                rconIp: cur.rconIp || '202.181.188.45',
-                rconPort: cur.rconPort || 25826,
-                rconPassword: cur.rconPassword || 'SLdISRA2f8uu22qhyLOH17',
+                port: cur.port || 25565,
+                rconIp: cur.rconIp || 'localhost',
+                rconPort: cur.rconPort || 25575,
+                rconPassword: cur.rconPassword || 'storylegends_rcon_pass',
                 rconEnabled: cur.rconEnabled ?? true
             });
         }
@@ -192,7 +194,7 @@ const MinecraftServerTab: React.FC = () => {
         }
         try {
             const res = await minecraftApi.createServer(newServerForm);
-            showNotification(res.message || 'Сервер создан!', 'success');
+            showNotification(`Сервер ${newServerForm.name || 'Minecraft'} успешно создан!`, 'success');
             setIsCreateServerModalOpen(false);
             const nextPort = 25565 + servers.length + 1;
             setNewServerForm({
@@ -1055,13 +1057,13 @@ const MinecraftServerTab: React.FC = () => {
                                             <select
                                                 value={settingsForm.memory}
                                                 onChange={e => setSettingsForm({ ...settingsForm, memory: e.target.value })}
-                                                className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
+                                                className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold [&>option]:bg-[#0b1320] [&>option]:text-white"
                                             >
+                                                <option value="1G">1 GB RAM</option>
+                                                <option value="1.5G">1.5 GB RAM</option>
                                                 <option value="2G">2 GB RAM</option>
-                                                <option value="4G">4 GB RAM</option>
-                                                <option value="8G">8 GB RAM</option>
-                                                <option value="16G">16 GB RAM</option>
-                                                <option value="32G">32 GB RAM</option>
+                                                <option value="3G">3 GB RAM</option>
+                                                <option value="4G">4 GB RAM (Максимум)</option>
                                             </select>
                                         </div>
 
@@ -1160,14 +1162,25 @@ const MinecraftServerTab: React.FC = () => {
                                         </label>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <div>
+                                            <label className="block text-gray-300 font-bold mb-1">Игровой порт</label>
+                                            <input
+                                                type="number"
+                                                value={settingsForm.port}
+                                                onChange={e => setSettingsForm({ ...settingsForm, port: parseInt(e.target.value) || 25565 })}
+                                                placeholder="25565"
+                                                className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
+                                            />
+                                        </div>
+
                                         <div>
                                             <label className="block text-gray-300 font-bold mb-1">RCON IP / Хост</label>
                                             <input
                                                 type="text"
                                                 value={settingsForm.rconIp}
                                                 onChange={e => setSettingsForm({ ...settingsForm, rconIp: e.target.value })}
-                                                placeholder="202.181.188.45"
+                                                placeholder="localhost"
                                                 className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
                                             />
                                         </div>
@@ -1177,8 +1190,8 @@ const MinecraftServerTab: React.FC = () => {
                                             <input
                                                 type="number"
                                                 value={settingsForm.rconPort}
-                                                onChange={e => setSettingsForm({ ...settingsForm, rconPort: parseInt(e.target.value) || 25826 })}
-                                                placeholder="25826"
+                                                onChange={e => setSettingsForm({ ...settingsForm, rconPort: parseInt(e.target.value) || 25575 })}
+                                                placeholder="25575"
                                                 className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-story-gold"
                                             />
                                         </div>
@@ -1238,7 +1251,7 @@ const MinecraftServerTab: React.FC = () => {
                                     <select
                                         value={newServerForm.type}
                                         onChange={e => setNewServerForm({ ...newServerForm, type: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
+                                        className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold [&>option]:bg-[#0b1320] [&>option]:text-white"
                                     >
                                         <option value="PAPER">Paper (Рекомендуется)</option>
                                         <option value="PURPUR">Purpur (High Performance)</option>
@@ -1253,7 +1266,7 @@ const MinecraftServerTab: React.FC = () => {
                                     <select
                                         value={newServerForm.version}
                                         onChange={e => setNewServerForm({ ...newServerForm, version: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
+                                        className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold [&>option]:bg-[#0b1320] [&>option]:text-white"
                                     >
                                         <option value="1.20.4">1.20.4</option>
                                         <option value="1.20.2">1.20.2</option>
@@ -1271,13 +1284,13 @@ const MinecraftServerTab: React.FC = () => {
                                     <select
                                         value={newServerForm.memory}
                                         onChange={e => setNewServerForm({ ...newServerForm, memory: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
+                                        className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold [&>option]:bg-[#0b1320] [&>option]:text-white"
                                     >
+                                        <option value="1G">1 GB RAM</option>
+                                        <option value="1.5G">1.5 GB RAM</option>
                                         <option value="2G">2 GB RAM</option>
-                                        <option value="4G">4 GB RAM</option>
-                                        <option value="8G">8 GB RAM</option>
-                                        <option value="16G">16 GB RAM</option>
-                                        <option value="32G">32 GB RAM</option>
+                                        <option value="3G">3 GB RAM</option>
+                                        <option value="4G">4 GB RAM (Максимум)</option>
                                     </select>
                                 </div>
 
@@ -1286,7 +1299,7 @@ const MinecraftServerTab: React.FC = () => {
                                     <select
                                         value={newServerForm.javaVersion}
                                         onChange={e => setNewServerForm({ ...newServerForm, javaVersion: e.target.value })}
-                                        className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold"
+                                        className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold [&>option]:bg-[#0b1320] [&>option]:text-white"
                                     >
                                         <option value="JAVA_21">Java 21 LTS</option>
                                         <option value="JAVA_17">Java 17 LTS</option>

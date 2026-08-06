@@ -59,6 +59,7 @@ import GuestRoute from './components/GuestRoute';
 import DiscordCallbackPage from './pages/DiscordCallbackPage';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import MaintenanceOverlay from './components/MaintenanceOverlay';
 
 function App() {
   return (
@@ -69,6 +70,7 @@ function App() {
       <CookieBanner />
         <NotificationProvider>
           <AuthProvider>
+            <MaintenanceOverlay />
             <Suspense fallback={
               <div className="flex items-center justify-center min-h-screen bg-[#0b1320]">
                 <Loader />

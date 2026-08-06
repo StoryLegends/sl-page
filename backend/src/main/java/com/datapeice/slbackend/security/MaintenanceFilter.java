@@ -40,6 +40,7 @@ public class MaintenanceFilter extends OncePerRequestFilter {
                     || path.equals("/api/auth/discord/callback")
                     || path.equals("/api/anticheat")
                     || path.startsWith("/ws/")
+                    || path.startsWith("/api/ws/")
                     || path.equals("/error");
 
             if (!isAllowedPublicPath) {

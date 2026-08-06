@@ -137,13 +137,13 @@ public class AdminWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        List<MinecraftServer> servers = minecraftServerController.getRegisteredServersList();
+        List<Map<String, Object>> servers = minecraftServerController.getRegisteredServersList();
         if (servers == null || servers.isEmpty()) {
             return;
         }
 
-        for (MinecraftServer server : servers) {
-            String serverId = server.getServerId();
+        for (Map<String, Object> server : servers) {
+            String serverId = String.valueOf(server.get("serverId"));
             try {
                 var statusResp = minecraftServerController.getStatus(serverId).getBody();
                 if (statusResp != null) {

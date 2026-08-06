@@ -114,13 +114,20 @@ public class AuthController {
         return ResponseEntity.ok(Map.of(
                 "registrationOpen", settings.isRegistrationOpen(),
                 "applicationsOpen", settings.isApplicationsOpen(),
-                "maintenanceMode", settings.isMaintenanceMode()));
+                "maintenanceMode", settings.isMaintenanceMode(),
+                "announcementEnabled", settings.isAnnouncementEnabled(),
+                "announcementText", settings.getAnnouncementText() != null ? settings.getAnnouncementText() : "",
+                "announcementType", settings.getAnnouncementType() != null ? settings.getAnnouncementType() : "info"));
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody SignUpBody body, HttpServletRequest request) {
         String ipAddress = getClientIP(request);
         String userAgent = request.getHeader("User-Agent");
+
+        if (siteSettingsService.getSettings().isMaintenanceMode()) {
+            return ResponseEntity.status(503).body(Map.of("error", "MAINTENANCE_MODE", "message", "На сайте ведутся технические работы. Регистрация закрыта."));
+        }
 
         // Check if registration is open
         if (!siteSettingsService.getSettings().isRegistrationOpen()) {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Form, Input, Button, Switch, InputNumber, Space, Modal, Alert, message, Select } from 'antd';
-import { Sliders, Shield, Bell, Database, AlertTriangle, RefreshCw, Download, AlertCircle, Settings } from 'lucide-react';
+import { Sliders, Shield, Bell, Database, AlertTriangle, RefreshCw, Download, AlertCircle, Settings, Megaphone } from 'lucide-react';
 import { adminApi, type SiteSettings } from '../../../api/admin';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -149,6 +149,40 @@ const SettingsTab: React.FC = () => {
                                     </div>
                                 </div>
                             )}
+                        </div>
+
+                        {/* SECTION: ANNOUNCEMENT BANNER */}
+                        <div>
+                            <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                                <Megaphone className="w-3 h-3 text-amber-400" />
+                                Постоянное уведомление на сайте
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-white/5">
+                                <div className="space-y-0.5 pr-4">
+                                    <div className="text-sm font-semibold text-white">Включить уведомление</div>
+                                    <div className="text-xs text-gray-400">Отображает верхнюю плашку с объявлением для всех посетителей проекта.</div>
+                                </div>
+                                <Form.Item name="announcementEnabled" valuePropName="checked" className="mb-0">
+                                    <Switch />
+                                </Form.Item>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3">
+                                <div className="md:col-span-2">
+                                    <Form.Item name="announcementText" label={<span className="text-xs font-semibold text-gray-300">Текст объявления</span>} className="mb-0">
+                                        <Input.TextArea rows={2} placeholder="Например: Технические работы на сервере планируются в 20:00 МСК" className="bg-black/50 border-white/10 text-white text-xs rounded-xl" />
+                                    </Form.Item>
+                                </div>
+                                <div>
+                                    <Form.Item name="announcementType" label={<span className="text-xs font-semibold text-gray-300">Тип плашки</span>} className="mb-0">
+                                        <Select className="w-full">
+                                            <Select.Option value="info">Синяя (Информация)</Select.Option>
+                                            <Select.Option value="warning">Желтая (Предупреждение)</Select.Option>
+                                            <Select.Option value="error">Красная (Срочно / Важно)</Select.Option>
+                                            <Select.Option value="success">Зеленая (Успех / Новость)</Select.Option>
+                                        </Select>
+                                    </Form.Item>
+                                </div>
+                            </div>
                         </div>
 
                         {/* SECTION: ACCESS CONFIG */}

@@ -79,6 +79,16 @@ public class SiteSettings {
     @Column(name = "sponsorship_history_migrated", nullable = false, columnDefinition = "boolean default false")
     private boolean sponsorshipHistoryMigrated = false;
 
+    // Announcement Banner settings
+    @Column(columnDefinition = "boolean default false")
+    private boolean announcementEnabled = false;
+
+    @Column(columnDefinition = "text")
+    private String announcementText = "";
+
+    @Column(columnDefinition = "varchar(50) default 'info'")
+    private String announcementType = "info"; // "info", "warning", "error", "success"
+
     // Review reminder bot event settings (Default OFF)
     @Column(columnDefinition = "boolean default false")
     private boolean reviewReminderAppAccepted = false;

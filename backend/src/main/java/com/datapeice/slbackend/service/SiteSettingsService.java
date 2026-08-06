@@ -172,6 +172,23 @@ public class SiteSettingsService {
             settings.setTopDonatorAmount3(request.getTopDonatorAmount3());
         }
 
+        // Announcement Banner settings
+        if (request.getAnnouncementEnabled() != null
+                && !request.getAnnouncementEnabled().equals(settings.isAnnouncementEnabled())) {
+            changes.add("Announcement Enabled: " + settings.isAnnouncementEnabled() + " -> " + request.getAnnouncementEnabled());
+            settings.setAnnouncementEnabled(request.getAnnouncementEnabled());
+        }
+        if (request.getAnnouncementText() != null
+                && !request.getAnnouncementText().equals(settings.getAnnouncementText())) {
+            changes.add("Announcement Text Updated");
+            settings.setAnnouncementText(request.getAnnouncementText());
+        }
+        if (request.getAnnouncementType() != null
+                && !request.getAnnouncementType().equals(settings.getAnnouncementType())) {
+            changes.add("Announcement Type: " + settings.getAnnouncementType() + " -> " + request.getAnnouncementType());
+            settings.setAnnouncementType(request.getAnnouncementType());
+        }
+
         SiteSettings saved = siteSettingsRepository.save(settings);
         cachedSettings = saved;
 
