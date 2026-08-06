@@ -31,6 +31,7 @@ public class AdminWebSocketHandler extends TextWebSocketHandler {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final MinecraftServerController minecraftServerController;
+    private final com.datapeice.slbackend.service.DockerLogStreamerService dockerLogStreamerService;
 
     // Active WebSocket sessions
     private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
@@ -39,12 +40,14 @@ public class AdminWebSocketHandler extends TextWebSocketHandler {
                                  CustomUserDetailsService userDetailsService, 
                                  UserRepository userRepository, 
                                  ObjectMapper objectMapper,
-                                 @Lazy MinecraftServerController minecraftServerController) {
+                                 @Lazy MinecraftServerController minecraftServerController,
+                                 @Lazy com.datapeice.slbackend.service.DockerLogStreamerService dockerLogStreamerService) {
         this.jwtCore = jwtCore;
         this.userDetailsService = userDetailsService;
         this.userRepository = userRepository;
         this.objectMapper = objectMapper;
         this.minecraftServerController = minecraftServerController;
+        this.dockerLogStreamerService = dockerLogStreamerService;
     }
 
     @Override
@@ -144,6 +147,7 @@ public class AdminWebSocketHandler extends TextWebSocketHandler {
 
         for (Map<String, Object> server : servers) {
             String serverId = String.valueOf(server.get("serverId"));
+            String containerName = String.valueOf(server.get("containerName"));
             try {
                 var statusResp = minecraftServerController.getStatus(serverId).getBody();
                 if (statusResp != null) {
@@ -151,11 +155,8 @@ public class AdminWebSocketHandler extends TextWebSocketHandler {
                     broadcastToTopic("/topic/minecraft/status", statusResp);
                 }
 
-                var logsResp = minecraftServerController.getConsoleLogs(serverId).getBody();
-                if (logsResp != null && logsResp.containsKey("logs")) {
-                    broadcastToTopic("/topic/minecraft/logs/" + serverId, logsResp);
-                    broadcastToTopic("/topic/minecraft/logs", logsResp);
-                }
+                // Ensure real-time docker log streaming is running for active container
+                dockerLogStreamerService.ensureStreaming(serverId, containerName);
             } catch (Exception e) {
                 logger.warn("WebSocket status broadcast error for server {}: {}", serverId, e.getMessage());
             }

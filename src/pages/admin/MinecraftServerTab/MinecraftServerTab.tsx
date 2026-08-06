@@ -128,7 +128,6 @@ const MinecraftServerTab: React.FC = () => {
         if (selectedServerId) {
             setLogs([]);
             fetchStatus();
-            fetchLogs();
         }
     }, [selectedServerId]);
 
