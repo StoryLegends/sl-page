@@ -309,6 +309,12 @@ const MinecraftServerTab: React.FC = () => {
     const handlePowerAction = async (action: 'start' | 'stop' | 'restart' | 'kill', serverId: string = selectedServerId || 'server-1', e?: React.MouseEvent) => {
         if (e) e.stopPropagation();
         try {
+            if ((action === 'start' || action === 'restart') && selectedServerId === serverId && settingsForm.type && settingsForm.version) {
+                await minecraftApi.updateServerSettings({
+                    serverId: selectedServerId,
+                    ...settingsForm
+                });
+            }
             const res = await minecraftApi.powerAction(action, serverId);
             showNotification(res.message || 'Команда питания отправлена', 'success');
             fetchStatus();

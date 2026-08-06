@@ -575,37 +575,46 @@ public class MinecraftServerController {
             @RequestParam(defaultValue = "") String path
     ) {
         List<Map<String, Object>> filesList = new ArrayList<>();
-        String index = serverId.replace("server-", "");
-        String dirName = "server-1".equals(serverId) ? "minecraft_data" : "minecraft_data_" + index;
-        Path baseDir = Paths.get("./docker", dirName);
-        Path targetDir = path.isEmpty() ? baseDir : baseDir.resolve(path).normalize();
+        String nodeVolume = "minecraft_node_data_" + serverId;
+        String cleanPath = path.replaceAll("^/+", "").replaceAll("/+$", "");
+        String targetPath = cleanPath.isEmpty() ? "/data" : "/data/" + cleanPath;
 
-        if (!targetDir.startsWith(baseDir.normalize())) {
-            targetDir = baseDir;
-        }
+        String lsOutput = executeDockerCommandWithOutput(
+            "docker run --rm -v " + nodeVolume + ":/data alpine sh -c 'if [ -d \"" + targetPath + "\" ]; then ls -la --time-style=+%s \"" + targetPath + "\"; fi'"
+        );
 
-        if (Files.exists(targetDir) && Files.isDirectory(targetDir)) {
-            try (var stream = Files.list(targetDir)) {
-                stream.forEach(p -> {
+        if (lsOutput != null && !lsOutput.isBlank()) {
+            String[] lines = lsOutput.split("\r?\n");
+            for (String line : lines) {
+                line = line.trim();
+                if (line.startsWith("total ") || line.isEmpty()) continue;
+                
+                String[] tokens = line.split("\\s+");
+                if (tokens.length >= 7) {
+                    boolean isDir = tokens[0].startsWith("d");
+                    String name = tokens[tokens.length - 1];
+                    if (".".equals(name) || "..".equals(name)) continue;
+
+                    long size = 0;
+                    try { size = Long.parseLong(tokens[4]); } catch (Exception ignored) {}
+
+                    long time = System.currentTimeMillis();
+                    try { time = Long.parseLong(tokens[5]) * 1000L; } catch (Exception ignored) {}
+
+                    String relPath = cleanPath.isEmpty() ? name : cleanPath + "/" + name;
+
                     Map<String, Object> fileItem = new HashMap<>();
-                    fileItem.put("name", p.getFileName().toString());
-                    fileItem.put("relativePath", baseDir.relativize(p).toString().replace("\\", "/"));
-                    fileItem.put("isDir", Files.isDirectory(p));
-                    try {
-                        fileItem.put("sizeBytes", Files.isDirectory(p) ? 0 : Files.size(p));
-                        fileItem.put("lastModified", Files.getLastModifiedTime(p).toMillis());
-                    } catch (IOException e) {
-                        fileItem.put("sizeBytes", 0);
-                        fileItem.put("lastModified", System.currentTimeMillis());
-                    }
+                    fileItem.put("name", name);
+                    fileItem.put("relativePath", relPath);
+                    fileItem.put("isDir", isDir);
+                    fileItem.put("sizeBytes", isDir ? 0 : size);
+                    fileItem.put("lastModified", time);
                     filesList.add(fileItem);
-                });
-            } catch (Exception e) {
-                logger.error("Error listing files", e);
+                }
             }
         }
 
-        if (filesList.isEmpty() && path.isEmpty()) {
+        if (filesList.isEmpty() && cleanPath.isEmpty()) {
             filesList.add(Map.of("name", "plugins", "relativePath", "plugins", "isDir", true, "sizeBytes", 0, "lastModified", System.currentTimeMillis()));
             filesList.add(Map.of("name", "mods", "relativePath", "mods", "isDir", true, "sizeBytes", 0, "lastModified", System.currentTimeMillis()));
             filesList.add(Map.of("name", "world", "relativePath", "world", "isDir", true, "sizeBytes", 0, "lastModified", System.currentTimeMillis()));
@@ -628,23 +637,25 @@ public class MinecraftServerController {
             @RequestParam(defaultValue = "server-1") String serverId,
             @RequestParam String path
     ) {
-        String index = serverId.replace("server-", "");
-        String dirName = "server-1".equals(serverId) ? "minecraft_data" : "minecraft_data_" + index;
-        Path baseDir = Paths.get("./docker", dirName);
-        Path targetFile = baseDir.resolve(path).normalize();
-
-        if (!targetFile.startsWith(baseDir.normalize())) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Недопустимый путь"));
-        }
+        String nodeVolume = "minecraft_node_data_" + serverId;
+        String cleanPath = path.replaceAll("^/+", "");
+        
+        String base64Output = executeDockerCommandWithOutput(
+            "docker run --rm -v " + nodeVolume + ":/data alpine sh -c '[ -f \"/data/" + cleanPath + "\" ] && base64 /data/" + cleanPath + "'"
+        );
 
         String content = "";
-        if (Files.exists(targetFile) && !Files.isDirectory(targetFile)) {
+        if (base64Output != null && !base64Output.isBlank()) {
             try {
-                content = Files.readString(targetFile, StandardCharsets.UTF_8);
+                String cleanBase64 = base64Output.replaceAll("\\s+", "");
+                byte[] decoded = java.util.Base64.getDecoder().decode(cleanBase64);
+                content = new String(decoded, StandardCharsets.UTF_8);
             } catch (Exception e) {
-                return ResponseEntity.internalServerError().body(Map.of("error", "Не удалось прочитать файл"));
+                logger.error("Failed to decode base64 file content for {}", path, e);
             }
-        } else {
+        }
+
+        if (content.isEmpty()) {
             content = "# Configuration file: " + path + "\n";
         }
 
@@ -661,18 +672,14 @@ public class MinecraftServerController {
             return ResponseEntity.badRequest().body(Map.of("error", "Путь к файлу не указан"));
         }
 
-        String index = serverId.replace("server-", "");
-        String dirName = "server-1".equals(serverId) ? "minecraft_data" : "minecraft_data_" + index;
-        Path baseDir = Paths.get("./docker", dirName);
-        Path targetFile = baseDir.resolve(path).normalize();
-
-        if (!targetFile.startsWith(baseDir.normalize())) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Недопустимый путь"));
-        }
+        String nodeVolume = "minecraft_node_data_" + serverId;
+        String cleanPath = path.replaceAll("^/+", "");
+        String base64Content = java.util.Base64.getEncoder().encodeToString(content.getBytes(StandardCharsets.UTF_8));
 
         try {
-            Files.createDirectories(targetFile.getParent());
-            Files.writeString(targetFile, content, StandardCharsets.UTF_8);
+            executeDockerCommandWithOutput(
+                "docker run --rm -v " + nodeVolume + ":/data alpine sh -c 'mkdir -p \"$(dirname /data/" + cleanPath + ")\" && echo \"" + base64Content + "\" | base64 -d > /data/" + cleanPath + "'"
+            );
             return ResponseEntity.ok(Map.of("message", "Файл " + path + " сохранен!"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Ошибка при сохранении файла"));
@@ -690,17 +697,19 @@ public class MinecraftServerController {
         }
 
         try {
-            String index = serverId.replace("server-", "");
-            String dirName = "server-1".equals(serverId) ? "minecraft_data" : "minecraft_data_" + index;
-            Path baseDir = Paths.get("./docker", dirName);
-            Path targetDir = baseDir.resolve(targetFolder).normalize();
-            Files.createDirectories(targetDir);
+            String nodeVolume = "minecraft_node_data_" + serverId;
+            String fileName = file.getOriginalFilename();
+            String cleanFolder = targetFolder.replaceAll("^/+", "");
+            String targetPath = cleanFolder.isEmpty() ? fileName : cleanFolder + "/" + fileName;
+            
+            String base64Content = java.util.Base64.getEncoder().encodeToString(file.getBytes());
 
-            Path targetFile = targetDir.resolve(file.getOriginalFilename());
-            Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
+            executeDockerCommandWithOutput(
+                "docker run --rm -v " + nodeVolume + ":/data alpine sh -c 'mkdir -p /data/" + cleanFolder + " && echo \"" + base64Content + "\" | base64 -d > /data/" + targetPath + "'"
+            );
 
             return ResponseEntity.ok(Map.of(
-                "message", "Файл " + file.getOriginalFilename() + " загружен в папку " + targetFolder + "!"
+                "message", "Файл " + fileName + " загружен в папку " + targetFolder + "!"
             ));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Ошибка при загрузке файла"));
@@ -712,21 +721,12 @@ public class MinecraftServerController {
             @RequestParam(defaultValue = "server-1") String serverId,
             @RequestParam String path
     ) {
-        String index = serverId.replace("server-", "");
-        String dirName = "server-1".equals(serverId) ? "minecraft_data" : "minecraft_data_" + index;
-        Path baseDir = Paths.get("./docker", dirName);
-        Path targetFile = baseDir.resolve(path).normalize();
-
-        if (!targetFile.startsWith(baseDir.normalize())) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Недопустимый путь"));
-        }
-
+        String nodeVolume = "minecraft_node_data_" + serverId;
+        String cleanPath = path.replaceAll("^/+", "");
+        
         try {
-            if (Files.exists(targetFile)) {
-                Files.delete(targetFile);
-                return ResponseEntity.ok(Map.of("message", "Файл " + path + " удален!"));
-            }
-            return ResponseEntity.notFound().build();
+            executeDockerCommandWithOutput("docker run --rm -v " + nodeVolume + ":/data alpine rm -rf /data/" + cleanPath);
+            return ResponseEntity.ok(Map.of("message", "Файл " + path + " удален!"));
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body(Map.of("error", "Ошибка при удалении файла"));
         }
