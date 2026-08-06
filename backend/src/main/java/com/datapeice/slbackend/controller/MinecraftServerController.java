@@ -118,29 +118,48 @@ public class MinecraftServerController {
 
     public List<Map<String, Object>> getRegisteredServersList() {
         List<Map<String, Object>> result = new ArrayList<>();
-        
-        // Scan ./docker/ folder for minecraft_data* directories
-        Path dockerBase = Paths.get("./docker");
-        List<Path> dataDirs = new ArrayList<>();
-        if (Files.exists(dockerBase) && Files.isDirectory(dockerBase)) {
-            try (var stream = Files.list(dockerBase)) {
-                stream.filter(p -> Files.isDirectory(p) && p.getFileName().toString().startsWith("minecraft_data"))
-                      .forEach(dataDirs::add);
-            } catch (Exception e) {
-                logger.error("Error listing docker data dirs", e);
+        Set<String> serverIds = new LinkedHashSet<>();
+
+        // 1. Scan Docker Volumes matching minecraft_node_data_
+        String volOutput = executeDockerCommandWithOutput("docker volume ls -q --filter name=minecraft_node_data_");
+        if (volOutput != null && !volOutput.isBlank()) {
+            String[] vols = volOutput.split("\r?\n");
+            for (String v : vols) {
+                v = v.trim();
+                if (v.startsWith("minecraft_node_data_")) {
+                    String sId = v.replace("minecraft_node_data_", "");
+                    if (!sId.isBlank()) {
+                        serverIds.add(sId);
+                    }
+                }
             }
         }
 
-        // Sort directories by name so server-1, server-2 are in order
-        dataDirs.sort(Comparator.comparing(p -> p.getFileName().toString()));
+        // 2. Scan local ./docker/ folder for legacy directories
+        Path dockerBase = Paths.get("./docker");
+        if (Files.exists(dockerBase) && Files.isDirectory(dockerBase)) {
+            try (var stream = Files.list(dockerBase)) {
+                stream.filter(p -> Files.isDirectory(p) && p.getFileName().toString().startsWith("minecraft_data"))
+                      .forEach(p -> {
+                          String dirName = p.getFileName().toString();
+                          String sId = dirName.equals("minecraft_data") ? "server-1" : "server-" + dirName.replace("minecraft_data_", "");
+                          serverIds.add(sId);
+                      });
+            } catch (Exception ignored) {}
+        }
 
         int index = 1;
-        for (Path dir : dataDirs) {
-            String dirName = dir.getFileName().toString();
-            String serverId = dirName.equals("minecraft_data") ? "server-1" : "server-" + dirName.replace("minecraft_data_", "");
-            String cName = dirName.equals("minecraft_data") ? defaultContainerName : "sl-minecraft-server-" + dirName.replace("minecraft_data_", "");
-            
-            Map<String, String> props = readPropertiesFile(dir.resolve("server.properties"));
+        for (String serverId : serverIds) {
+            String sIndex = serverId.replace("server-", "");
+            String cName = "server-1".equals(serverId) ? defaultContainerName : "sl-minecraft-server-" + sIndex;
+            String dirName = "server-1".equals(serverId) ? "minecraft_data" : "minecraft_data_" + sIndex;
+            Path dataPath = Paths.get("./docker", dirName);
+
+            Map<String, String> props = readPropertiesFile(dataPath.resolve("server.properties"));
+            if (props.isEmpty() || !props.containsKey("engine-type")) {
+                Map<String, String> volProps = readNodeVolumeProperties(serverId);
+                volProps.forEach(props::putIfAbsent);
+            }
 
             Map<String, Object> serverMap = new HashMap<>();
             serverMap.put("id", serverId);
@@ -149,7 +168,7 @@ public class MinecraftServerController {
             serverMap.put("containerName", cName);
             serverMap.put("version", props.getOrDefault("version", "1.20.4"));
             serverMap.put("type", props.getOrDefault("engine-type", "PAPER"));
-            
+
             int port = 25565;
             try { port = Integer.parseInt(props.getOrDefault("server-port", String.valueOf(25565 + index - 1))); } catch (Exception ignored) {}
             serverMap.put("port", port);
@@ -165,13 +184,13 @@ public class MinecraftServerController {
             serverMap.put("diskSpace", "25G");
             serverMap.put("motd", props.getOrDefault("motd", "§6§lStoryLegends §7- §fMinecraft Server"));
             serverMap.put("onlineMode", Boolean.parseBoolean(props.getOrDefault("online-mode", "false")));
-            
+
             int maxPlayers = 50;
             try { maxPlayers = Integer.parseInt(props.getOrDefault("max-players", "50")); } catch (Exception ignored) {}
             serverMap.put("maxPlayers", maxPlayers);
-            
+
             serverMap.put("autoRestart", "always");
-            serverMap.put("path", dir.toAbsolutePath().normalize().toString().replace("\\", "/"));
+            serverMap.put("path", dataPath.toAbsolutePath().normalize().toString().replace("\\", "/"));
             serverMap.put("rconIp", "localhost");
             serverMap.put("rconPassword", props.getOrDefault("rcon.password", "storylegends_rcon_pass"));
             serverMap.put("rconEnabled", true);
@@ -308,6 +327,7 @@ public class MinecraftServerController {
             Files.createDirectories(dataPath);
             writePropertiesFile(propsFile, currentProps);
             writePropertiesFile(dataPath.resolve("sl-node.properties"), currentProps);
+            writeNodeVolumeProperties(serverId, currentProps);
         } catch (Exception e) {
             logger.error("Failed to write updated server.properties", e);
         }
@@ -427,6 +447,9 @@ public class MinecraftServerController {
                     if ("exited".equalsIgnoreCase(inspectCheck) || "dead".equalsIgnoreCase(inspectCheck)) {
                         executeDockerCommandWithOutput("docker rm -f " + cName);
                     }
+
+                    Map<String, String> volProps = readNodeVolumeProperties(serverId);
+                    volProps.forEach(props::putIfAbsent);
 
                     String port = props.getOrDefault("server-port", "25565");
                     String rconPort = props.getOrDefault("rcon.port", "25575");
@@ -780,6 +803,40 @@ public class MinecraftServerController {
             sb.append(entry.getKey()).append("=").append(entry.getValue()).append("\n");
         }
         Files.writeString(path, sb.toString(), StandardCharsets.UTF_8);
+    }
+
+    private Map<String, String> readNodeVolumeProperties(String serverId) {
+        Map<String, String> props = new LinkedHashMap<>();
+        String volumeName = "minecraft_node_data_" + serverId;
+        String raw = executeDockerCommandWithOutput(
+            "docker run --rm -v " + volumeName + ":/data alpine sh -c '[ -f /data/sl-node.properties ] && cat /data/sl-node.properties; [ -f /data/server.properties ] && cat /data/server.properties'"
+        );
+        if (raw != null && !raw.isBlank()) {
+            String[] lines = raw.split("\r?\n");
+            for (String line : lines) {
+                line = line.trim();
+                if (!line.startsWith("#") && line.contains("=")) {
+                    int idx = line.indexOf("=");
+                    String key = line.substring(0, idx).trim();
+                    String val = line.substring(idx + 1).trim();
+                    props.putIfAbsent(key, val);
+                }
+            }
+        }
+        return props;
+    }
+
+    private void writeNodeVolumeProperties(String serverId, Map<String, String> props) {
+        String volumeName = "minecraft_node_data_" + serverId;
+        StringBuilder sb = new StringBuilder();
+        sb.append("# Updated by StoryLegends\\n");
+        for (Map.Entry<String, String> entry : props.entrySet()) {
+            sb.append(entry.getKey()).append("=").append(entry.getValue()).append("\\n");
+        }
+        String content = sb.toString();
+        executeDockerCommandWithOutput(
+            "docker run --rm -v " + volumeName + ":/data alpine sh -c 'printf \"" + content + "\" > /data/sl-node.properties'"
+        );
     }
 
     private Map<String, Object> getContainerStats(String containerName) {
