@@ -435,6 +435,8 @@ public class MinecraftServerController {
                     String memory = props.getOrDefault("memory-limit", "4G");
                     String onlineMode = props.getOrDefault("online-mode", "false");
                     String rconPassword = props.getOrDefault("rcon.password", "storylegends_rcon_pass");
+                    String nodeVolume = "minecraft_node_data_" + serverId;
+
                     // Legacy version compatibility: Purpur/Paper don't exist for 1.7.x/1.8.x -> fallback to Spigot
                     if ("PURPUR".equalsIgnoreCase(type) && (version.startsWith("1.7") || version.startsWith("1.8") || version.startsWith("1.9") || version.startsWith("1.10") || version.startsWith("1.11") || version.startsWith("1.12") || version.startsWith("1.13") || version.startsWith("1.14") || version.startsWith("1.15"))) {
                         type = "SPIGOT";
