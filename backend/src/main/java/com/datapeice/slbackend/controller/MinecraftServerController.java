@@ -586,8 +586,8 @@ public class MinecraftServerController {
         String index = serverId.replace("server-", "");
         String cName = "server-1".equals(serverId) ? defaultContainerName : "sl-minecraft-server-" + index;
 
-        // Execute command directly into process stdin using mc-send-to-console
-        String output = executeDockerCommandWithOutput("docker exec " + cName + " mc-send-to-console " + command);
+        // Execute command directly into Minecraft console via rcon-cli
+        String output = executeDockerCommandWithOutput("docker exec " + cName + " rcon-cli \"" + command.replace("\"", "\\\"") + "\"");
 
         String finalResult = (output != null && !output.isBlank()) ? output.trim() : "[Console]: " + command;
         return ResponseEntity.ok(Map.of("command", command, "output", finalResult));
