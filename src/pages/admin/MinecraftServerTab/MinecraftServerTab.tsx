@@ -195,10 +195,9 @@ const MinecraftServerTab: React.FC = () => {
         }
     }, [selectedServerId, servers]);
 
-    // Auto-scroll terminal when autoScroll is enabled
     useEffect(() => {
-        if (autoScroll && activeSubTab === 'console' && terminalEndRef.current && selectedServerId) {
-            terminalEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        if (autoScroll && activeSubTab === 'console' && terminalContainerRef.current) {
+            terminalContainerRef.current.scrollTop = terminalContainerRef.current.scrollHeight;
         }
     }, [logs, autoScroll, activeSubTab, selectedServerId]);
 

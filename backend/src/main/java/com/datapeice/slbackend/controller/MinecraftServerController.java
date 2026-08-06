@@ -198,12 +198,16 @@ public class MinecraftServerController {
         executeDockerCommandWithOutput("docker rm -f " + cName);
         executeDockerCommandWithOutput("docker volume rm minecraft_node_data_" + id);
 
-        // 2. Delete ALL data files on disk (maps, plugins, configs, etc.)
+        // 2. Delete ALL data files on disk (maps, plugins, configs, etc.) using Docker root permission
         try {
+            Path parentDir = dataPath.getParent().toAbsolutePath().normalize();
+            String absParent = parentDir.toString().replace("\\", "/");
+            executeDockerCommandWithOutput("docker run --rm -v " + absParent + ":/docker_root alpine rm -rf /docker_root/" + dirName);
+
             if (Files.exists(dataPath)) {
                 FileSystemUtils.deleteRecursively(dataPath);
-                logger.info("Successfully deleted server data directory: {}", dataPath.toAbsolutePath());
             }
+            logger.info("Successfully deleted server data directory: {}", dataPath.toAbsolutePath());
         } catch (Exception e) {
             logger.error("Failed to delete server files for {}: {}", id, e.getMessage());
         }
@@ -431,7 +435,16 @@ public class MinecraftServerController {
                     String memory = props.getOrDefault("memory-limit", "4G");
                     String onlineMode = props.getOrDefault("online-mode", "false");
                     String rconPassword = props.getOrDefault("rcon.password", "storylegends_rcon_pass");
-                    String nodeVolume = "minecraft_node_data_" + serverId;
+                    // Legacy version compatibility: Purpur/Paper don't exist for 1.7.x/1.8.x -> fallback to Spigot
+                    if ("PURPUR".equalsIgnoreCase(type) && (version.startsWith("1.7") || version.startsWith("1.8") || version.startsWith("1.9") || version.startsWith("1.10") || version.startsWith("1.11") || version.startsWith("1.12") || version.startsWith("1.13") || version.startsWith("1.14") || version.startsWith("1.15"))) {
+                        type = "SPIGOT";
+                    }
+                    if ("PAPER".equalsIgnoreCase(type) && version.startsWith("1.7")) {
+                        type = "SPIGOT";
+                    }
+
+                    // Purge cached jar files from node volume so itzg/minecraft-server downloads the exact requested VERSION
+                    executeDockerCommandWithOutput("docker run --rm -v " + nodeVolume + ":/data alpine sh -c 'rm -f /data/*.jar /data/paper.jar /data/purpur.jar /data/spigot*.jar /data/mojang*.jar'");
 
                     String runCmd = String.format(
                         "docker run -d --name %s -p %s:25565 -p %s:25575 -e EULA=TRUE -e TYPE=%s -e VERSION=%s -e INIT_MEMORY=512M -e MAX_MEMORY=%s -e ONLINE_MODE=%s -e ENABLE_RCON=true -e RCON_PORT=25575 -e RCON_PASSWORD=%s -v %s:/data itzg/minecraft-server:latest",
