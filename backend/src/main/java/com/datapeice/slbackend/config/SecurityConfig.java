@@ -86,6 +86,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/totp/verify", "/api/totp/qr").permitAll()
                                                 .requestMatchers("/api/anticheat/snapshot").permitAll()
                                                 .requestMatchers("/api/files/view/**").permitAll()
+                                                .requestMatchers("/api/ws/**", "/ws/**").permitAll()
                                                 .requestMatchers("/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                                                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "MODERATOR")
                                                 .anyRequest().authenticated())

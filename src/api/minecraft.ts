@@ -127,25 +127,26 @@ export const minecraftApi = {
         const res = await apiClient.get(`/api/admin/minecraft/files/read?serverId=${serverId}&path=${encodeURIComponent(path)}`);
         return res.data.content;
     },
-    writeFile: async (path: string, content: string) => {
-        const res = await apiClient.post('/api/admin/minecraft/files/write', { path, content });
+    writeFile: async (path: string, content: string, serverId: string = 'server-1') => {
+        const res = await apiClient.post('/api/admin/minecraft/files/write', { path, content, serverId });
         return res.data;
     },
-    uploadContainerFile: async (file: File, targetFolder: string = 'plugins') => {
+    uploadContainerFile: async (file: File, targetFolder: string = 'plugins', serverId: string = 'server-1') => {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('targetFolder', targetFolder);
+        formData.append('serverId', serverId);
         const res = await apiClient.post('/api/admin/minecraft/files/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return res.data;
     },
-    deleteContainerFile: async (path: string) => {
-        const res = await apiClient.delete(`/api/admin/minecraft/files?path=${encodeURIComponent(path)}`);
+    deleteContainerFile: async (path: string, serverId: string = 'server-1') => {
+        const res = await apiClient.delete(`/api/admin/minecraft/files?path=${encodeURIComponent(path)}&serverId=${serverId}`);
         return res.data;
     },
-    getPlayers: async (): Promise<MinecraftPlayer[]> => {
-        const res = await apiClient.get('/api/admin/minecraft/players');
+    getPlayers: async (serverId: string = 'server-1'): Promise<MinecraftPlayer[]> => {
+        const res = await apiClient.get(`/api/admin/minecraft/players?serverId=${serverId}`);
         return res.data;
     }
 };

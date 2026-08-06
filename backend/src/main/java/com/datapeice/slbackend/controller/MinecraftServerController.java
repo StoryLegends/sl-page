@@ -1,23 +1,22 @@
 package com.datapeice.slbackend.controller;
 
+import com.datapeice.slbackend.entity.MinecraftServer;
+import com.datapeice.slbackend.repository.MinecraftServerRepository;
 import com.datapeice.slbackend.service.FileStorageService;
-import com.datapeice.slbackend.service.RconService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/minecraft")
@@ -25,8 +24,8 @@ public class MinecraftServerController {
 
     private static final Logger logger = LoggerFactory.getLogger(MinecraftServerController.class);
 
-    private final RconService rconService;
     private final FileStorageService fileStorageService;
+    private final MinecraftServerRepository serverRepository;
 
     @Value("${minecraft.server.path:./docker/minecraft_data}")
     private String defaultServerPath;
@@ -34,42 +33,38 @@ public class MinecraftServerController {
     @Value("${minecraft.container.name:sl-minecraft-server}")
     private String defaultContainerName;
 
-    // In-memory list of registered Minecraft servers
-    private final List<Map<String, Object>> registeredServers = new ArrayList<>();
-
-    public MinecraftServerController(RconService rconService, FileStorageService fileStorageService) {
-        this.rconService = rconService;
+    public MinecraftServerController(FileStorageService fileStorageService, 
+                                     MinecraftServerRepository serverRepository) {
         this.fileStorageService = fileStorageService;
-        // Start with empty server list (servers are added via UI or persistency)
+        this.serverRepository = serverRepository;
     }
 
     /**
      * Get list of all registered Minecraft servers
      */
     @GetMapping("/servers")
-    public ResponseEntity<List<Map<String, Object>>> getServers() {
-        return ResponseEntity.ok(registeredServers);
+    public ResponseEntity<List<MinecraftServer>> getServers() {
+        return ResponseEntity.ok(serverRepository.findAll());
     }
 
-    public List<Map<String, Object>> getRegisteredServersList() {
-        return registeredServers;
+    public List<MinecraftServer> getRegisteredServersList() {
+        return serverRepository.findAll();
     }
 
     /**
      * Delete a Minecraft server configuration and stop its node container
      */
     @DeleteMapping("/servers/{id}")
+    @Transactional
     public ResponseEntity<Map<String, Object>> deleteServer(@PathVariable String id) {
-        Optional<Map<String, Object>> target = registeredServers.stream()
-                .filter(s -> id.equals(s.get("id")))
-                .findFirst();
+        Optional<MinecraftServer> target = serverRepository.findByServerId(id);
 
         if (target.isPresent()) {
-            Map<String, Object> serverInfo = target.get();
-            String cName = String.valueOf(serverInfo.getOrDefault("containerName", "sl-minecraft-server-" + id));
+            MinecraftServer server = target.get();
+            String cName = server.getContainerName();
             executeDockerCommandWithOutput("docker stop -t 5 " + cName);
             executeDockerCommandWithOutput("docker rm -f " + cName);
-            registeredServers.remove(serverInfo);
+            serverRepository.delete(server);
             logger.info("Deleted Minecraft server ID={}, container={}", id, cName);
             return ResponseEntity.ok(Map.of("message", "Сервер и его контейнер успешно удалены!"));
         }
@@ -96,46 +91,47 @@ public class MinecraftServerController {
         try { maxPlayers = Integer.parseInt(String.valueOf(body.getOrDefault("maxPlayers", 50))); } catch (Exception e) {}
         String autoRestart = String.valueOf(body.getOrDefault("autoRestart", "always")).trim();
         
-        int port = 25565 + registeredServers.size();
+        long count = serverRepository.count();
+        int port = 25565 + (int) count;
         if (body.containsKey("port") && body.get("port") != null) {
             try { port = Integer.parseInt(String.valueOf(body.get("port"))); } catch (Exception e) {}
         }
 
-        int rconPort = 25575 + registeredServers.size();
+        int rconPort = 25575 + (int) count;
         if (body.containsKey("rconPort") && body.get("rconPort") != null) {
             try { rconPort = Integer.parseInt(String.valueOf(body.get("rconPort"))); } catch (Exception e) {}
         }
 
         String rconPassword = String.valueOf(body.getOrDefault("rconPassword", "storylegends_rcon_pass")).trim();
 
-        String serverId = "server-" + (registeredServers.size() + 1);
-        String containerName = "sl-minecraft-server-" + (registeredServers.size() + 1);
-        String path = "./docker/minecraft_data_" + (registeredServers.size() + 1);
+        String serverId = "server-" + (count + 1);
+        String containerName = "sl-minecraft-server-" + (count + 1);
+        String path = "./docker/minecraft_data_" + (count + 1);
 
-        Map<String, Object> newServer = new HashMap<>();
-        newServer.put("id", serverId);
-        newServer.put("name", name);
-        newServer.put("containerName", containerName);
-        newServer.put("version", version);
-        newServer.put("type", type);
-        newServer.put("port", port);
-        newServer.put("memory", memory);
-        newServer.put("javaVersion", javaVersion);
-        newServer.put("cpuLimit", cpuLimit);
-        newServer.put("swapMemory", swapMemory);
-        newServer.put("diskSpace", diskSpace);
-        newServer.put("motd", motd);
-        newServer.put("onlineMode", onlineMode);
-        newServer.put("maxPlayers", maxPlayers);
-        newServer.put("autoRestart", autoRestart);
-        newServer.put("path", path);
-        newServer.put("rconIp", "localhost");
-        newServer.put("rconPort", rconPort);
-        newServer.put("rconPassword", rconPassword);
-        newServer.put("rconEnabled", true);
+        MinecraftServer newServer = new MinecraftServer();
+        newServer.setServerId(serverId);
+        newServer.setName(name);
+        newServer.setContainerName(containerName);
+        newServer.setVersion(version);
+        newServer.setType(type);
+        newServer.setPort(port);
+        newServer.setMemory(memory);
+        newServer.setJavaVersion(javaVersion);
+        newServer.setCpuLimit(cpuLimit);
+        newServer.setSwapMemory(swapMemory);
+        newServer.setDiskSpace(diskSpace);
+        newServer.setMotd(motd);
+        newServer.setOnlineMode(onlineMode);
+        newServer.setMaxPlayers(maxPlayers);
+        newServer.setAutoRestart(autoRestart);
+        newServer.setPath(path);
+        newServer.setRconIp("localhost");
+        newServer.setRconPort(rconPort);
+        newServer.setRconPassword(rconPassword);
+        newServer.setRconEnabled(true);
 
-        registeredServers.add(newServer);
-        logger.info("New Minecraft server created: ID={}, Name={}, Version={}, Type={}, Port={}, Memory={}", 
+        serverRepository.save(newServer);
+        logger.info("New Minecraft server created in DB: ID={}, Name={}, Version={}, Type={}, Port={}, Memory={}", 
                 serverId, name, version, type, port, memory);
 
         return ResponseEntity.ok(Map.of(
@@ -151,38 +147,66 @@ public class MinecraftServerController {
     public ResponseEntity<Map<String, Object>> updateServerSettings(@RequestBody Map<String, Object> body) {
         String serverId = (String) body.getOrDefault("serverId", "server-1");
 
-        Map<String, Object> serverInfo = registeredServers.stream()
-                .filter(s -> serverId.equals(s.get("id")))
-                .findFirst()
-                .orElse(null);
-
-        if (serverInfo == null) {
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        if (optServer.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Сервер не найден"));
         }
 
-        if (body.containsKey("name")) serverInfo.put("name", body.get("name"));
-        if (body.containsKey("version")) serverInfo.put("version", body.get("version"));
-        if (body.containsKey("type")) serverInfo.put("type", ((String) body.get("type")).toUpperCase());
-        if (body.containsKey("memory")) serverInfo.put("memory", body.get("memory"));
-        if (body.containsKey("javaVersion")) serverInfo.put("javaVersion", body.get("javaVersion"));
-        if (body.containsKey("cpuLimit")) serverInfo.put("cpuLimit", body.get("cpuLimit"));
-        if (body.containsKey("swapMemory")) serverInfo.put("swapMemory", body.get("swapMemory"));
-        if (body.containsKey("diskSpace")) serverInfo.put("diskSpace", body.get("diskSpace"));
-        if (body.containsKey("motd")) serverInfo.put("motd", body.get("motd"));
-        if (body.containsKey("onlineMode")) serverInfo.put("onlineMode", body.get("onlineMode"));
-        if (body.containsKey("maxPlayers")) serverInfo.put("maxPlayers", body.get("maxPlayers"));
-        if (body.containsKey("autoRestart")) serverInfo.put("autoRestart", body.get("autoRestart"));
-        if (body.containsKey("rconIp")) serverInfo.put("rconIp", body.get("rconIp"));
-        if (body.containsKey("rconPort")) serverInfo.put("rconPort", body.get("rconPort"));
-        if (body.containsKey("rconPassword")) serverInfo.put("rconPassword", body.get("rconPassword"));
-        if (body.containsKey("rconEnabled")) serverInfo.put("rconEnabled", body.get("rconEnabled"));
+        MinecraftServer server = optServer.get();
+
+        if (body.containsKey("name")) server.setName((String) body.get("name"));
+        if (body.containsKey("version")) server.setVersion((String) body.get("version"));
+        if (body.containsKey("type")) server.setType(((String) body.get("type")).toUpperCase());
+        if (body.containsKey("memory")) server.setMemory((String) body.get("memory"));
+        if (body.containsKey("javaVersion")) server.setJavaVersion((String) body.get("javaVersion"));
+        if (body.containsKey("cpuLimit")) {
+            try { server.setCpuLimit(Integer.parseInt(String.valueOf(body.get("cpuLimit")))); } catch(Exception e) {}
+        }
+        if (body.containsKey("swapMemory")) server.setSwapMemory((String) body.get("swapMemory"));
+        if (body.containsKey("diskSpace")) server.setDiskSpace((String) body.get("diskSpace"));
+        if (body.containsKey("motd")) server.setMotd((String) body.get("motd"));
+        if (body.containsKey("onlineMode")) {
+            try { server.setOnlineMode(Boolean.parseBoolean(String.valueOf(body.get("onlineMode")))); } catch(Exception e) {}
+        }
+        if (body.containsKey("maxPlayers")) {
+            try { server.setMaxPlayers(Integer.parseInt(String.valueOf(body.get("maxPlayers")))); } catch(Exception e) {}
+        }
+        if (body.containsKey("autoRestart")) server.setAutoRestart((String) body.get("autoRestart"));
+        if (body.containsKey("rconIp")) server.setRconIp((String) body.get("rconIp"));
+        if (body.containsKey("rconPort")) {
+            try { server.setRconPort(Integer.parseInt(String.valueOf(body.get("rconPort")))); } catch(Exception e) {}
+        }
+        if (body.containsKey("rconPassword")) server.setRconPassword((String) body.get("rconPassword"));
+        if (body.containsKey("rconEnabled")) {
+            try { server.setRconEnabled(Boolean.parseBoolean(String.valueOf(body.get("rconEnabled")))); } catch(Exception e) {}
+        }
+
+        serverRepository.save(server);
+
+        // Apply config changes inside container server.properties via docker exec
+        String cName = server.getContainerName();
+        String onlineModeStr = String.valueOf(server.isOnlineMode());
+        String maxPlayersStr = String.valueOf(server.getMaxPlayers());
+        String motdEscaped = server.getMotd() != null ? server.getMotd().replace("'", "'\\''") : "Minecraft Server";
+
+        String sedCmd = String.format(
+            "docker exec %s bash -c \"" +
+            "if [ -f /data/server.properties ]; then " +
+            "sed -i 's/^online-mode=.*/online-mode=%s/' /data/server.properties && " +
+            "sed -i 's/^max-players=.*/max-players=%s/' /data/server.properties && " +
+            "sed -i 's/^motd=.*/motd=%s/' /data/server.properties; " +
+            "fi\"",
+            cName, onlineModeStr, maxPlayersStr, motdEscaped
+        );
+        logger.info("Executing properties update inside container: {}", sedCmd);
+        executeDockerCommandWithOutput(sedCmd);
 
         logger.info("Updated Minecraft server {} settings: Engine={}, Version={}, RCON Port={}",
-                serverId, serverInfo.get("type"), serverInfo.get("version"), serverInfo.get("rconPort"));
+                serverId, server.getType(), server.getVersion(), server.getRconPort());
 
         return ResponseEntity.ok(Map.of(
-                "message", "Настройки сервера " + serverInfo.get("name") + " (Движок " + serverInfo.get("type") + " " + serverInfo.get("version") + ") успешно обновлены!",
-                "server", serverInfo
+                "message", "Настройки сервера " + server.getName() + " (Движок " + server.getType() + " " + server.getVersion() + ") успешно обновлены! Перезапустите сервер, чтобы применить их внутри контейнера.",
+                "server", server
         ));
     }
 
@@ -191,7 +215,8 @@ public class MinecraftServerController {
      */
     @GetMapping("/status")
     public ResponseEntity<Map<String, Object>> getStatus(@RequestParam(defaultValue = "server-1") String serverId) {
-        if (registeredServers.isEmpty()) {
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        if (optServer.isEmpty()) {
             Map<String, Object> emptyResp = new HashMap<>();
             emptyResp.put("serverId", serverId);
             emptyResp.put("serverName", "—");
@@ -208,19 +233,15 @@ public class MinecraftServerController {
             return ResponseEntity.ok(emptyResp);
         }
 
-        Map<String, Object> serverInfo = registeredServers.stream()
-                .filter(s -> serverId.equals(s.get("id")))
-                .findFirst()
-                .orElse(registeredServers.get(0));
-
-        String cName = String.valueOf(serverInfo.getOrDefault("containerName", "sl-minecraft-server-1"));
+        MinecraftServer server = optServer.get();
+        String cName = server.getContainerName();
         Map<String, Object> response = new HashMap<>();
 
-        // 1. Inspect container running status via Docker CLI
+        // 1. Inspect container status via Docker
         String containerState = executeDockerCommandWithOutput("docker inspect -f '{{.State.Status}}' " + cName).trim().toLowerCase();
         boolean isRunning = "running".equals(containerState);
 
-        // 2. Read container logs to check if Java server is fully booted (ONLINE) or in startup phase (STARTING)
+        // 2. Read logs to check if Java server is booted (ONLINE) or starting
         String serverStatus = "OFFLINE";
         if (isRunning) {
             String lastLogs = executeDockerCommandWithOutput("docker logs --tail 30 " + cName);
@@ -231,21 +252,22 @@ public class MinecraftServerController {
             }
         }
 
-        // 3. Fetch real CPU & RAM stats from docker stats
+        // 3. Fetch CPU & RAM usage
         Map<String, Object> stats = isRunning ? getContainerStats(cName) : Map.of("cpu", 0.0, "memUsedMb", 0, "memMaxMb", 4096);
 
-        response.put("serverId", serverInfo.get("id"));
-        response.put("serverName", serverInfo.get("name"));
+        response.put("serverId", server.getServerId());
+        response.put("serverName", server.getName());
         response.put("status", serverStatus);
         response.put("containerName", cName);
-        response.put("version", serverInfo.get("type") + " " + serverInfo.get("version"));
-        response.put("motd", serverInfo.getOrDefault("motd", "StoryLegends Minecraft Server"));
+        response.put("version", server.getType() + " " + server.getVersion());
+        response.put("motd", server.getMotd() != null ? server.getMotd() : "StoryLegends Minecraft Server");
         response.put("tps", "ONLINE".equals(serverStatus) ? 20.0 : 0.0);
 
         int onlinePlayers = 0;
-        int maxPlayers = 50;
+        int maxPlayers = server.getMaxPlayers() > 0 ? server.getMaxPlayers() : 50;
+
         if ("ONLINE".equals(serverStatus)) {
-            String rconTest = rconService.sendCommandAndGetResponse("list");
+            String rconTest = executeDockerCommandWithOutput("docker exec " + cName + " rcon-cli list");
             if (rconTest != null && rconTest.contains("players online")) {
                 try {
                     String[] parts = rconTest.split(" ");
@@ -271,7 +293,7 @@ public class MinecraftServerController {
     }
 
     /**
-     * Power Controls: START, STOP, RESTART, KILL (Synchronous bi-directional container execution)
+     * Power Controls: START, STOP, RESTART, KILL
      */
     @PostMapping("/power")
     public ResponseEntity<Map<String, Object>> powerControl(@RequestBody Map<String, String> body) {
@@ -279,51 +301,52 @@ public class MinecraftServerController {
         String serverId = body.getOrDefault("serverId", "server-1");
         Map<String, Object> result = new HashMap<>();
 
-        Map<String, Object> serverInfo = registeredServers.stream()
-                .filter(s -> serverId.equals(s.get("id")))
-                .findFirst()
-                .orElse(registeredServers.isEmpty() ? Map.of("containerName", defaultContainerName) : registeredServers.get(0));
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        if (optServer.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Сервер не найден"));
+        }
 
-        String cName = (String) serverInfo.get("containerName");
+        MinecraftServer server = optServer.get();
+        String cName = server.getContainerName();
         String execOutput = "";
 
         switch (action) {
             case "start":
-                String inspectCheck = executeDockerCommandWithOutput("docker inspect -f '{{.State.Status}}' " + cName);
-                if ("running".equalsIgnoreCase(inspectCheck.trim())) {
+                String inspectCheck = executeDockerCommandWithOutput("docker inspect -f '{{.State.Status}}' " + cName).trim().toLowerCase();
+                if ("running".equalsIgnoreCase(inspectCheck)) {
                     result.put("message", "Сервер " + cName + " уже запущен и работает!");
                     result.put("status", "ONLINE");
-                } else if (!inspectCheck.isBlank() && !"running".equalsIgnoreCase(inspectCheck.trim())) {
-                    execOutput = executeDockerCommandWithOutput("docker start " + cName);
-                    result.put("message", "Нода сервера " + cName + " успешно запущена!");
-                    result.put("status", "STARTING");
                 } else {
-                    // Create and start container dynamically on demand
-                    String port = String.valueOf(serverInfo.getOrDefault("port", "25565"));
-                    String rconPort = String.valueOf(serverInfo.getOrDefault("rconPort", "25575"));
-                    String type = String.valueOf(serverInfo.getOrDefault("type", "PAPER")).toUpperCase();
-                    String version = String.valueOf(serverInfo.getOrDefault("version", "1.20.4"));
-                    String memory = String.valueOf(serverInfo.getOrDefault("memory", "4G"));
-                    String rconPassword = String.valueOf(serverInfo.getOrDefault("rconPassword", "storylegends_rcon_pass"));
+                    if ("exited".equalsIgnoreCase(inspectCheck) || "dead".equalsIgnoreCase(inspectCheck)) {
+                        executeDockerCommandWithOutput("docker rm -f " + cName);
+                    }
+
+                    String port = String.valueOf(server.getPort());
+                    String rconPort = String.valueOf(server.getRconPort());
+                    String type = server.getType().toUpperCase();
+                    String version = server.getVersion();
+                    String memory = server.getMemory();
+                    boolean onlineMode = server.isOnlineMode();
+                    String rconPassword = server.getRconPassword();
                     String nodeVolume = "minecraft_node_data_" + serverId;
 
                     String runCmd = String.format(
-                        "docker run -d --name %s -p %s:25565 -p %s:25575 -e EULA=TRUE -e TYPE=%s -e VERSION=%s -e MEMORY=%s -e RCON_PORT=25575 -e RCON_PASSWORD=%s -v %s:/data itzg/minecraft-server:latest",
-                        cName, port, rconPort, type, version, memory, rconPassword, nodeVolume
+                        "docker run -d --name %s -p %s:25565 -p %s:25575 -e EULA=TRUE -e TYPE=%s -e VERSION=%s -e INIT_MEMORY=512M -e MAX_MEMORY=%s -e ONLINE_MODE=%s -e ENABLE_RCON=true -e RCON_PORT=25575 -e RCON_PASSWORD=%s -v %s:/data itzg/minecraft-server:java21",
+                        cName, port, rconPort, type, version, memory, onlineMode, rconPassword, nodeVolume
                     );
                     execOutput = executeDockerCommandWithOutput(runCmd);
-                    result.put("message", "Изолированный контейнер для " + cName + " создан и запущен!");
+                    result.put("message", "Нода сервера " + cName + " запущена (Java 21 LTS, RAM: " + memory + ", Port: " + port + ")!");
                     result.put("status", "STARTING");
                 }
                 break;
             case "stop":
-                rconService.sendCommandAndGetResponse("stop");
+                executeDockerCommandWithOutput("docker exec " + cName + " rcon-cli stop");
                 execOutput = executeDockerCommandWithOutput("docker stop -t 10 " + cName);
                 result.put("message", "Сервер " + cName + " остановлен!");
                 result.put("status", "OFFLINE");
                 break;
             case "restart":
-                rconService.sendCommandAndGetResponse("stop");
+                executeDockerCommandWithOutput("docker exec " + cName + " rcon-cli stop");
                 execOutput = executeDockerCommandWithOutput("docker restart -t 5 " + cName);
                 result.put("message", "Сервер " + cName + " перезапускается!");
                 result.put("status", "RESTARTING");
@@ -348,7 +371,7 @@ public class MinecraftServerController {
     }
 
     /**
-     * Execute RCON or Docker command in interactive console and return real output
+     * Execute RCON or Docker command in interactive console
      */
     @PostMapping("/command")
     public ResponseEntity<Map<String, String>> executeCommand(@RequestBody Map<String, String> body) {
@@ -361,19 +384,11 @@ public class MinecraftServerController {
             command = command.substring(1);
         }
 
-        String output = rconService.sendCommandAndGetResponse(command);
-        if (output == null || output.isBlank() || output.contains("Error") || output.contains("disabled")) {
-            Map<String, Object> serverInfo = registeredServers.stream()
-                    .filter(s -> serverId.equals(s.get("id")))
-                    .findFirst()
-                    .orElse(registeredServers.isEmpty() ? Map.of("containerName", defaultContainerName) : registeredServers.get(0));
-            String cName = (String) serverInfo.get("containerName");
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        String cName = optServer.isPresent() ? optServer.get().getContainerName() : defaultContainerName;
 
-            String dockerExecOut = executeDockerCommandWithOutput("docker exec " + cName + " rcon-cli " + command);
-            if (!dockerExecOut.isBlank()) {
-                output = dockerExecOut;
-            }
-        }
+        String dockerExecOut = executeDockerCommandWithOutput("docker exec " + cName + " rcon-cli " + command);
+        String output = dockerExecOut;
 
         String finalResult = (output != null && !output.isBlank()) ? output.trim() : "[Server]: Команда " + command + " выполнена";
         return ResponseEntity.ok(Map.of("command", command, "output", finalResult));
@@ -384,19 +399,17 @@ public class MinecraftServerController {
      */
     @GetMapping("/console")
     public ResponseEntity<Map<String, Object>> getConsoleLogs(@RequestParam(defaultValue = "server-1") String serverId) {
-        Map<String, Object> serverInfo = registeredServers.stream()
-                .filter(s -> serverId.equals(s.get("id")))
-                .findFirst()
-                .orElse(registeredServers.isEmpty() ? Map.of("containerName", defaultContainerName) : registeredServers.get(0));
-
-        String cName = (String) serverInfo.get("containerName");
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        String cName = optServer.isPresent() ? optServer.get().getContainerName() : defaultContainerName;
+        String serverPath = optServer.isPresent() ? optServer.get().getPath() : defaultServerPath;
+        
         List<String> lines = new ArrayList<>();
 
         String rawDockerLogs = executeDockerCommandWithOutput("docker logs --tail 200 " + cName);
         if (!rawDockerLogs.isBlank()) {
             lines = Arrays.asList(rawDockerLogs.split("\r?\n"));
         } else {
-            Path logPath = Paths.get(defaultServerPath, "logs", "latest.log");
+            Path logPath = Paths.get(serverPath, "logs", "latest.log");
             if (Files.exists(logPath)) {
                 try {
                     List<String> allLines = Files.readAllLines(logPath, StandardCharsets.UTF_8);
@@ -428,10 +441,11 @@ public class MinecraftServerController {
             @RequestParam(defaultValue = "") String path
     ) {
         List<Map<String, Object>> filesList = new ArrayList<>();
-        Path baseDir = Paths.get(defaultServerPath);
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        String serverPath = optServer.isPresent() ? optServer.get().getPath() : defaultServerPath;
+        Path baseDir = Paths.get(serverPath);
         Path targetDir = path.isEmpty() ? baseDir : baseDir.resolve(path).normalize();
 
-        // Security check against directory traversal
         if (!targetDir.startsWith(baseDir.normalize())) {
             targetDir = baseDir;
         }
@@ -457,7 +471,6 @@ public class MinecraftServerController {
             }
         }
 
-        // Default file structure demo if folder is newly created
         if (filesList.isEmpty() && path.isEmpty()) {
             filesList.add(Map.of("name", "plugins", "relativePath", "plugins", "isDir", true, "sizeBytes", 0, "lastModified", System.currentTimeMillis()));
             filesList.add(Map.of("name", "mods", "relativePath", "mods", "isDir", true, "sizeBytes", 0, "lastModified", System.currentTimeMillis()));
@@ -470,7 +483,6 @@ public class MinecraftServerController {
             filesList.add(Map.of("name", "whitelist.json", "relativePath", "whitelist.json", "isDir", false, "sizeBytes", 80, "lastModified", System.currentTimeMillis()));
         }
 
-        // Sort directories first, then files
         filesList.sort((a, b) -> {
             boolean aDir = (boolean) a.get("isDir");
             boolean bDir = (boolean) b.get("isDir");
@@ -489,7 +501,9 @@ public class MinecraftServerController {
             @RequestParam(defaultValue = "server-1") String serverId,
             @RequestParam String path
     ) {
-        Path baseDir = Paths.get(defaultServerPath);
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        String serverPath = optServer.isPresent() ? optServer.get().getPath() : defaultServerPath;
+        Path baseDir = Paths.get(serverPath);
         Path targetFile = baseDir.resolve(path).normalize();
 
         if (!targetFile.startsWith(baseDir.normalize())) {
@@ -505,7 +519,6 @@ public class MinecraftServerController {
                 return ResponseEntity.internalServerError().body(Map.of("error", "Не удалось прочитать файл"));
             }
         } else {
-            // Provide default file templates if file doesn't exist yet
             if (path.endsWith("server.properties")) {
                 content = "# StoryLegends Minecraft Server Configuration\nserver-port=25565\nenable-rcon=true\nrcon.port=25575\nrcon.password=storylegends_rcon_pass\nmotd=StoryLegends Minecraft Server\npvp=true\ndifficulty=hard\nmax-players=50\nonline-mode=false\n";
             } else if (path.endsWith("ops.json")) {
@@ -523,6 +536,7 @@ public class MinecraftServerController {
      */
     @PostMapping("/files/write")
     public ResponseEntity<Map<String, String>> writeFile(@RequestBody Map<String, String> body) {
+        String serverId = body.getOrDefault("serverId", "server-1");
         String path = body.getOrDefault("path", "");
         String content = body.getOrDefault("content", "");
 
@@ -530,7 +544,9 @@ public class MinecraftServerController {
             return ResponseEntity.badRequest().body(Map.of("error", "Путь к файлу не указан"));
         }
 
-        Path baseDir = Paths.get(defaultServerPath);
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        String serverPath = optServer.isPresent() ? optServer.get().getPath() : defaultServerPath;
+        Path baseDir = Paths.get(serverPath);
         Path targetFile = baseDir.resolve(path).normalize();
 
         if (!targetFile.startsWith(baseDir.normalize())) {
@@ -540,7 +556,7 @@ public class MinecraftServerController {
         try {
             Files.createDirectories(targetFile.getParent());
             Files.writeString(targetFile, content, StandardCharsets.UTF_8);
-            logger.info("File saved in container: {}", path);
+            logger.info("File saved in container for server {}: {}", serverId, path);
             return ResponseEntity.ok(Map.of("message", "Файл " + path + " успешно сохранен в контейнере!"));
         } catch (Exception e) {
             logger.error("Failed to write file in container", e);
@@ -554,6 +570,7 @@ public class MinecraftServerController {
     @PostMapping("/files/upload")
     public ResponseEntity<Map<String, String>> uploadFileToContainer(
             @RequestParam("file") MultipartFile file,
+            @RequestParam(defaultValue = "server-1") String serverId,
             @RequestParam(defaultValue = "plugins") String targetFolder
     ) {
         if (file.isEmpty()) {
@@ -561,14 +578,16 @@ public class MinecraftServerController {
         }
 
         try {
-            Path baseDir = Paths.get(defaultServerPath);
+            Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+            String serverPath = optServer.isPresent() ? optServer.get().getPath() : defaultServerPath;
+            Path baseDir = Paths.get(serverPath);
             Path targetDir = baseDir.resolve(targetFolder).normalize();
             Files.createDirectories(targetDir);
 
             Path targetFile = targetDir.resolve(file.getOriginalFilename());
             Files.copy(file.getInputStream(), targetFile, StandardCopyOption.REPLACE_EXISTING);
 
-            logger.info("File uploaded directly into container folder {}: {}", targetFolder, file.getOriginalFilename());
+            logger.info("File uploaded directly into server {} folder {}: {}", serverId, targetFolder, file.getOriginalFilename());
 
             return ResponseEntity.ok(Map.of(
                 "message", "Файл " + file.getOriginalFilename() + " успешно загружен в контейнер (/data/" + targetFolder + ")!"
@@ -583,8 +602,13 @@ public class MinecraftServerController {
      * Delete file or folder inside container
      */
     @DeleteMapping("/files")
-    public ResponseEntity<Map<String, String>> deleteFileInContainer(@RequestParam String path) {
-        Path baseDir = Paths.get(defaultServerPath);
+    public ResponseEntity<Map<String, String>> deleteFileInContainer(
+            @RequestParam(defaultValue = "server-1") String serverId,
+            @RequestParam String path
+    ) {
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        String serverPath = optServer.isPresent() ? optServer.get().getPath() : defaultServerPath;
+        Path baseDir = Paths.get(serverPath);
         Path targetFile = baseDir.resolve(path).normalize();
 
         if (!targetFile.startsWith(baseDir.normalize())) {
@@ -607,27 +631,30 @@ public class MinecraftServerController {
      * Get online players list with skins
      */
     @GetMapping("/players")
-    public ResponseEntity<List<Map<String, Object>>> getOnlinePlayers() {
+    public ResponseEntity<List<Map<String, Object>>> getOnlinePlayers(@RequestParam(defaultValue = "server-1") String serverId) {
         List<Map<String, Object>> players = new ArrayList<>();
-        String rconOutput = rconService.sendCommandAndGetResponse("list");
-
-        if (rconOutput != null && rconOutput.contains(":")) {
-            String namesPart = rconOutput.substring(rconOutput.indexOf(":") + 1).trim();
-            if (!namesPart.isEmpty()) {
-                String[] names = namesPart.split(",");
-                for (String name : names) {
-                    String cleanName = name.trim();
-                    if (!cleanName.isEmpty()) {
-                        players.add(Map.of(
-                            "name", cleanName,
-                            "avatarUrl", "https://mc-heads.net/avatar/" + cleanName + "/64",
-                            "ping", (int)(Math.random() * 30 + 15)
-                        ));
+        
+        Optional<MinecraftServer> optServer = serverRepository.findByServerId(serverId);
+        if (optServer.isPresent()) {
+            String cName = optServer.get().getContainerName();
+            String rconOutput = executeDockerCommandWithOutput("docker exec " + cName + " rcon-cli list");
+            if (rconOutput != null && rconOutput.contains(":")) {
+                String namesPart = rconOutput.substring(rconOutput.indexOf(":") + 1).trim();
+                if (!namesPart.isEmpty()) {
+                    String[] names = namesPart.split(",");
+                    for (String name : names) {
+                        String cleanName = name.trim();
+                        if (!cleanName.isEmpty()) {
+                            players.add(Map.of(
+                                "name", cleanName,
+                                "avatarUrl", "https://mc-heads.net/avatar/" + cleanName + "/64",
+                                "ping", (int)(Math.random() * 30 + 15)
+                            ));
+                        }
                     }
                 }
             }
         }
-
         return ResponseEntity.ok(players);
     }
 

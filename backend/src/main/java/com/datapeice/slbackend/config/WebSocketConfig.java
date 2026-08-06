@@ -1,33 +1,34 @@
 package com.datapeice.slbackend.config;
 
+import com.datapeice.slbackend.websocket.AdminWebSocketHandler;
+import com.datapeice.slbackend.websocket.AdminWebSocketHandshakeInterceptor;
+import com.datapeice.slbackend.websocket.CustomSimpMessagingTemplate;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.socket.config.annotation.EnableWebSocket;
+import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
 
 @Configuration
-@EnableWebSocketMessageBroker
-public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+@EnableWebSocket
+public class WebSocketConfig implements WebSocketConfigurer {
 
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic");
-        config.setApplicationDestinationPrefixes("/app");
+    private final AdminWebSocketHandler adminWebSocketHandler;
+
+    public WebSocketConfig(AdminWebSocketHandler adminWebSocketHandler) {
+        this.adminWebSocketHandler = adminWebSocketHandler;
     }
 
     @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/api/ws/admin")
+    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+        registry.addHandler(adminWebSocketHandler, "/api/ws/admin")
+                .addInterceptors(new AdminWebSocketHandshakeInterceptor())
                 .setAllowedOriginPatterns("*");
-        registry.addEndpoint("/api/ws/admin")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+    }
 
-        registry.addEndpoint("/ws/admin")
-                .setAllowedOriginPatterns("*");
-        registry.addEndpoint("/ws/admin")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+    @Bean
+    public SimpMessagingTemplate simpMessagingTemplate() {
+        return new CustomSimpMessagingTemplate(adminWebSocketHandler);
     }
 }

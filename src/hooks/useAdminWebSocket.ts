@@ -12,6 +12,7 @@ export interface ServerMetricsMessage {
     ramMaxMb: number;
     tps: number;
     onlinePlayers: number;
+    status?: string;
 }
 
 export type AdminWSMessage = ServerLogMessage | ServerMetricsMessage;
@@ -53,20 +54,36 @@ export function useAdminWebSocket(
 
             ws.onmessage = (event) => {
                 try {
-                    const data: AdminWSMessage = JSON.parse(event.data);
+                    const data = JSON.parse(event.data);
+                    
+                    // Route logs and metrics to local hooks if it's for current server
                     if (data.type === 'log') {
                         setLogs((prev) => [...prev, data.message]);
                     } else if (data.type === 'metrics') {
                         setMetrics(data);
                     }
-                } catch {
-                    setLogs((prev) => [...prev, event.data]);
-                }
 
-                if (typeof serverIdOrTopicMap === 'object' && serverIdOrTopicMap !== null) {
-                    Object.values(serverIdOrTopicMap).forEach(fn => {
-                        if (typeof fn === 'function') fn(event.data);
-                    });
+                    // Precise routing based on topics if a topic map is used
+                    if (typeof serverIdOrTopicMap === 'object' && serverIdOrTopicMap !== null) {
+                        if (data.topic) {
+                            const callback = serverIdOrTopicMap[data.topic];
+                            if (typeof callback === 'function') {
+                                callback(data.data || data);
+                            }
+                        } else {
+                            // Fallback to legacy callback trigger for all handlers
+                            Object.values(serverIdOrTopicMap).forEach(fn => {
+                                if (typeof fn === 'function') fn(event.data);
+                            });
+                        }
+                    }
+                } catch {
+                    // Fallback to calling all callbacks if it's not JSON
+                    if (typeof serverIdOrTopicMap === 'object' && serverIdOrTopicMap !== null) {
+                        Object.values(serverIdOrTopicMap).forEach(fn => {
+                            if (typeof fn === 'function') fn(event.data);
+                        });
+                    }
                 }
             };
 
@@ -99,5 +116,5 @@ export function useAdminWebSocket(
         }
     }, []);
 
-    return { logs, metrics, isConnected, sendCommand };
+    return { logs, setLogs, metrics, setMetrics, isConnected, sendCommand };
 }

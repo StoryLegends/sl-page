@@ -13,7 +13,7 @@ import {
 } from '../../../api/minecraft';
 import { useNotification } from '../../../context/NotificationContext';
 
-import { useMinecraftWebSocket } from '../../../hooks/useMinecraftWebSocket';
+import { useAdminWebSocket } from '../../../hooks/useAdminWebSocket';
 
 const MinecraftServerTab: React.FC = () => {
     const { showNotification } = useNotification();
@@ -24,20 +24,14 @@ const MinecraftServerTab: React.FC = () => {
     const [status, setStatus] = useState<MinecraftStatus | null>(null);
     const [isCreateServerModalOpen, setIsCreateServerModalOpen] = useState(false);
     
-    // WebSocket Real-time Stream Hook (Replaces HTTP Polling)
-    const { status: wsStatus, logs: wsLogs } = useMinecraftWebSocket(selectedServerId || 'server-1');
+    // WebSocket Real-time Stream Hook
+    const { logs, setLogs, metrics: wsStatus, sendCommand } = useAdminWebSocket(selectedServerId || 'server-1');
 
     useEffect(() => {
         if (wsStatus) {
-            setStatus(wsStatus);
+            setStatus(wsStatus as any);
         }
     }, [wsStatus]);
-
-    useEffect(() => {
-        if (wsLogs && wsLogs.length > 0) {
-            setLogs(wsLogs);
-        }
-    }, [wsLogs]);
     
     // New Server Form State
     const [newServerForm, setNewServerForm] = useState({
@@ -60,8 +54,7 @@ const MinecraftServerTab: React.FC = () => {
 
     const [activeSubTab, setActiveSubTab] = useState<'console' | 'files' | 'players' | 'settings'>('console');
 
-    // Console / Terminal state
-    const [logs, setLogs] = useState<string[]>([]);
+    // Console / Terminal state (provided by useAdminWebSocket hook)
     const [command, setCommand] = useState('');
     const [autoScroll, setAutoScroll] = useState(true);
     const terminalEndRef = useRef<HTMLDivElement>(null);
@@ -132,6 +125,7 @@ const MinecraftServerTab: React.FC = () => {
 
     useEffect(() => {
         if (selectedServerId) {
+            setLogs([]);
             fetchStatus();
             fetchLogs();
         }
@@ -186,7 +180,7 @@ const MinecraftServerTab: React.FC = () => {
         if (selectedServerId && activeSubTab === 'files' && !editingFile) {
             loadFiles(currentPath);
         } else if (selectedServerId && activeSubTab === 'players') {
-            minecraftApi.getPlayers().then(setPlayers).catch(console.error);
+            minecraftApi.getPlayers(selectedServerId).then(setPlayers).catch(console.error);
         }
     }, [activeSubTab, selectedServerId, currentPath]);
 
@@ -281,12 +275,9 @@ const MinecraftServerTab: React.FC = () => {
         setLogs(prev => [...prev, `> ${cmdToRun}`]);
 
         try {
-            const res = await minecraftApi.sendCommand(cmdToRun, selectedServerId || 'server-1');
-            if (res.output) {
-                setLogs(prev => [...prev, res.output]);
-            }
+            sendCommand(cmdToRun);
         } catch (err) {
-            showNotification('Ошибка отправки команды RCON', 'error');
+            showNotification('Ошибка отправки команды WebSocket', 'error');
         }
     };
 
@@ -304,7 +295,7 @@ const MinecraftServerTab: React.FC = () => {
         if (!editingFile) return;
         setIsSavingFile(true);
         try {
-            const res = await minecraftApi.writeFile(editingFile.path, editingFile.content);
+            const res = await minecraftApi.writeFile(editingFile.path, editingFile.content, selectedServerId || 'server-1');
             showNotification(res.message || 'Файл сохранен в контейнере!', 'success');
         } catch (err) {
             showNotification('Ошибка при сохранении файла', 'error');
@@ -318,7 +309,7 @@ const MinecraftServerTab: React.FC = () => {
         if (!file) return;
         setIsUploadingFile(true);
         try {
-            const res = await minecraftApi.uploadContainerFile(file, currentPath || 'plugins');
+            const res = await minecraftApi.uploadContainerFile(file, currentPath || 'plugins', selectedServerId || 'server-1');
             showNotification(res.message || 'Файл загружен в контейнер!', 'success');
             loadFiles(currentPath);
         } catch (err) {
@@ -331,7 +322,7 @@ const MinecraftServerTab: React.FC = () => {
     const handleDeleteContainerFile = async (path: string) => {
         if (!window.confirm(`Удалить файл ${path} из контейнера?`)) return;
         try {
-            const res = await minecraftApi.deleteContainerFile(path);
+            const res = await minecraftApi.deleteContainerFile(path, selectedServerId || 'server-1');
             showNotification(res.message || 'Файл удален', 'info');
             loadFiles(currentPath);
         } catch (err) {
@@ -787,7 +778,20 @@ const MinecraftServerTab: React.FC = () => {
                             ) : (
                                 <div className="space-y-4">
                                     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4">
-                                        <div className="flex items-center gap-2 text-xs font-mono text-gray-300">
+                                        <div className="flex items-center gap-3 text-xs font-mono text-gray-300">
+                                            {currentPath && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const parts = currentPath.split('/').filter(Boolean);
+                                                        parts.pop();
+                                                        loadFiles(parts.join('/'));
+                                                    }}
+                                                    className="px-2.5 py-1 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all flex items-center gap-1.5 cursor-pointer font-bold font-sans"
+                                                >
+                                                    <ArrowLeft className="w-3.5 h-3.5" /> Назад
+                                                </button>
+                                            )}
                                             <button
                                                 type="button"
                                                 onClick={() => loadFiles('')}
