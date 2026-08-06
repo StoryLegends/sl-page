@@ -15,7 +15,6 @@ const Layout = ({ children }: LayoutProps) => {
       <div id="nav-sentinel" className="absolute top-0 h-[10px] left-0 right-0 pointer-events-none bg-transparent opacity-0 z-[-1]" />
       <Background />
       <SeasonalEffects />
-      <AnnouncementBanner />
       <Navbar />
       <main className="flex-grow">
         {children}

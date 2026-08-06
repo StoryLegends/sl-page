@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Youtube, Shield, User, FileText, MessageSquare } from 'lucide-react';
 import UserAvatar from './UserAvatar';
 import { useAuth } from '../context/AuthContext';
+import AnnouncementBanner from './AnnouncementBanner';
 
 
 const DiscordIcon = ({ className }: { className?: string }) => (
@@ -80,8 +81,9 @@ const Navbar: React.FC = () => {
   return (
     <>
       <div id="nav-sentinel" className="absolute top-0 left-0 w-full h-1 pointer-events-none" />
-      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${scrolled ? 'py-3 md:py-4 bg-[#0a0a0a] shadow-lg' : 'py-3 md:py-6 bg-transparent'}`}>
-        <div className="max-w-[1440px] mx-auto px-4 md:px-10 flex items-center justify-between">
+      <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-300 ${scrolled ? 'bg-[#0a0a0a]/95 backdrop-blur-md shadow-lg' : 'bg-transparent'}`}>
+        <AnnouncementBanner />
+        <nav className="max-w-[1440px] mx-auto px-4 md:px-10 py-3 md:py-4 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="relative group cursor-pointer z-50">
             <div className="absolute inset-0 bg-gradient-to-r from-story-gold/40 via-transparent to-legends-blue/60 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-full" />
@@ -223,8 +225,8 @@ const Navbar: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      </nav>
+        </nav>
+      </header>
 
       {/* Mobile Drawer */}
       <div className={`fixed inset-0 bg-black/80 backdrop-blur-sm z-[120] transition-opacity duration-300 md:hidden ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setMobileMenuOpen(false)} />
