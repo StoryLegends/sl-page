@@ -212,12 +212,13 @@ public class MinecraftServerController {
         String dirName = "server-1".equals(id) ? "minecraft_data" : "minecraft_data_" + index;
         Path dataPath = Paths.get("./docker", dirName);
 
-        // 1. Stop & Kill Container
-        executeDockerCommandWithOutput("docker stop -t 5 " + cName);
-        executeDockerCommandWithOutput("docker rm -f " + cName);
-        executeDockerCommandWithOutput("docker volume rm minecraft_node_data_" + id);
+        // 1. Force kill & remove container with its attached volumes (-v)
+        executeDockerCommandWithOutput("docker rm -f -v " + cName);
 
-        // 2. Delete ALL data files on disk (maps, plugins, configs, etc.) using system rm -rf
+        // 2. Explicitly remove Volume
+        executeDockerCommandWithOutput("docker volume rm -f minecraft_node_data_" + id);
+
+        // 3. Remove local directory if present
         try {
             Process p = new ProcessBuilder("rm", "-rf", dataPath.toAbsolutePath().toString()).start();
             p.waitFor();
