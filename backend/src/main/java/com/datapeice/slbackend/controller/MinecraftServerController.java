@@ -198,12 +198,10 @@ public class MinecraftServerController {
         executeDockerCommandWithOutput("docker rm -f " + cName);
         executeDockerCommandWithOutput("docker volume rm minecraft_node_data_" + id);
 
-        // 2. Delete ALL data files on disk (maps, plugins, configs, etc.) using Docker root permission
+        // 2. Delete ALL data files on disk (maps, plugins, configs, etc.) using system rm -rf
         try {
-            Path parentDir = dataPath.getParent().toAbsolutePath().normalize();
-            String absParent = parentDir.toString().replace("\\", "/");
-            executeDockerCommandWithOutput("docker run --rm -v " + absParent + ":/docker_root alpine rm -rf /docker_root/" + dirName);
-
+            Process p = new ProcessBuilder("rm", "-rf", dataPath.toAbsolutePath().toString()).start();
+            p.waitFor();
             if (Files.exists(dataPath)) {
                 FileSystemUtils.deleteRecursively(dataPath);
             }
@@ -268,6 +266,7 @@ public class MinecraftServerController {
             initialProps.put("java-version", javaVersion);
 
             writePropertiesFile(propsFile, initialProps);
+            writePropertiesFile(dataPath.resolve("sl-node.properties"), initialProps);
             logger.info("Created server configuration file: {}", propsFile.toAbsolutePath());
         } catch (Exception e) {
             logger.error("Error creating server directory", e);
@@ -308,6 +307,7 @@ public class MinecraftServerController {
         try {
             Files.createDirectories(dataPath);
             writePropertiesFile(propsFile, currentProps);
+            writePropertiesFile(dataPath.resolve("sl-node.properties"), currentProps);
         } catch (Exception e) {
             logger.error("Failed to write updated server.properties", e);
         }
@@ -750,6 +750,24 @@ public class MinecraftServerController {
                 }
             } catch (Exception e) {
                 logger.error("Error reading properties file {}", path, e);
+            }
+        }
+
+        Path slNodeFile = (path != null && path.getParent() != null) ? path.getParent().resolve("sl-node.properties") : null;
+        if (slNodeFile != null && Files.exists(slNodeFile)) {
+            try {
+                List<String> lines = Files.readAllLines(slNodeFile, StandardCharsets.UTF_8);
+                for (String line : lines) {
+                    line = line.trim();
+                    if (!line.startsWith("#") && line.contains("=")) {
+                        int idx = line.indexOf("=");
+                        String key = line.substring(0, idx).trim();
+                        String val = line.substring(idx + 1).trim();
+                        props.put(key, val);
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Error reading sl-node.properties file {}", slNodeFile, e);
             }
         }
         return props;

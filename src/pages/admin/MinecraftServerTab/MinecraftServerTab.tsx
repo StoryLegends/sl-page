@@ -70,6 +70,19 @@ const MinecraftServerTab: React.FC = () => {
         }
     }, [wsStatus]);
     
+    const getVersionsForEngine = (type: string, versionsList: string[]): string[] => {
+        if (!versionsList || versionsList.length === 0) return [];
+        return versionsList.filter(v => {
+            const parts = v.split('.').map(n => parseInt(n, 10));
+            const minor = parts[1] !== undefined ? parts[1] : 0;
+            if (type === 'PURPUR') return minor >= 16;
+            if (type === 'PAPER') return minor >= 8;
+            if (type === 'FABRIC') return minor >= 14;
+            if (type === 'FORGE') return minor >= 7;
+            return true;
+        });
+    };
+
     // New Server Form State
     const [newServerForm, setNewServerForm] = useState({
         name: '',
@@ -1038,14 +1051,23 @@ const MinecraftServerTab: React.FC = () => {
                                             <label className="block text-gray-300 font-bold mb-1">Ядро / Движок</label>
                                             <select
                                                 value={settingsForm.type}
-                                                onChange={e => setSettingsForm({ ...settingsForm, type: e.target.value })}
+                                                onChange={e => {
+                                                    const newType = e.target.value;
+                                                    const validVers = getVersionsForEngine(newType, availableVersions);
+                                                    const keepCurrent = validVers.includes(settingsForm.version);
+                                                    setSettingsForm({
+                                                        ...settingsForm,
+                                                        type: newType,
+                                                        version: keepCurrent ? settingsForm.version : (validVers[0] || '1.20.4')
+                                                    });
+                                                }}
                                                 className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-story-gold font-bold"
                                             >
-                                                <option value="PAPER">Paper (Рекомендуется)</option>
-                                                <option value="PURPUR">Purpur (High Performance)</option>
-                                                <option value="FABRIC">Fabric (Modded)</option>
-                                                <option value="FORGE">Forge (Modded)</option>
-                                                <option value="SPIGOT">Spigot</option>
+                                                <option value="PAPER">Paper (1.8.8+)</option>
+                                                <option value="PURPUR">Purpur (1.16.5+)</option>
+                                                <option value="FABRIC">Fabric (1.14+)</option>
+                                                <option value="FORGE">Forge (1.7.10+)</option>
+                                                <option value="SPIGOT">Spigot (1.7.2+)</option>
                                             </select>
                                         </div>
 
