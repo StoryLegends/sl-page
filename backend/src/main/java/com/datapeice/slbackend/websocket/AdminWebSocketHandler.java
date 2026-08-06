@@ -170,7 +170,6 @@ public class AdminWebSocketHandler extends TextWebSocketHandler {
         message.put("topic", topic);
         message.put("data", data);
 
-        // Standardize format for legacy React useAdminWebSocket wrapper
         if (topic.startsWith("/topic/minecraft/status")) {
             message.put("type", "metrics");
             if (data instanceof Map) {
@@ -178,12 +177,12 @@ public class AdminWebSocketHandler extends TextWebSocketHandler {
                 for (Map.Entry<?, ?> entry : dataMap.entrySet()) {
                     message.put(String.valueOf(entry.getKey()), entry.getValue());
                 }
-                message.put("cpu", dataMap.getOrDefault("cpuUsagePercent", 0.0));
-                message.put("ramUsedMb", dataMap.getOrDefault("memoryUsedMb", 0));
-                message.put("ramMaxMb", dataMap.getOrDefault("memoryMaxMb", 4096));
-                message.put("tps", dataMap.getOrDefault("tps", 20.0));
-                message.put("onlinePlayers", dataMap.getOrDefault("onlinePlayers", 0));
-                message.put("status", dataMap.getOrDefault("status", "OFFLINE"));
+                message.put("cpu", dataMap.get("cpuUsagePercent") != null ? dataMap.get("cpuUsagePercent") : 0.0);
+                message.put("ramUsedMb", dataMap.get("memoryUsedMb") != null ? dataMap.get("memoryUsedMb") : 0);
+                message.put("ramMaxMb", dataMap.get("memoryMaxMb") != null ? dataMap.get("memoryMaxMb") : 4096);
+                message.put("tps", dataMap.get("tps") != null ? dataMap.get("tps") : 20.0);
+                message.put("onlinePlayers", dataMap.get("onlinePlayers") != null ? dataMap.get("onlinePlayers") : 0);
+                message.put("status", dataMap.get("status") != null ? dataMap.get("status") : "OFFLINE");
             }
         } else if (topic.startsWith("/topic/minecraft/logs")) {
             message.put("type", "log");
