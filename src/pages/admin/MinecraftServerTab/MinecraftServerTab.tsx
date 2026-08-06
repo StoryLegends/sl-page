@@ -118,6 +118,7 @@ const MinecraftServerTab: React.FC = () => {
     const [editingFile, setEditingFile] = useState<{ path: string; content: string } | null>(null);
     const [isSavingFile, setIsSavingFile] = useState(false);
     const [isUploadingFile, setIsUploadingFile] = useState(false);
+    const [isDraggingFile, setIsDraggingFile] = useState(false);
 
     // Players state
     const [players, setPlayers] = useState<MinecraftPlayer[]>([]);
@@ -363,18 +364,28 @@ const MinecraftServerTab: React.FC = () => {
         }
     };
 
-    const handleUploadToContainer = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const handleUploadFileList = async (files: FileList | File[]) => {
+        if (!files || files.length === 0) return;
         setIsUploadingFile(true);
         try {
-            const res = await minecraftApi.uploadContainerFile(file, currentPath || 'plugins', selectedServerId || 'server-1');
-            showNotification(res.message || 'Файл загружен в контейнер!', 'success');
+            let successCount = 0;
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                await minecraftApi.uploadContainerFile(file, currentPath || '', selectedServerId || 'server-1');
+                successCount++;
+            }
+            showNotification(`Успешно загружено файлов: ${successCount}!`, 'success');
             loadFiles(currentPath);
         } catch (err) {
-            showNotification('Ошибка загрузки файла в контейнер', 'error');
+            showNotification('Ошибка загрузки файлов в контейнер', 'error');
         } finally {
             setIsUploadingFile(false);
+        }
+    };
+
+    const handleUploadToContainer = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleUploadFileList(e.target.files);
         }
     };
 
@@ -644,7 +655,7 @@ const MinecraftServerTab: React.FC = () => {
 
                             <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-2">
                                 <div className="flex items-center justify-between text-gray-400">
-                                    <span className="flex items-center gap-1.5 font-bold"><HardDrive className="w-4 h-4 text-purple-400" /> RAM Память</span>
+                                    <span className="flex items-center gap-1.5 font-bold"><HardDrive className="w-4 h-4 text-purple-400" /> RAM</span>
                                     <span className="font-mono text-white font-bold">{((status?.memoryUsedMb || 0) / 1024).toFixed(2)} / {currentServer?.memory || '4G'}</span>
                                 </div>
                                 <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
@@ -723,7 +734,7 @@ const MinecraftServerTab: React.FC = () => {
                             <div className="flex items-center justify-between border-b border-white/10 pb-3 text-xs">
                                 <span className="font-mono text-gray-400 flex items-center gap-2">
                                     <Terminal className="w-4 h-4 text-story-gold" />
-                                    Live RCON Console Stream ({currentServer?.name})
+                                    Терминал
                                 </span>
                                 <div className="flex items-center gap-4">
                                     <label className="flex items-center gap-2 text-gray-400 cursor-pointer">
@@ -881,6 +892,7 @@ const MinecraftServerTab: React.FC = () => {
                                                 {isUploadingFile ? 'Загрузка...' : 'Загрузить файл в контейнер'}
                                                 <input
                                                     type="file"
+                                                    multiple
                                                     className="hidden"
                                                     onChange={handleUploadToContainer}
                                                     disabled={isUploadingFile}
@@ -889,7 +901,25 @@ const MinecraftServerTab: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    <div className="bg-black/40 border border-white/10 rounded-xl overflow-hidden text-xs">
+                                    <div 
+                                        onDragOver={(e) => { e.preventDefault(); setIsDraggingFile(true); }}
+                                        onDragLeave={(e) => { e.preventDefault(); setIsDraggingFile(false); }}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            setIsDraggingFile(false);
+                                            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                                                handleUploadFileList(e.dataTransfer.files);
+                                            }
+                                        }}
+                                        className="bg-black/40 border border-white/10 rounded-xl overflow-hidden text-xs relative min-h-[250px]"
+                                    >
+                                        {isDraggingFile && (
+                                            <div className="absolute inset-0 bg-purple-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center border-2 border-dashed border-purple-400 rounded-xl space-y-3 p-6">
+                                                <Upload className="w-12 h-12 text-purple-300 animate-bounce" />
+                                                <p className="text-base font-bold text-white">Перетащите файлы сюда для загрузки</p>
+                                                <p className="text-xs text-purple-300 font-mono">Папка назначения: /{currentPath || 'data'}</p>
+                                            </div>
+                                        )}
                                         <div className="grid grid-cols-12 px-4 py-2.5 bg-white/5 border-b border-white/10 text-gray-400 font-bold">
                                             <div className="col-span-6">ИМЯ ФАЙЛА / ПАПКИ</div>
                                             <div className="col-span-3">РАЗМЕР</div>
