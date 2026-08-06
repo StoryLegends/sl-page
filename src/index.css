@@ -58,7 +58,19 @@
   --color-legends-blue: #00BFFF;
   --color-legends-blue-light: #4DD2FF;
   --color-legends-blue-dark: #0086B3;
+}
 
+/* Select Option Dark Mode Custom Styling */
+select {
+  color-scheme: dark;
+}
+select option {
+  background-color: #0b1320 !important;
+  color: #ffffff !important;
+  padding: 8px !important;
+}
+
+@theme {
   --color-dark-bg: #050505;
 
   --animate-spin-slow: spin 20s linear infinite;

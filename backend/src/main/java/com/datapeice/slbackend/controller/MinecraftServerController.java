@@ -44,6 +44,78 @@ public class MinecraftServerController {
         return ResponseEntity.ok(getRegisteredServersList());
     }
 
+    private List<String> cachedVersions = null;
+    private long lastVersionFetch = 0;
+
+    /**
+     * Fetch dynamic Minecraft release versions from official Mojang Launcher Meta API
+     */
+    @GetMapping("/versions")
+    public ResponseEntity<List<String>> getMinecraftVersions() {
+        if (cachedVersions != null && !cachedVersions.isEmpty() && (System.currentTimeMillis() - lastVersionFetch < 3600000)) {
+            return ResponseEntity.ok(cachedVersions);
+        }
+
+        List<String> versions = new ArrayList<>();
+        try {
+            java.net.URL url = new java.net.URL("https://launchermeta.mojang.com/mc/game/version_manifest_v2.json");
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(4000);
+            conn.setReadTimeout(4000);
+            if (conn.getResponseCode() == 200) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    StringBuilder sb = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) sb.append(line);
+                    
+                    String json = sb.toString();
+                    Matcher matcher = Pattern.compile("\"id\"\\s*:\\s*\"([^\"]+)\"\\s*,\\s*\"type\"\\s*:\\s*\"release\"").matcher(json);
+                    while (matcher.find()) {
+                        String ver = matcher.group(1);
+                        if (!versions.contains(ver)) {
+                            versions.add(ver);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Failed to fetch versions from Mojang API, using fallback list: {}", e.getMessage());
+        }
+
+        if (versions.isEmpty()) {
+            versions = List.of("1.21.1", "1.21", "1.20.6", "1.20.4", "1.20.2", "1.19.4", "1.18.2", "1.16.5", "1.12.2", "1.8.8");
+        }
+
+        cachedVersions = versions;
+        lastVersionFetch = System.currentTimeMillis();
+        return ResponseEntity.ok(versions);
+    }
+
+    /**
+     * Inspect host VPS system resources (physical RAM & CPU cores)
+     */
+    @GetMapping("/system-resources")
+    public ResponseEntity<Map<String, Object>> getSystemResources() {
+        long totalMemoryBytes = 0;
+        try {
+            com.sun.management.OperatingSystemMXBean osBean =
+                    (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+            totalMemoryBytes = osBean.getTotalMemorySize();
+        } catch (Throwable e) {
+            totalMemoryBytes = Runtime.getRuntime().maxMemory();
+        }
+        
+        int totalCores = Runtime.getRuntime().availableProcessors();
+        long totalRamMb = totalMemoryBytes / (1024 * 1024);
+        if (totalRamMb <= 0) totalRamMb = 4096;
+
+        return ResponseEntity.ok(Map.of(
+            "totalRamMb", totalRamMb,
+            "totalCores", totalCores
+        ));
+    }
+
     public List<Map<String, Object>> getRegisteredServersList() {
         List<Map<String, Object>> result = new ArrayList<>();
         
@@ -59,10 +131,8 @@ public class MinecraftServerController {
             }
         }
 
-        if (dataDirs.isEmpty()) {
-            // Default server-1 directory
-            dataDirs.add(Paths.get(defaultServerPath));
-        }
+        // Sort directories by name so server-1, server-2 are in order
+        dataDirs.sort(Comparator.comparing(p -> p.getFileName().toString()));
 
         int index = 1;
         for (Path dir : dataDirs) {

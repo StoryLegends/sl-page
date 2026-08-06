@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { 
     Play, Square, RotateCw, Zap, Terminal, Cpu, HardDrive, Users, Activity, 
     Upload, Package, Server, Send, RefreshCw, CheckCircle2, Settings as SettingsIcon,
@@ -18,6 +18,10 @@ import { useAdminWebSocket } from '../../../hooks/useAdminWebSocket';
 const MinecraftServerTab: React.FC = () => {
     const { showNotification } = useNotification();
     
+    // System Hardware Resources & Dynamic Minecraft Versions
+    const [systemResources, setSystemResources] = useState<{ totalRamMb: number; totalCores: number }>({ totalRamMb: 4096, totalCores: 4 });
+    const [availableVersions, setAvailableVersions] = useState<string[]>(['1.21.1', '1.21', '1.20.6', '1.20.4', '1.20.2', '1.19.4', '1.16.5', '1.12.2']);
+
     // Server Selector State (Default: null = Grid / Tiles View)
     const [servers, setServers] = useState<MinecraftServerInfo[]>([]);
     const [selectedServerId, setSelectedServerId] = useState<string | null>(null);
@@ -26,6 +30,39 @@ const MinecraftServerTab: React.FC = () => {
     
     // WebSocket Real-time Stream Hook
     const { logs, setLogs, metrics: wsStatus, sendCommand } = useAdminWebSocket(selectedServerId || 'server-1');
+
+    useEffect(() => {
+        minecraftApi.getSystemResources().then(res => {
+            if (res && res.totalRamMb) setSystemResources(res);
+        }).catch(() => {});
+
+        minecraftApi.getVersions().then(verList => {
+            if (verList && verList.length > 0) {
+                setAvailableVersions(verList);
+                setNewServerForm(prev => ({ ...prev, version: verList[0] }));
+            }
+        }).catch(() => {});
+    }, []);
+
+    const ramOptions = useMemo(() => {
+        const totalGb = Math.max(1, Math.round(systemResources.totalRamMb / 1024));
+        const options = [];
+        if (totalGb >= 1) options.push({ val: '1G', label: '1 GB RAM' });
+        if (totalGb >= 1.5) options.push({ val: '1.5G', label: '1.5 GB RAM' });
+        if (totalGb >= 2) options.push({ val: '2G', label: '2 GB RAM' });
+        if (totalGb >= 3) options.push({ val: '3G', label: '3 GB RAM' });
+        if (totalGb >= 4) options.push({ val: '4G', label: totalGb === 4 ? '4 GB RAM (Максимум VPS)' : '4 GB RAM' });
+        if (totalGb >= 6) options.push({ val: '6G', label: totalGb === 6 ? '6 GB RAM (Максимум VPS)' : '6 GB RAM' });
+        if (totalGb >= 8) options.push({ val: '8G', label: totalGb === 8 ? '8 GB RAM (Максимум VPS)' : '8 GB RAM' });
+        if (totalGb >= 12) options.push({ val: '12G', label: '12 GB RAM' });
+        if (totalGb >= 16) options.push({ val: '16G', label: totalGb === 16 ? '16 GB RAM (Максимум VPS)' : '16 GB RAM' });
+        if (totalGb >= 32) options.push({ val: '32G', label: totalGb === 32 ? '32 GB RAM (Максимум VPS)' : '32 GB RAM' });
+
+        if (!options.some(o => o.val === `${totalGb}G`)) {
+            options.push({ val: `${totalGb}G`, label: `${totalGb} GB RAM (Максимум VPS)` });
+        }
+        return options;
+    }, [systemResources.totalRamMb]);
 
     useEffect(() => {
         if (wsStatus) {
@@ -231,6 +268,7 @@ const MinecraftServerTab: React.FC = () => {
             if (selectedServerId === serverId) {
                 setSelectedServerId(null);
             }
+            setServers(prev => prev.filter(s => s.id !== serverId));
             await fetchServers();
         } catch (err) {
             showNotification('Ошибка при удалении сервера', 'error');
@@ -1017,14 +1055,11 @@ const MinecraftServerTab: React.FC = () => {
                                             <select
                                                 value={settingsForm.version}
                                                 onChange={e => setSettingsForm({ ...settingsForm, version: e.target.value })}
-                                                className="w-full bg-black/50 border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-story-gold font-bold"
+                                                className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none focus:border-story-gold font-bold cursor-pointer [&>option]:bg-[#0b1320] [&>option]:text-white"
                                             >
-                                                <option value="1.20.4">1.20.4 (Актуальная)</option>
-                                                <option value="1.20.2">1.20.2</option>
-                                                <option value="1.19.4">1.19.4</option>
-                                                <option value="1.16.5">1.16.5 (Классическая)</option>
-                                                <option value="1.12.2">1.12.2</option>
-                                                <option value="1.8.8">1.8.8 (PvP)</option>
+                                                {availableVersions.map(v => (
+                                                    <option key={v} value={v}>{v}</option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>
@@ -1056,13 +1091,11 @@ const MinecraftServerTab: React.FC = () => {
                                             <select
                                                 value={settingsForm.memory}
                                                 onChange={e => setSettingsForm({ ...settingsForm, memory: e.target.value })}
-                                                className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold [&>option]:bg-[#0b1320] [&>option]:text-white"
+                                                className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold cursor-pointer [&>option]:bg-[#0b1320] [&>option]:text-white"
                                             >
-                                                <option value="1G">1 GB RAM</option>
-                                                <option value="1.5G">1.5 GB RAM</option>
-                                                <option value="2G">2 GB RAM</option>
-                                                <option value="3G">3 GB RAM</option>
-                                                <option value="4G">4 GB RAM (Максимум)</option>
+                                                {ramOptions.map(opt => (
+                                                    <option key={opt.val} value={opt.val}>{opt.label}</option>
+                                                ))}
                                             </select>
                                         </div>
 
@@ -1265,14 +1298,11 @@ const MinecraftServerTab: React.FC = () => {
                                     <select
                                         value={newServerForm.version}
                                         onChange={e => setNewServerForm({ ...newServerForm, version: e.target.value })}
-                                        className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold [&>option]:bg-[#0b1320] [&>option]:text-white"
+                                        className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold cursor-pointer [&>option]:bg-[#0b1320] [&>option]:text-white"
                                     >
-                                        <option value="1.20.4">1.20.4</option>
-                                        <option value="1.20.2">1.20.2</option>
-                                        <option value="1.19.4">1.19.4</option>
-                                        <option value="1.16.5">1.16.5</option>
-                                        <option value="1.12.2">1.12.2</option>
-                                        <option value="1.8.8">1.8.8</option>
+                                        {availableVersions.map(v => (
+                                            <option key={v} value={v}>{v}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -1283,13 +1313,11 @@ const MinecraftServerTab: React.FC = () => {
                                     <select
                                         value={newServerForm.memory}
                                         onChange={e => setNewServerForm({ ...newServerForm, memory: e.target.value })}
-                                        className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold [&>option]:bg-[#0b1320] [&>option]:text-white"
+                                        className="w-full bg-[#0b1320] border border-white/15 rounded-xl p-3 text-white focus:outline-none font-bold cursor-pointer [&>option]:bg-[#0b1320] [&>option]:text-white"
                                     >
-                                        <option value="1G">1 GB RAM</option>
-                                        <option value="1.5G">1.5 GB RAM</option>
-                                        <option value="2G">2 GB RAM</option>
-                                        <option value="3G">3 GB RAM</option>
-                                        <option value="4G">4 GB RAM (Максимум)</option>
+                                        {ramOptions.map(opt => (
+                                            <option key={opt.val} value={opt.val}>{opt.label}</option>
+                                        ))}
                                     </select>
                                 </div>
 

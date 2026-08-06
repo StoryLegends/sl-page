@@ -53,6 +53,14 @@ export interface MinecraftPlayer {
 }
 
 export const minecraftApi = {
+    getVersions: async (): Promise<string[]> => {
+        const res = await apiClient.get('/api/admin/minecraft/versions');
+        return res.data;
+    },
+    getSystemResources: async (): Promise<{ totalRamMb: number; totalCores: number }> => {
+        const res = await apiClient.get('/api/admin/minecraft/system-resources');
+        return res.data;
+    },
     getServers: async (): Promise<MinecraftServerInfo[]> => {
         const res = await apiClient.get('/api/admin/minecraft/servers');
         return res.data;
