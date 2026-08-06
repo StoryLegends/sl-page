@@ -74,7 +74,9 @@ const MinecraftServerTab: React.FC = () => {
         if (!versionsList || versionsList.length === 0) return [];
         return versionsList.filter(v => {
             const parts = v.split('.').map(n => parseInt(n, 10));
+            const major = parts[0] !== undefined ? parts[0] : 0;
             const minor = parts[1] !== undefined ? parts[1] : 0;
+            if (major >= 26) return true;
             if (type === 'PURPUR') return minor >= 16;
             if (type === 'PAPER') return minor >= 8;
             if (type === 'FABRIC') return minor >= 14;

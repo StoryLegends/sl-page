@@ -517,9 +517,6 @@ public class MinecraftServerController {
                     String rconPort = props.getOrDefault("rcon.port", "25575");
                     String type = props.getOrDefault("engine-type", "PAPER");
                     String version = props.getOrDefault("version", "1.20.4");
-                    if (!version.startsWith("1.") || version.length() > 10) {
-                        version = "1.20.4";
-                    }
                     String memory = props.getOrDefault("memory-limit", "4G");
                     String onlineMode = props.getOrDefault("online-mode", "false");
                     String rconPassword = props.getOrDefault("rcon.password", "storylegends_rcon_pass");
