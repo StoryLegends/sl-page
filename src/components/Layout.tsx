@@ -3,7 +3,6 @@ import Navbar from './Navbar';
 import Background from './Background';
 import Footer from './Footer';
 import SeasonalEffects from './SeasonalEffects';
-import AnnouncementBanner from './AnnouncementBanner';
 
 interface LayoutProps {
   children: ReactNode;
