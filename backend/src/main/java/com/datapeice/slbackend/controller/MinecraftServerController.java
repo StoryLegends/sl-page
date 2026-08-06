@@ -9,6 +9,9 @@ import org.springframework.util.FileSystemUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -17,6 +20,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/minecraft")
@@ -116,38 +120,74 @@ public class MinecraftServerController {
         ));
     }
 
+    private synchronized List<Map<String, Object>> readServersRegistry() {
+        Path registryFile = Paths.get("./docker/servers_registry.json");
+        if (Files.exists(registryFile)) {
+            try {
+                String json = Files.readString(registryFile, StandardCharsets.UTF_8);
+                ObjectMapper mapper = new ObjectMapper();
+                return mapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {});
+            } catch (Exception e) {
+                logger.error("Error reading servers registry", e);
+            }
+        }
+        return null;
+    }
+
+    private synchronized void writeServersRegistry(List<Map<String, Object>> servers) {
+        try {
+            Path registryFile = Paths.get("./docker/servers_registry.json");
+            if (registryFile.getParent() != null) {
+                Files.createDirectories(registryFile.getParent());
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.writerWithDefaultPrettyPrinter().writeValue(registryFile.toFile(), servers);
+        } catch (Exception e) {
+            logger.error("Error writing servers registry", e);
+        }
+    }
+
     public List<Map<String, Object>> getRegisteredServersList() {
-        List<Map<String, Object>> result = new ArrayList<>();
+        List<Map<String, Object>> registry = readServersRegistry();
         Set<String> serverIds = new LinkedHashSet<>();
 
-        // 1. Scan Docker Volumes matching minecraft_node_data_
-        String volOutput = executeDockerCommandWithOutput("docker volume ls -q --filter name=minecraft_node_data_");
-        if (volOutput != null && !volOutput.isBlank()) {
-            String[] vols = volOutput.split("\r?\n");
-            for (String v : vols) {
-                v = v.trim();
-                if (v.startsWith("minecraft_node_data_")) {
-                    String sId = v.replace("minecraft_node_data_", "");
-                    if (!sId.isBlank()) {
-                        serverIds.add(sId);
+        if (registry != null) {
+            for (Map<String, Object> s : registry) {
+                if (s.containsKey("id")) {
+                    serverIds.add(String.valueOf(s.get("id")));
+                }
+            }
+        } else {
+            // 1. Scan Docker Volumes matching minecraft_node_data_
+            String volOutput = executeDockerCommandWithOutput("docker volume ls -q --filter name=minecraft_node_data_");
+            if (volOutput != null && !volOutput.isBlank()) {
+                String[] vols = volOutput.split("\r?\n");
+                for (String v : vols) {
+                    v = v.trim();
+                    if (v.startsWith("minecraft_node_data_")) {
+                        String sId = v.replace("minecraft_node_data_", "");
+                        if (!sId.isBlank()) {
+                            serverIds.add(sId);
+                        }
                     }
                 }
             }
+
+            // 2. Scan local ./docker/ folder for legacy directories
+            Path dockerBase = Paths.get("./docker");
+            if (Files.exists(dockerBase) && Files.isDirectory(dockerBase)) {
+                try (var stream = Files.list(dockerBase)) {
+                    stream.filter(p -> Files.isDirectory(p) && p.getFileName().toString().startsWith("minecraft_data"))
+                          .forEach(p -> {
+                              String dirName = p.getFileName().toString();
+                              String sId = dirName.equals("minecraft_data") ? "server-1" : "server-" + dirName.replace("minecraft_data_", "");
+                              serverIds.add(sId);
+                          });
+                } catch (Exception ignored) {}
+            }
         }
 
-        // 2. Scan local ./docker/ folder for legacy directories
-        Path dockerBase = Paths.get("./docker");
-        if (Files.exists(dockerBase) && Files.isDirectory(dockerBase)) {
-            try (var stream = Files.list(dockerBase)) {
-                stream.filter(p -> Files.isDirectory(p) && p.getFileName().toString().startsWith("minecraft_data"))
-                      .forEach(p -> {
-                          String dirName = p.getFileName().toString();
-                          String sId = dirName.equals("minecraft_data") ? "server-1" : "server-" + dirName.replace("minecraft_data_", "");
-                          serverIds.add(sId);
-                      });
-            } catch (Exception ignored) {}
-        }
-
+        List<Map<String, Object>> result = new ArrayList<>();
         int index = 1;
         for (String serverId : serverIds) {
             String sIndex = serverId.replace("server-", "");
@@ -199,6 +239,10 @@ public class MinecraftServerController {
             index++;
         }
 
+        if (registry == null) {
+            writeServersRegistry(result);
+        }
+
         return result;
     }
 
@@ -229,6 +273,14 @@ public class MinecraftServerController {
         } catch (Exception e) {
             logger.error("Failed to delete server files for {}: {}", id, e.getMessage());
         }
+
+        // 4. Update servers_registry.json
+        List<Map<String, Object>> currentList = getRegisteredServersList();
+        List<Map<String, Object>> updatedList = currentList.stream()
+                .filter(s -> !id.equals(String.valueOf(s.get("id"))))
+                .collect(Collectors.toList());
+
+        writeServersRegistry(updatedList);
 
         return ResponseEntity.ok(Map.of("message", "Сервер " + id + " и все его файлы карт/конфигов успешно удалены!"));
     }
@@ -291,6 +343,17 @@ public class MinecraftServerController {
         } catch (Exception e) {
             logger.error("Error creating server directory", e);
         }
+
+        Map<String, Object> newServerMap = new HashMap<>();
+        newServerMap.put("id", serverId);
+        newServerMap.put("name", name);
+        newServerMap.put("type", type);
+        newServerMap.put("version", version);
+        newServerMap.put("memory", memory);
+        newServerMap.put("port", port);
+
+        currentServers.add(newServerMap);
+        writeServersRegistry(currentServers);
 
         return ResponseEntity.ok(Map.of(
             "message", "Сервер " + name + " (Порт: " + port + ") создана!",

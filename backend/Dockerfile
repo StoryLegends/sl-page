@@ -14,4 +14,4 @@ RUN apk add --no-cache docker-cli
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms128m", "-Xmx384m", "-XX:+UseG1GC", "-XX:MaxMetaspaceSize=128m", "-XX:ReservedCodeCacheSize=64m", "-Xss256k", "-jar", "app.jar"]
