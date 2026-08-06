@@ -28,8 +28,8 @@ const MinecraftServerTab: React.FC = () => {
     const [status, setStatus] = useState<MinecraftStatus | null>(null);
     const [isCreateServerModalOpen, setIsCreateServerModalOpen] = useState(false);
     
-    // WebSocket Real-time Stream Hook
-    const { logs, setLogs, metrics: wsStatus, sendCommand } = useAdminWebSocket(selectedServerId || 'server-1');
+    // WebSocket Real-time Stream Hook (Only connect when a server is selected)
+    const { logs, setLogs, metrics: wsStatus, sendCommand } = useAdminWebSocket(selectedServerId);
 
     useEffect(() => {
         minecraftApi.getSystemResources().then(res => {

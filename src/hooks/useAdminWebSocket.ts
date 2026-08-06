@@ -18,16 +18,21 @@ export interface ServerMetricsMessage {
 export type AdminWSMessage = ServerLogMessage | ServerMetricsMessage;
 
 export function useAdminWebSocket(
-    serverIdOrTopicMap: string | Record<string, Function> = 'server-1'
+    serverIdOrTopicMap: string | null | Record<string, Function> = 'server-1'
 ) {
     const [logs, setLogs] = useState<string[]>([]);
     const [metrics, setMetrics] = useState<ServerMetricsMessage | null>(null);
     const [isConnected, setIsConnected] = useState(false);
     const wsRef = useRef<WebSocket | null>(null);
 
-    const serverId = typeof serverIdOrTopicMap === 'string' ? serverIdOrTopicMap : 'server-1';
+    const isTopicMap = typeof serverIdOrTopicMap === 'object' && serverIdOrTopicMap !== null;
+    const serverId = typeof serverIdOrTopicMap === 'string' ? serverIdOrTopicMap : (isTopicMap ? 'admin' : null);
 
     const connect = useCallback(() => {
+        if (!serverId) {
+            return;
+        }
+
         const baseUrl = import.meta.env.VITE_API_URL || '';
         let wsUrl: string;
 
