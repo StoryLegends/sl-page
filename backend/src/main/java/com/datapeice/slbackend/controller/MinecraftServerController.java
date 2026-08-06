@@ -196,10 +196,8 @@ public class MinecraftServerController {
             Path dataPath = Paths.get("./docker", dirName);
 
             Map<String, String> props = readPropertiesFile(dataPath.resolve("server.properties"));
-            if (props.isEmpty() || !props.containsKey("engine-type")) {
-                Map<String, String> volProps = readNodeVolumeProperties(serverId);
-                volProps.forEach(props::putIfAbsent);
-            }
+            Map<String, String> volProps = readNodeVolumeProperties(serverId);
+            volProps.forEach(props::put);
 
             Map<String, Object> serverMap = new HashMap<>();
             serverMap.put("id", serverId);
@@ -264,7 +262,7 @@ public class MinecraftServerController {
 
         // 3. Remove local directory if present
         try {
-            Process p = new ProcessBuilder("rm", "-rf", dataPath.toAbsolutePath().toString()).start();
+            Process p = new ProcessBuilder("sh", "-c", "rm -rf " + dataPath.toAbsolutePath().toString()).start();
             p.waitFor();
             if (Files.exists(dataPath)) {
                 FileSystemUtils.deleteRecursively(dataPath);
@@ -513,7 +511,7 @@ public class MinecraftServerController {
                     }
 
                     Map<String, String> volProps = readNodeVolumeProperties(serverId);
-                    volProps.forEach(props::putIfAbsent);
+                    volProps.forEach(props::put);
 
                     String port = props.getOrDefault("server-port", "25565");
                     String rconPort = props.getOrDefault("rcon.port", "25575");
