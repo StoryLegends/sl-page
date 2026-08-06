@@ -434,11 +434,11 @@ public class MinecraftServerController {
                     String nodeVolume = "minecraft_node_data_" + serverId;
 
                     String runCmd = String.format(
-                        "docker run -d --name %s -p %s:25565 -p %s:25575 -e EULA=TRUE -e TYPE=%s -e VERSION=%s -e INIT_MEMORY=512M -e MAX_MEMORY=%s -e ONLINE_MODE=%s -e ENABLE_RCON=true -e RCON_PORT=25575 -e RCON_PASSWORD=%s -v %s:/data itzg/minecraft-server:java21",
+                        "docker run -d --name %s -p %s:25565 -p %s:25575 -e EULA=TRUE -e TYPE=%s -e VERSION=%s -e INIT_MEMORY=512M -e MAX_MEMORY=%s -e ONLINE_MODE=%s -e ENABLE_RCON=true -e RCON_PORT=25575 -e RCON_PASSWORD=%s -v %s:/data itzg/minecraft-server:latest",
                         cName, port, rconPort, type, version, memory, onlineMode, rconPassword, nodeVolume
                     );
                     execOutput = executeDockerCommandWithOutput(runCmd);
-                    result.put("message", "Сервер " + cName + " запущен (Java 21 LTS, RAM: " + memory + ", Port: " + port + ")!");
+                    result.put("message", "Сервер " + cName + " запущен (RAM: " + memory + ", Port: " + port + ")!");
                     result.put("status", "STARTING");
                 }
                 break;
