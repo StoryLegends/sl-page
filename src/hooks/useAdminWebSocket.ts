@@ -28,9 +28,22 @@ export function useAdminWebSocket(
     const isTopicMap = typeof serverIdOrTopicMap === 'object' && serverIdOrTopicMap !== null;
     const serverId = typeof serverIdOrTopicMap === 'string' ? serverIdOrTopicMap : (isTopicMap ? 'admin' : null);
 
+    // Keep latest topic map reference in a ref so connect() stays stable across renders
+    const topicMapRef = useRef(serverIdOrTopicMap);
+    useEffect(() => {
+        topicMapRef.current = serverIdOrTopicMap;
+    }, [serverIdOrTopicMap]);
+
     const connect = useCallback(() => {
         if (!serverId) {
             return;
+        }
+
+        // Avoid re-connecting if already connected or connecting
+        if (wsRef.current) {
+            if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+                return;
+            }
         }
 
         const baseUrl = import.meta.env.VITE_API_URL || '';
@@ -68,24 +81,23 @@ export function useAdminWebSocket(
                         setMetrics(data);
                     }
 
-                    // Precise routing based on topics if a topic map is used
-                    if (typeof serverIdOrTopicMap === 'object' && serverIdOrTopicMap !== null) {
+                    const currentTopicMap = topicMapRef.current;
+                    if (typeof currentTopicMap === 'object' && currentTopicMap !== null) {
                         if (data.topic) {
-                            const callback = serverIdOrTopicMap[data.topic];
+                            const callback = currentTopicMap[data.topic];
                             if (typeof callback === 'function') {
                                 callback(data.data || data);
                             }
                         } else {
-                            // Fallback to legacy callback trigger for all handlers
-                            Object.values(serverIdOrTopicMap).forEach(fn => {
+                            Object.values(currentTopicMap).forEach(fn => {
                                 if (typeof fn === 'function') fn(event.data);
                             });
                         }
                     }
                 } catch {
-                    // Fallback to calling all callbacks if it's not JSON
-                    if (typeof serverIdOrTopicMap === 'object' && serverIdOrTopicMap !== null) {
-                        Object.values(serverIdOrTopicMap).forEach(fn => {
+                    const currentTopicMap = topicMapRef.current;
+                    if (typeof currentTopicMap === 'object' && currentTopicMap !== null) {
+                        Object.values(currentTopicMap).forEach(fn => {
                             if (typeof fn === 'function') fn(event.data);
                         });
                     }
@@ -104,13 +116,14 @@ export function useAdminWebSocket(
         } catch {
             setIsConnected(false);
         }
-    }, [serverId, serverIdOrTopicMap]);
+    }, [serverId]);
 
     useEffect(() => {
         connect();
         return () => {
             if (wsRef.current) {
                 wsRef.current.close();
+                wsRef.current = null;
             }
         };
     }, [connect]);
